@@ -3,32 +3,38 @@
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 
-export default function HomePage() {
-  const { isAuthenticated } = useAuthStore();
+export default function AuthLayoutWrapper({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [isLoading, setIsLoading] = useState(true);
+  const [hasToken, setHasToken] = useState(false);
 
   useEffect(() => {
-    // Check if we have a token in localStorage
+    // Check localStorage directly for token
     const token = localStorage.getItem('api_token');
     
     if (token) {
-      // If we have a token, redirect to dashboard
       window.location.href = '/dashboard';
-    } else {
-      // If no token, redirect to pricing page
-      window.location.href = '/pricing';
+      return;
     }
     
+    setHasToken(false);
     setIsLoading(false);
   }, []);
 
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-900">
-        <div className="text-gray-400">Redirecting...</div>
+        <div className="text-gray-400">Loading...</div>
       </div>
     );
   }
 
-  return null;
-}
+  if (hasToken) {
+    return null;
+  }
+
+  return <>{children}</>;
+} 

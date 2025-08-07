@@ -1,36 +1,199 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PossiNotify Customer Dashboard
+
+A comprehensive Next.js dashboard for PossiNotify customers to manage API keys, monitor usage, send SMS, and manage their account.
+
+## Features
+
+- 🔐 **Authentication**: Secure login with JWT tokens
+- 🔑 **API Key Management**: Create, view, and revoke API keys
+- 📊 **Usage Analytics**: Monitor usage with interactive charts
+- 📱 **SMS Testing**: Send single and bulk SMS messages
+- 🎨 **Dark Theme**: Modern dark-themed UI for better readability
+- 📱 **Responsive Design**: Works on desktop and mobile devices
+
+## Technical Stack
+
+- **Framework**: Next.js 14 (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS + Shadcn/ui
+- **State Management**: Zustand
+- **HTTP Client**: Axios
+- **Charts**: Recharts
+- **Forms**: React Hook Form + Zod
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
+- Node.js 18+ 
+- npm or yarn
+- PossiNotify API backend running on `http://localhost:3000`
+
+### Installation
+
+1. Clone the repository:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <repository-url>
+cd possi_notify_ui
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies:
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Create environment file:
+```bash
+# Create .env.local file
+NEXT_PUBLIC_API_URL=http://localhost:3000
+NEXT_PUBLIC_APP_NAME=PossiNotify Dashboard
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Run the development server:
+```bash
+npm run dev
+```
 
-## Learn More
+5. Open [http://localhost:3001](http://localhost:3001) in your browser.
 
-To learn more about Next.js, take a look at the following resources:
+## Project Structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+src/
+├── app/                    # Next.js app router pages
+│   ├── (auth)/            # Authentication pages
+│   │   └── login/         # Login page
+│   ├── (dashboard)/       # Dashboard pages
+│   │   ├── dashboard/     # Main dashboard
+│   │   ├── api-keys/      # API keys management
+│   │   ├── usage/         # Usage analytics
+│   │   ├── sms/           # SMS testing
+│   │   ├── billing/       # Billing (placeholder)
+│   │   └── settings/      # Settings (placeholder)
+│   └── layout.tsx         # Root layout
+├── components/            # Reusable components
+│   ├── ui/               # Shadcn/ui components
+│   └── layout/           # Layout components
+├── lib/                  # Utility libraries
+│   ├── api.ts           # API configuration
+│   └── services/        # API service classes
+├── stores/              # Zustand state stores
+└── types/               # TypeScript type definitions
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## API Integration
 
-## Deploy on Vercel
+The dashboard integrates with the PossiNotify API with the following endpoints:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Authentication
+- `POST /api/v1/auth/login` - Customer login
+- `POST /admin/api/v1/customers` - Customer registration (admin)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### API Key Management
+- `GET /api/v1/api_keys` - List API keys
+- `POST /api/v1/api_keys` - Create API key
+- `DELETE /api/v1/api_keys/:id` - Revoke API key
+
+### SMS Management
+- `POST /api/v1/sms/send` - Send single SMS
+- `POST /api/v1/sms/bulk` - Send bulk SMS
+- `GET /api/v1/sms` - List SMS messages
+
+### Usage Analytics
+- `GET /api/v1/usage/current` - Current month usage
+- `GET /api/v1/usage/history` - Usage history
+
+## Key Features
+
+### Dashboard Overview
+- Real-time usage statistics
+- Monthly limit tracking
+- Quick action buttons
+- Usage breakdown by service
+
+### API Key Management
+- Create new API keys with custom names
+- View key prefixes and usage history
+- Revoke keys with confirmation
+- Secure key generation (shown only once)
+
+### SMS Testing
+- Send single SMS with validation
+- Bulk SMS with recipient list
+- Character count and SMS calculation
+- Real-time status feedback
+
+### Usage Analytics
+- Interactive line charts for usage over time
+- Bar charts for service breakdown
+- Recent API calls with status codes
+- Cost tracking and analysis
+
+## Authentication Flow
+
+1. Users visit the dashboard
+2. If not authenticated, redirected to login
+3. After successful login, JWT token stored in localStorage
+4. Token automatically included in API requests
+5. 401 responses trigger automatic logout
+
+## State Management
+
+The app uses Zustand for state management with two main stores:
+
+- **AuthStore**: Manages authentication state and user data
+- **UsageStore**: Manages usage data and analytics
+
+## Styling
+
+The dashboard uses a dark theme throughout with:
+- Dark backgrounds (`bg-gray-800`, `bg-gray-900`)
+- Light text (`text-white`, `text-gray-300`)
+- Blue accents (`bg-blue-600`, `text-blue-400`)
+- Consistent spacing and typography
+
+## Development
+
+### Available Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
+
+### Adding New Pages
+
+1. Create a new directory in `src/app/(dashboard)/`
+2. Add a `page.tsx` file
+3. Update the navigation in `src/components/layout/Sidebar.tsx`
+
+### Adding New API Services
+
+1. Create a new service file in `src/lib/services/`
+2. Import and use the `api` instance from `src/lib/api.ts`
+3. Add TypeScript types in `src/types/index.ts`
+
+## Deployment
+
+The dashboard can be deployed to any platform that supports Next.js:
+
+- **Vercel**: Recommended for Next.js apps
+- **Netlify**: Static site deployment
+- **Railway**: Full-stack deployment
+- **Docker**: Containerized deployment
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License.
+
+## Support
+
+For support and questions, please contact the PossiNotify team.
