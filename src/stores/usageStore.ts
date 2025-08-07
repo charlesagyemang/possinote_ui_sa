@@ -1,16 +1,25 @@
 import { create } from 'zustand';
 import { UsageService } from '@/lib/services/usage';
-import { UsageData } from '@/types';
 
-interface UsageState {
-  currentUsage: UsageData | null;
-  usageHistory: any[];
-  isLoading: boolean;
-  fetchCurrentUsage: () => Promise<void>;
-  fetchUsageHistory: (params: any) => Promise<void>;
+interface UsageHistoryParams {
+  start_date: string;
+  end_date: string;
+  page?: number;
+  per_page?: number;
 }
 
-export const useUsageStore = create<UsageState>((set, get) => ({
+interface UsageData {
+  current_usage?: unknown;
+  usage_history?: unknown[];
+}
+
+export const useUsageStore = create<{
+  currentUsage: unknown | null;
+  usageHistory: unknown[];
+  isLoading: boolean;
+  fetchCurrentUsage: () => Promise<void>;
+  fetchUsageHistory: (params: UsageHistoryParams) => Promise<void>;
+}>((set) => ({
   currentUsage: null,
   usageHistory: [],
   isLoading: false,
@@ -19,15 +28,15 @@ export const useUsageStore = create<UsageState>((set, get) => ({
     try {
       const response = await UsageService.getCurrentUsage();
       set({ currentUsage: response.data });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to fetch current usage:', error);
       
-      if (error.response?.status === 429) {
+      if (error instanceof Error && error.message.includes('429')) {
         // Wait 2 seconds and retry once
         setTimeout(async () => {
           try {
-                    const retryResponse = await UsageService.getCurrentUsage();
-        set({ currentUsage: retryResponse.data });
+            const retryResponse = await UsageService.getCurrentUsage();
+            set({ currentUsage: retryResponse.data });
           } catch (retryError) {
             console.error('Retry failed:', retryError);
           }
@@ -37,12 +46,12 @@ export const useUsageStore = create<UsageState>((set, get) => ({
       set({ isLoading: false });
     }
   },
-  fetchUsageHistory: async (params) => {
+  fetchUsageHistory: async (params: UsageHistoryParams) => {
     set({ isLoading: true });
     try {
       const response = await UsageService.getUsageHistory(params);
       set({ usageHistory: response.data.records || [] });
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to fetch usage history:', error);
     } finally {
       set({ isLoading: false });

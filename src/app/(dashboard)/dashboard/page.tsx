@@ -7,6 +7,19 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Activity, DollarSign, TrendingUp, AlertTriangle, Users, MessageSquare, Key, BarChart3, ArrowRight, Zap, Target, CheckCircle } from 'lucide-react';
 
+interface UsageData {
+  current_month_usage?: string | number;
+  monthly_limit?: string | number;
+  usage_percentage?: string | number;
+  remaining_quota?: string | number;
+  can_send_notifications?: boolean;
+  month?: string;
+  breakdown?: {
+    sms?: string | number;
+    email?: string | number;
+  };
+}
+
 export default function DashboardPage() {
   const { currentUsage, fetchCurrentUsage, isLoading } = useUsageStore();
 
@@ -29,6 +42,8 @@ export default function DashboardPage() {
       </div>
     );
   }
+
+  const usage = currentUsage as UsageData | null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-6">
@@ -59,14 +74,14 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent className="p-6">
               <div className="text-3xl font-bold text-white mb-3">
-                ₵{parseFloat(currentUsage?.current_month_usage || 0).toFixed(2)}
+                ₵{parseFloat(String(usage?.current_month_usage || '0')).toFixed(2)}
               </div>
               <Progress 
-                value={currentUsage?.usage_percentage || 0} 
+                value={Number(usage?.usage_percentage || 0)} 
                 className="h-2 bg-white/10 mb-3"
               />
               <p className="text-sm text-gray-400">
-                {parseFloat(currentUsage?.usage_percentage || 0).toFixed(2)}% of monthly limit
+                {parseFloat(String(usage?.usage_percentage || '0')).toFixed(2)}% of monthly limit
               </p>
             </CardContent>
           </Card>
@@ -82,7 +97,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent className="p-6">
               <div className="text-3xl font-bold text-white mb-3">
-                ₵{parseFloat(currentUsage?.monthly_limit || 0).toFixed(2)}
+                ₵{parseFloat(String(usage?.monthly_limit || '0')).toFixed(2)}
               </div>
               <p className="text-sm text-gray-400">
                 Your monthly spending limit
@@ -101,7 +116,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent className="p-6">
               <div className="text-3xl font-bold text-white mb-3">
-                ₵{parseFloat(currentUsage?.remaining_quota || 0).toFixed(2)}
+                ₵{parseFloat(String(usage?.remaining_quota || '0')).toFixed(2)}
               </div>
               <p className="text-sm text-gray-400">
                 Available for this month
@@ -112,7 +127,7 @@ export default function DashboardPage() {
           <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden hover:bg-black/30 transition-all duration-300">
             <CardHeader className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-b border-white/10">
               <CardTitle className="text-white text-lg flex items-center justify-between">
-                <span>Status</span>
+                <span>Account Status</span>
                 <div className="p-2 bg-amber-500/20 rounded-xl">
                   <AlertTriangle className="h-5 w-5 text-amber-400" />
                 </div>
@@ -121,18 +136,18 @@ export default function DashboardPage() {
             <CardContent className="p-6">
               <div className="flex items-center space-x-3 mb-3">
                 <Badge 
-                  variant={currentUsage?.can_send_notifications ? "default" : "destructive"}
+                  variant={usage?.can_send_notifications ? "default" : "destructive"}
                   className={`text-sm px-3 py-1 rounded-xl ${
-                    currentUsage?.can_send_notifications 
+                    usage?.can_send_notifications 
                       ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white' 
                       : 'bg-gradient-to-r from-red-500 to-pink-600 text-white'
                   }`}
                 >
-                  {currentUsage?.can_send_notifications ? 'Active' : 'Limited'}
+                  {usage?.can_send_notifications ? 'Active' : 'Limited'}
                 </Badge>
               </div>
               <p className="text-sm text-gray-400">
-                {currentUsage?.can_send_notifications ? 'Can send notifications' : 'Usage limit reached'}
+                {usage?.can_send_notifications ? 'Can send notifications' : 'Usage limit reached'}
               </p>
             </CardContent>
           </Card>
@@ -151,7 +166,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent className="p-6">
               <div className="text-3xl font-bold text-white mb-3">
-                ₵{parseFloat(currentUsage?.breakdown?.sms || 0).toFixed(2)}
+                ₵{parseFloat(String(usage?.breakdown?.sms || '0')).toFixed(2)}
               </div>
               <p className="text-sm text-gray-400">
                 SMS notifications this month
@@ -170,7 +185,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent className="p-6">
               <div className="text-3xl font-bold text-white mb-3">
-                ₵{parseFloat(currentUsage?.breakdown?.email || 0).toFixed(2)}
+                ₵{parseFloat(String(usage?.breakdown?.email || '0')).toFixed(2)}
               </div>
               <p className="text-sm text-gray-400">
                 Email notifications this month
@@ -253,15 +268,15 @@ export default function DashboardPage() {
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-gray-400">Month:</span>
-                    <span className="text-white font-medium">{currentUsage?.month || 'N/A'}</span>
+                    <span className="text-white font-medium">{usage?.month || 'N/A'}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-400">Usage:</span>
-                    <span className="text-white font-medium">₵{parseFloat(currentUsage?.current_month_usage || 0).toFixed(2)}</span>
+                    <span className="text-white font-medium">₵{parseFloat(String(usage?.current_month_usage || '0')).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-400">Percentage:</span>
-                    <span className="text-white font-medium">{parseFloat(currentUsage?.usage_percentage || 0).toFixed(2)}%</span>
+                    <span className="text-white font-medium">{parseFloat(String(usage?.usage_percentage || '0')).toFixed(2)}%</span>
                   </div>
                 </div>
               </div>
@@ -271,19 +286,19 @@ export default function DashboardPage() {
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-gray-400">Monthly Limit:</span>
-                    <span className="text-white font-medium">₵{parseFloat(currentUsage?.monthly_limit || 0).toFixed(2)}</span>
+                    <span className="text-white font-medium">₵{parseFloat(String(usage?.monthly_limit || '0')).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-400">Remaining:</span>
-                    <span className="text-white font-medium">₵{parseFloat(currentUsage?.remaining_quota || 0).toFixed(2)}</span>
+                    <span className="text-white font-medium">₵{parseFloat(String(usage?.remaining_quota || '0')).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-400">Status:</span>
                     <Badge 
-                      variant={currentUsage?.can_send_notifications ? "default" : "destructive"}
-                      className={currentUsage?.can_send_notifications ? "bg-green-500/20 border-green-500/30 text-green-300" : "bg-red-500/20 border-red-500/30 text-red-300"}
+                      variant={usage?.can_send_notifications ? "default" : "destructive"}
+                      className={usage?.can_send_notifications ? "bg-green-500/20 border-green-500/30 text-green-300" : "bg-red-500/20 border-red-500/30 text-red-300"}
                     >
-                      {currentUsage?.can_send_notifications ? 'Active' : 'Limited'}
+                      {usage?.can_send_notifications ? 'Active' : 'Limited'}
                     </Badge>
                   </div>
                 </div>

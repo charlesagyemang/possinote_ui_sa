@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -10,7 +10,25 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Key, Plus, Trash2, Copy, Eye, EyeOff, Shield, Lock, Unlock, Clock, CheckCircle, AlertCircle, Zap, Sparkles } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, Copy, Trash2, Key, Calendar, CheckCircle, XCircle, Shield } from 'lucide-react';
+
+interface ApiKey {
+  id: string;
+  name: string;
+  key: string;
+  permissions: {
+    sms: string[];
+    email: string[];
+    analytics: string[];
+    api_keys: string[];
+    senders: string[];
+  };
+  created_at: string;
+  expires_at?: string;
+  is_active: boolean;
+}
 
 const apiKeySchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -19,11 +37,13 @@ const apiKeySchema = z.object({
     email: z.array(z.string()),
     analytics: z.array(z.string()),
     api_keys: z.array(z.string()),
+    senders: z.array(z.string()),
   }),
+  expires_at: z.string().optional(),
 });
 
 export default function ApiKeysPage() {
-  const [apiKeys, setApiKeys] = useState<any[]>([]);
+  const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
@@ -35,11 +55,13 @@ export default function ApiKeysPage() {
     defaultValues: {
       name: '',
       permissions: {
-        sms: ['send'],
-        email: ['send'],
+        sms: ['read', 'write'],
+        email: ['read', 'write'],
         analytics: ['read'],
-        api_keys: ['read'],
+        api_keys: ['read', 'write'],
+        senders: ['read', 'write'],
       },
+      expires_at: '',
     },
   });
 
@@ -64,27 +86,25 @@ export default function ApiKeysPage() {
 
   const onSubmit = async (data: z.infer<typeof apiKeySchema>) => {
     try {
-      const response = await ApiKeyService.createApiKey(data);
+      await ApiKeyService.createApiKey(data);
       setSuccessMessage('API key created successfully!');
       setShowCreateForm(false);
       form.reset();
       fetchApiKeys();
-    } catch (error: any) {
-      console.error('Failed to create API key:', error);
-      setErrorMessage(error.response?.data?.message || 'Failed to create API key');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create API key';
+      setErrorMessage(errorMessage);
     }
   };
 
   const deleteApiKey = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this API key?')) return;
-
     try {
       await ApiKeyService.revokeApiKey(id);
       setSuccessMessage('API key deleted successfully!');
       fetchApiKeys();
-    } catch (error: any) {
-      console.error('Failed to delete API key:', error);
-      setErrorMessage(error.response?.data?.message || 'Failed to delete API key');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete API key';
+      setErrorMessage(errorMessage);
     }
   };
 
@@ -141,7 +161,7 @@ export default function ApiKeysPage() {
           <div className="bg-gradient-to-r from-red-500/20 to-pink-500/20 border border-red-500/30 backdrop-blur-xl rounded-2xl p-4">
             <div className="flex items-center space-x-3">
               <div className="p-2 bg-red-500/20 rounded-xl">
-                <AlertCircle className="h-5 w-5 text-red-400" />
+                <XCircle className="h-5 w-5 text-red-400" />
               </div>
               <span className="text-red-300 font-medium">{errorMessage}</span>
             </div>
@@ -196,18 +216,34 @@ export default function ApiKeysPage() {
                         <label className="flex items-center space-x-2">
                           <input
                             type="checkbox"
-                            checked={form.watch('permissions.sms').includes('send')}
+                            checked={form.watch('permissions.sms').includes('read')}
                             onChange={(e) => {
                               const current = form.getValues('permissions.sms');
                               if (e.target.checked) {
-                                form.setValue('permissions.sms', [...current, 'send']);
+                                form.setValue('permissions.sms', [...current, 'read']);
                               } else {
-                                form.setValue('permissions.sms', current.filter(p => p !== 'send'));
+                                form.setValue('permissions.sms', current.filter(p => p !== 'read'));
                               }
                             }}
                             className="rounded border-white/20 bg-black/30 text-green-500 focus:ring-green-500/20"
                           />
-                          <span className="text-gray-300">Send SMS</span>
+                          <span className="text-gray-300">Read SMS</span>
+                        </label>
+                        <label className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            checked={form.watch('permissions.sms').includes('write')}
+                            onChange={(e) => {
+                              const current = form.getValues('permissions.sms');
+                              if (e.target.checked) {
+                                form.setValue('permissions.sms', [...current, 'write']);
+                              } else {
+                                form.setValue('permissions.sms', current.filter(p => p !== 'write'));
+                              }
+                            }}
+                            className="rounded border-white/20 bg-black/30 text-green-500 focus:ring-green-500/20"
+                          />
+                          <span className="text-gray-300">Write SMS</span>
                         </label>
                       </div>
                     </div>
@@ -221,18 +257,34 @@ export default function ApiKeysPage() {
                         <label className="flex items-center space-x-2">
                           <input
                             type="checkbox"
-                            checked={form.watch('permissions.email').includes('send')}
+                            checked={form.watch('permissions.email').includes('read')}
                             onChange={(e) => {
                               const current = form.getValues('permissions.email');
                               if (e.target.checked) {
-                                form.setValue('permissions.email', [...current, 'send']);
+                                form.setValue('permissions.email', [...current, 'read']);
                               } else {
-                                form.setValue('permissions.email', current.filter(p => p !== 'send'));
+                                form.setValue('permissions.email', current.filter(p => p !== 'read'));
                               }
                             }}
                             className="rounded border-white/20 bg-black/30 text-green-500 focus:ring-green-500/20"
                           />
-                          <span className="text-gray-300">Send Email</span>
+                          <span className="text-gray-300">Read Email</span>
+                        </label>
+                        <label className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            checked={form.watch('permissions.email').includes('write')}
+                            onChange={(e) => {
+                              const current = form.getValues('permissions.email');
+                              if (e.target.checked) {
+                                form.setValue('permissions.email', [...current, 'write']);
+                              } else {
+                                form.setValue('permissions.email', current.filter(p => p !== 'write'));
+                              }
+                            }}
+                            className="rounded border-white/20 bg-black/30 text-green-500 focus:ring-green-500/20"
+                          />
+                          <span className="text-gray-300">Write Email</span>
                         </label>
                       </div>
                     </div>
@@ -284,6 +336,63 @@ export default function ApiKeysPage() {
                           />
                           <span className="text-gray-300">Read API Keys</span>
                         </label>
+                        <label className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            checked={form.watch('permissions.api_keys').includes('write')}
+                            onChange={(e) => {
+                              const current = form.getValues('permissions.api_keys');
+                              if (e.target.checked) {
+                                form.setValue('permissions.api_keys', [...current, 'write']);
+                              } else {
+                                form.setValue('permissions.api_keys', current.filter(p => p !== 'write'));
+                              }
+                            }}
+                            className="rounded border-white/20 bg-black/30 text-green-500 focus:ring-green-500/20"
+                          />
+                          <span className="text-gray-300">Write API Keys</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-2">
+                        <Shield className="h-4 w-4 text-indigo-400" />
+                        <span className="text-white font-medium">Senders</span>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            checked={form.watch('permissions.senders').includes('read')}
+                            onChange={(e) => {
+                              const current = form.getValues('permissions.senders');
+                              if (e.target.checked) {
+                                form.setValue('permissions.senders', [...current, 'read']);
+                              } else {
+                                form.setValue('permissions.senders', current.filter(p => p !== 'read'));
+                              }
+                            }}
+                            className="rounded border-white/20 bg-black/30 text-green-500 focus:ring-green-500/20"
+                          />
+                          <span className="text-gray-300">Read Senders</span>
+                        </label>
+                        <label className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            checked={form.watch('permissions.senders').includes('write')}
+                            onChange={(e) => {
+                              const current = form.getValues('permissions.senders');
+                              if (e.target.checked) {
+                                form.setValue('permissions.senders', [...current, 'write']);
+                              } else {
+                                form.setValue('permissions.senders', current.filter(p => p !== 'write'));
+                              }
+                            }}
+                            className="rounded border-white/20 bg-black/30 text-green-500 focus:ring-green-500/20"
+                          />
+                          <span className="text-gray-300">Write Senders</span>
+                        </label>
                       </div>
                     </div>
                   </div>
@@ -332,12 +441,12 @@ export default function ApiKeysPage() {
                           <div className="flex items-center space-x-2">
                             <span className="text-gray-400 text-sm">Key:</span>
                             <code className="bg-black/30 px-3 py-1 rounded-lg text-sm text-gray-300 font-mono">
-                              {apiKey.key_prefix}...
+                              {apiKey.key}...
                             </code>
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => copyToClipboard(apiKey.key || apiKey.key_prefix, apiKey.id)}
+                              onClick={() => copyToClipboard(apiKey.key, apiKey.id)}
                               className="bg-blue-500/20 border-blue-500/30 text-blue-300 hover:bg-blue-500/30"
                             >
                               {copiedKey === apiKey.id ? <CheckCircle className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -345,26 +454,36 @@ export default function ApiKeysPage() {
                           </div>
                           
                           <div className="flex items-center space-x-2 text-sm text-gray-400">
-                            <Clock className="h-4 w-4" />
+                            <Calendar className="h-4 w-4" />
                             <span>Created: {new Date(apiKey.created_at).toLocaleDateString()}</span>
-                            {apiKey.last_used_at && (
+                            {apiKey.expires_at && (
                               <>
                                 <span>•</span>
-                                <span>Last used: {new Date(apiKey.last_used_at).toLocaleDateString()}</span>
+                                <span>Expires: {new Date(apiKey.expires_at).toLocaleDateString()}</span>
                               </>
                             )}
                           </div>
                         </div>
 
                         <div className="flex flex-wrap gap-2">
-                          {apiKey.permissions?.sms?.includes('send') && (
+                          {apiKey.permissions?.sms?.includes('read') && (
                             <Badge variant="outline" className="bg-blue-500/20 border-blue-500/30 text-blue-300">
-                              SMS Send
+                              SMS Read
                             </Badge>
                           )}
-                          {apiKey.permissions?.email?.includes('send') && (
+                          {apiKey.permissions?.sms?.includes('write') && (
+                            <Badge variant="outline" className="bg-blue-500/20 border-blue-500/30 text-blue-300">
+                              SMS Write
+                            </Badge>
+                          )}
+                          {apiKey.permissions?.email?.includes('read') && (
                             <Badge variant="outline" className="bg-green-500/20 border-green-500/30 text-green-300">
-                              Email Send
+                              Email Read
+                            </Badge>
+                          )}
+                          {apiKey.permissions?.email?.includes('write') && (
+                            <Badge variant="outline" className="bg-green-500/20 border-green-500/30 text-green-300">
+                              Email Write
                             </Badge>
                           )}
                           {apiKey.permissions?.analytics?.includes('read') && (
@@ -375,6 +494,21 @@ export default function ApiKeysPage() {
                           {apiKey.permissions?.api_keys?.includes('read') && (
                             <Badge variant="outline" className="bg-amber-500/20 border-amber-500/30 text-amber-300">
                               API Keys Read
+                            </Badge>
+                          )}
+                          {apiKey.permissions?.api_keys?.includes('write') && (
+                            <Badge variant="outline" className="bg-amber-500/20 border-amber-500/30 text-amber-300">
+                              API Keys Write
+                            </Badge>
+                          )}
+                          {apiKey.permissions?.senders?.includes('read') && (
+                            <Badge variant="outline" className="bg-indigo-500/20 border-indigo-500/30 text-indigo-300">
+                              Senders Read
+                            </Badge>
+                          )}
+                          {apiKey.permissions?.senders?.includes('write') && (
+                            <Badge variant="outline" className="bg-indigo-500/20 border-indigo-500/30 text-indigo-300">
+                              Senders Write
                             </Badge>
                           )}
                         </div>

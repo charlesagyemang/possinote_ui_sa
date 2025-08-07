@@ -1,51 +1,81 @@
 import { api } from '../api';
-import { SendSmsData, SendBulkSmsData, SmsHistoryParams } from '@/types';
+
+interface SmsHistoryParams {
+  page?: number;
+  per_page?: number;
+  status?: string;
+  date_filter?: string;
+  start_date?: string;
+  end_date?: string;
+  api_key_id?: string;
+  sender_id?: string;
+  phone?: string;
+  min_cost?: number;
+  max_cost?: number;
+}
+
+interface SmsResponse {
+  success: boolean;
+  data?: {
+    messages?: unknown[];
+    pagination?: unknown;
+  };
+  message?: string;
+}
 
 export class SmsService {
-  static async sendSms(data: SendSmsData) {
-    // Try the format from your original snippet
-    const requestData = {
-      sms: {
-        to: data.to,
-        message: data.message,
-        sender_id: data.sender_id
-      }
+  static async sendSms(to: string, message: string, senderId?: string) {
+    const payload = {
+      to,
+      message,
+      sender_id: senderId
     };
-    
-    console.log('Sending SMS request:', requestData);
-    console.log('API base URL:', api.defaults.baseURL);
-    console.log('Full URL:', `${api.defaults.baseURL}/sms/send`);
-    
-    const response = await api.post('/sms/send', requestData);
+
+    const response = await api.post('/sms/send', payload);
     return response.data;
   }
 
-  static async sendBulkSms(data: SendBulkSmsData) {
-    const requestData = {
-      bulk_sms: {
-        messages: data.messages,
-        sender_id: data.sender_id
-      }
+  static async sendBulkSms(recipients: string[], message: string, senderId?: string) {
+    const payload = {
+      recipients,
+      message,
+      sender_id: senderId
     };
-    
-    console.log('Sending bulk SMS request:', requestData);
-    console.log('API base URL:', api.defaults.baseURL);
-    console.log('Full URL:', `${api.defaults.baseURL}/sms/bulk`);
-    
-    const response = await api.post('/sms/bulk', requestData);
+
+    const response = await api.post('/sms/bulk', payload);
     return response.data;
   }
 
-  static async getSmsHistory(params?: SmsHistoryParams) {
-    console.log('SmsService.getSmsHistory called with params:', params);
-    console.log('Full API URL with params:', `/sms`, params);
-    const response = await api.get('/sms', { params });
-    console.log('SmsService response:', response);
-    return response.data;
-  }
-
-  static async getSmsStatus(id: string) {
-    const response = await api.get(`/sms/${id}`);
-    return response.data;
+  static async getSmsHistory(params?: SmsHistoryParams): Promise<SmsResponse> {
+    console.log('🔍 SmsService.getSmsHistory called with params:', params);
+    console.log('🔍 API base URL:', api.defaults.baseURL);
+    console.log('🔍 Full URL will be:', `${api.defaults.baseURL}/sms`);
+    console.log('🔍 Query parameters:', params);
+    
+    // Log the actual request being made
+    const requestConfig = { params };
+    console.log('🔍 Request config:', JSON.stringify(requestConfig, null, 2));
+    
+    try {
+      const response = await api.get('/sms', { params });
+      console.log('🔍 SmsService response status:', response.status);
+      console.log('🔍 SmsService response data:', response.data);
+      
+      // Check if the response contains the expected data structure
+      if (response.data && response.data.data && response.data.data.messages) {
+        console.log('🔍 Messages found:', response.data.data.messages.length);
+        console.log('🔍 First message status:', response.data.data.messages[0]?.status);
+      } else {
+        console.warn('🔍 Unexpected response structure:', response.data);
+      }
+      
+      return response.data;
+    } catch (error: unknown) {
+      console.error('🔍 SmsService error:', error);
+      if (error instanceof Error) {
+        console.error('🔍 Error message:', error.message);
+      }
+      throw error;
+    }
   }
 } 

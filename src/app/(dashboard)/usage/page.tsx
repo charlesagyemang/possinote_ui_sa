@@ -8,9 +8,18 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { UsageData } from '@/types';
 import { DollarSign, TrendingUp, Activity, Calendar, BarChart3, Target, Zap, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 
+interface UsageHistoryRecord {
+  id: string;
+  created_at: string;
+  cost: string | number;
+  endpoint?: string;
+  response_code?: number;
+  response_time?: number;
+}
+
 export default function UsagePage() {
   const [currentUsage, setCurrentUsage] = useState<UsageData | null>(null);
-  const [usageHistory, setUsageHistory] = useState<any[]>([]);
+  const [usageHistory, setUsageHistory] = useState<unknown[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -55,15 +64,18 @@ export default function UsagePage() {
     );
   }
 
-  const chartData = usageHistory.map(record => ({
-    date: new Date(record.created_at).toLocaleDateString(),
-    cost: parseFloat(record.cost || 0),
-    requests: 1,
-  }));
+  const chartData = usageHistory.map((record: unknown) => {
+    const typedRecord = record as UsageHistoryRecord;
+    return {
+      date: new Date(typedRecord.created_at).toLocaleDateString(),
+      cost: parseFloat(String(typedRecord.cost || 0)),
+      requests: 1,
+    };
+  });
 
   const breakdownData = currentUsage?.breakdown ? [
-    { name: 'SMS', value: parseFloat(currentUsage.breakdown.sms || 0), color: '#3B82F6' },
-    { name: 'Email', value: parseFloat(currentUsage.breakdown.email || 0), color: '#10B981' },
+    { name: 'SMS', value: Number(currentUsage.breakdown.sms || 0), color: '#3B82F6' },
+    { name: 'Email', value: Number(currentUsage.breakdown.email || 0), color: '#10B981' },
   ] : [];
 
   return (
@@ -95,12 +107,12 @@ export default function UsagePage() {
             </CardHeader>
             <CardContent className="p-6">
               <div className="text-3xl font-bold text-white mb-3">
-                ₵{parseFloat(currentUsage?.current_month_usage || 0).toFixed(2)}
+                ₵{parseFloat(String(currentUsage?.current_month_usage || 0)).toFixed(2)}
               </div>
               <div className="flex items-center space-x-2">
                 <ArrowUpRight className="h-4 w-4 text-green-400" />
                 <span className="text-sm text-gray-400">
-                  {parseFloat(currentUsage?.usage_percentage || 0).toFixed(2)}% of monthly limit
+                  {parseFloat(String(currentUsage?.usage_percentage || 0)).toFixed(2)}% of monthly limit
                 </span>
               </div>
             </CardContent>
@@ -117,7 +129,7 @@ export default function UsagePage() {
             </CardHeader>
             <CardContent className="p-6">
               <div className="text-3xl font-bold text-white mb-3">
-                ₵{parseFloat(currentUsage?.monthly_limit || 0).toFixed(2)}
+                ₵{parseFloat(String(currentUsage?.monthly_limit || 0)).toFixed(2)}
               </div>
               <p className="text-sm text-gray-400">
                 Your monthly spending limit
@@ -136,7 +148,7 @@ export default function UsagePage() {
             </CardHeader>
             <CardContent className="p-6">
               <div className="text-3xl font-bold text-white mb-3">
-                ₵{parseFloat(currentUsage?.remaining_quota || 0).toFixed(2)}
+                ₵{parseFloat(String(currentUsage?.remaining_quota || 0)).toFixed(2)}
               </div>
               <p className="text-sm text-gray-400">
                 Available for this month
@@ -183,7 +195,7 @@ export default function UsagePage() {
                         color: '#F9FAFB',
                         boxShadow: '0 10px 25px rgba(0, 0, 0, 0.3)'
                       }}
-                      formatter={(value: any) => [`₵${typeof value === 'number' ? value.toFixed(2) : parseFloat(value || 0).toFixed(2)}`, 'Cost']}
+                      formatter={(value: unknown) => [`₵${typeof value === 'number' ? value.toFixed(2) : parseFloat(String(value) || '0').toFixed(2)}`, 'Cost']}
                     />
                     <Line 
                       type="monotone" 
@@ -244,7 +256,7 @@ export default function UsagePage() {
                         color: '#F9FAFB',
                         boxShadow: '0 10px 25px rgba(0, 0, 0, 0.3)'
                       }}
-                      formatter={(value: any) => [`₵${typeof value === 'number' ? value.toFixed(2) : parseFloat(value || 0).toFixed(2)}`, 'Cost']}
+                      formatter={(value: unknown) => [`₵${typeof value === 'number' ? value.toFixed(2) : parseFloat(String(value) || '0').toFixed(2)}`, 'Cost']}
                     />
                     <Bar 
                       dataKey="value" 
@@ -286,34 +298,37 @@ export default function UsagePage() {
           <CardContent className="p-8">
             {usageHistory.length > 0 ? (
               <div className="space-y-4">
-                {usageHistory.slice(0, 10).map((record) => (
-                  <div key={record.id} className="border border-white/10 rounded-2xl p-4 bg-gradient-to-r from-white/5 to-white/10 backdrop-blur-sm hover:from-white/10 hover:to-white/15 transition-all duration-300">
-                    <div className="flex justify-between items-center">
-                      <div className="space-y-1">
-                        <p className="font-medium text-white">{record.endpoint || 'API Call'}</p>
-                        <p className="text-sm text-gray-400">
-                          {new Date(record.created_at).toLocaleString()}
-                        </p>
-                      </div>
-                      <div className="text-right space-y-1">
-                        <p className="font-medium text-white">₵{parseFloat(record.cost || 0).toFixed(4)}</p>
-                        <div className="flex items-center space-x-2 text-sm">
-                          <Badge 
-                            variant={record.response_code >= 200 && record.response_code < 300 ? "default" : "destructive"}
-                            className={`text-xs px-2 py-1 rounded-lg ${
-                              record.response_code >= 200 && record.response_code < 300 
-                                ? 'bg-green-500/20 border-green-500/30 text-green-300' 
-                                : 'bg-red-500/20 border-red-500/30 text-red-300'
-                            }`}
-                          >
-                            {record.response_code}
-                          </Badge>
-                          <span className="text-gray-400">{record.response_time}ms</span>
+                {usageHistory.slice(0, 10).map((record: unknown) => {
+                  const typedRecord = record as UsageHistoryRecord;
+                  return (
+                    <div key={typedRecord.id} className="border border-white/10 rounded-2xl p-4 bg-gradient-to-r from-white/5 to-white/10 backdrop-blur-sm hover:from-white/10 hover:to-white/15 transition-all duration-300">
+                      <div className="flex justify-between items-center">
+                        <div className="space-y-1">
+                          <p className="font-medium text-white">{typedRecord.endpoint || 'API Call'}</p>
+                          <p className="text-sm text-gray-400">
+                            {new Date(typedRecord.created_at).toLocaleString()}
+                          </p>
+                        </div>
+                        <div className="text-right space-y-1">
+                          <p className="font-medium text-white">₵{parseFloat(String(typedRecord.cost || 0)).toFixed(4)}</p>
+                          <div className="flex items-center space-x-2 text-sm">
+                            <Badge 
+                              variant={typedRecord.response_code && typedRecord.response_code >= 200 && typedRecord.response_code < 300 ? "default" : "destructive"}
+                              className={`text-xs px-2 py-1 rounded-lg ${
+                                typedRecord.response_code && typedRecord.response_code >= 200 && typedRecord.response_code < 300 
+                                  ? 'bg-green-500/20 border-green-500/30 text-green-300' 
+                                  : 'bg-red-500/20 border-red-500/30 text-red-300'
+                              }`}
+                            >
+                              {typedRecord.response_code || 'N/A'}
+                            </Badge>
+                            <span className="text-gray-400">{typedRecord.response_time || 'N/A'}ms</span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="flex items-center justify-center h-32">

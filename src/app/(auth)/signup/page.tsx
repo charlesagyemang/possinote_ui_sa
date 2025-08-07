@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuthStore } from '@/stores/authStore';
+import { Customer } from '@/types';
 import { AuthService } from '@/lib/services/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -62,22 +63,25 @@ export default function SignupPage() {
       
       if (response.success) {
         setSuccess(true);
-        setApiKey(response.api_key);
+        setApiKey(response.api_key || '');
         
         // Store the API key in localStorage
-        localStorage.setItem('api_token', response.api_key);
+        localStorage.setItem('api_token', response.api_key || '');
         
         // Update auth store
         const login = useAuthStore.getState().login;
-        login(response.api_key, response.customer);
+        if (response.customer && response.api_key) {
+          login(response.api_key, response.customer as Customer);
+        }
         
         // Redirect to dashboard after 3 seconds
         setTimeout(() => {
           window.location.href = '/dashboard';
         }, 3000);
       }
-    } catch (error: any) {
-      setError(error.response?.data?.message || 'Signup failed. Please try again.');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Signup failed. Please try again.';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -142,7 +146,7 @@ export default function SignupPage() {
                       <Shield className="h-4 w-4 text-amber-400" />
                     </div>
                     <span className="text-amber-300 font-medium">
-                      Copy this API key now! It won't be shown again.
+                      Copy this API key now! It won&apos;t be shown again.
                     </span>
                   </div>
                 </div>
@@ -317,11 +321,8 @@ export default function SignupPage() {
             </form>
             
             <div className="mt-8 text-center">
-              <p className="text-gray-400">
-                Already have an account?{' '}
-                <Link href="/login" className="text-blue-400 hover:text-blue-300 font-medium transition-colors">
-                  Sign in
-                </Link>
+              <p className="text-gray-400 text-center">
+                Already have an account? <a href="/login" className="text-purple-400 hover:text-purple-300">Sign in</a>
               </p>
             </div>
           </CardContent>

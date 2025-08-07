@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -257,7 +256,7 @@ export default function PricingPage() {
                 <span>What happens if I exceed my limit?</span>
               </h3>
               <p className="text-gray-400">
-                You'll receive a notification when you reach 80% of your limit. You can upgrade your plan to continue sending.
+                You&apos;ll receive a notification when you reach 80% of your limit. You can upgrade your plan to continue sending.
               </p>
             </div>
             
@@ -289,8 +288,8 @@ export default function PricingPage() {
             <h2 className="text-3xl font-bold text-white mb-4">
               Ready to Get Started?
             </h2>
-            <p className="text-gray-400 mb-6 text-lg">
-              Choose a plan above or sign in to your existing account
+            <p className="text-gray-400 mb-6">
+              Perfect for small businesses and startups. Get started with SMS notifications today.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/signup">

@@ -1,36 +1,19 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { SmsService } from '@/lib/services/sms';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-  MessageSquare, 
-  Search, 
-  Filter, 
-  ChevronLeft, 
-  ChevronRight, 
-  Phone, 
-  Clock, 
-  DollarSign, 
-  CheckCircle, 
-  XCircle, 
-  AlertCircle,
-  RefreshCw,
-  Download,
-  Eye,
-  Calendar,
-  FileDown
-} from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { CheckCircle, XCircle, AlertCircle, Clock, ChevronLeft, ChevronRight, Filter, Search, Calendar, Phone, DollarSign, Key, User, RefreshCw, MessageSquare, Eye, FileDown } from 'lucide-react';
 
 interface SmsMessage {
   message_id: string;
   to: string;
-  status: string;
+  status: 'pending' | 'sent' | 'delivered' | 'failed' | 'cancelled';
   created_at: string;
   cost: string;
   message?: string;
@@ -46,57 +29,33 @@ interface Pagination {
 export default function SmsHistoryPage() {
   const [messages, setMessages] = useState<SmsMessage[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isRateLimited, setIsRateLimited] = useState(false);
+  const [rateLimitCountdown, setRateLimitCountdown] = useState(0);
+  const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null);
+
+  // Filter states
   const [currentPage, setCurrentPage] = useState(1);
-  const [startDate, setStartDate] = useState(() => {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
-  });
-  const [endDate, setEndDate] = useState(() => {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
-  });
-  const [dateFilter, setDateFilter] = useState('today');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState('all');
   const [apiKeyFilter, setApiKeyFilter] = useState('all');
-  const [minCost, setMinCost] = useState('');
-  const [maxCost, setMaxCost] = useState('');
   const [senderIdFilter, setSenderIdFilter] = useState('');
   const [phoneFilter, setPhoneFilter] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [minCost, setMinCost] = useState('');
+  const [maxCost, setMaxCost] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
+  // Export states
   const [isExporting, setIsExporting] = useState(false);
-  const [availableFilters, setAvailableFilters] = useState<any>(null);
-  const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  // Debounced fetch function
-  const debouncedFetch = useCallback(() => {
-    if (debounceTimer) {
-      clearTimeout(debounceTimer);
-    }
-    
-    const timer = setTimeout(() => {
-      fetchSmsHistory();
-    }, 300); // 300ms delay
-    
-    setDebounceTimer(timer);
-  }, [debounceTimer]);
-
-  // Immediate fetch for pagination and major filter changes
-  useEffect(() => {
-    fetchSmsHistory();
-  }, [currentPage, statusFilter, dateFilter, apiKeyFilter]);
-
-  // Debounced fetch for search and cost filters
-  useEffect(() => {
-    debouncedFetch();
-  }, [searchTerm, minCost, maxCost, startDate, endDate, senderIdFilter, phoneFilter]);
 
   const fetchSmsHistory = async () => {
     try {
       setIsLoading(true);
       setError(null);
-      const params: any = {
+      const params: Record<string, string | number> = {
         page: currentPage,
         per_page: 20
       };
@@ -110,8 +69,11 @@ export default function SmsHistoryPage() {
       }
 
       // Add other filters
-      if (statusFilter !== 'all') {
+      if (statusFilter && statusFilter !== 'all') {
         params.status = statusFilter;
+        console.log('🔍 Status filter applied:', statusFilter);
+      } else {
+        console.log('🔍 No status filter applied (statusFilter:', statusFilter, ')');
       }
 
       if (apiKeyFilter !== 'all') {
@@ -134,34 +96,104 @@ export default function SmsHistoryPage() {
         params.phone = phoneFilter;
       }
 
-      console.log('SMS History API params being sent:', params);
-      console.log('Status filter check - statusFilter:', statusFilter, 'will be included:', statusFilter !== 'all');
-      const response = await SmsService.getSmsHistory(params);
-      console.log('SMS History response:', response);
-      
-      setMessages(response.data?.messages || []);
-      setPagination(response.data?.pagination || null);
-      
-      // Store available filters for UI
-      if (response.data?.filters?.available) {
-        setAvailableFilters(response.data.filters.available);
+      // Debug status filter specifically
+      console.log('🔍 STATUS FILTER DEBUG:');
+      console.log('- statusFilter value:', statusFilter);
+      console.log('- statusFilter !== "all":', statusFilter !== 'all');
+      console.log('- params.status:', params.status);
+      console.log('🔍 END STATUS DEBUG');
+
+      console.log('=== SMS History Filter Debug ===');
+      console.log('Current filter values:');
+      console.log('- statusFilter:', statusFilter, '(will be included:', statusFilter !== 'all', ')');
+      console.log('- dateFilter:', dateFilter);
+      console.log('- apiKeyFilter:', apiKeyFilter);
+      console.log('- senderIdFilter:', senderIdFilter);
+      console.log('- phoneFilter:', phoneFilter);
+      console.log('- minCost:', minCost);
+      console.log('- maxCost:', maxCost);
+      console.log('- startDate:', startDate);
+      console.log('- endDate:', endDate);
+      console.log('Final params:', params);
+      console.log('=== END DEBUG ===');
+
+      const response = await fetch('/api/sms-history', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(params),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-    } catch (error: any) {
+
+      const data = await response.json();
+      console.log('🔍 SMS History API Response:', data);
+
+      if (data.success) {
+        setMessages(data.data.messages || []);
+        setPagination(data.data.pagination || null);
+        console.log('🔍 Messages set:', data.data.messages?.length || 0);
+        console.log('🔍 Pagination set:', data.data.pagination);
+      } else {
+        setError(data.message || 'Failed to fetch SMS history');
+        console.error('🔍 API returned error:', data.message);
+      }
+    } catch (error: unknown) {
       console.error('Failed to fetch SMS history:', error);
       
       // Handle rate limiting
-      if (error.response?.status === 429) {
+      if (error instanceof Error && error.message.includes('429')) {
         setError('Too many requests. Please wait a moment and try again.');
+        setIsRateLimited(true);
         console.log('Rate limited - waiting before retry...');
+        
+        // Auto-clear rate limit after 30 seconds with countdown
+        let countdown = 30;
+        setRateLimitCountdown(countdown);
+        
+        const countdownInterval = setInterval(() => {
+          countdown--;
+          setRateLimitCountdown(countdown);
+          
+          if (countdown <= 0) {
+            clearInterval(countdownInterval);
+            setIsRateLimited(false);
+            setError(null);
+            setRateLimitCountdown(0);
+          }
+        }, 1000);
       } else {
         setError('Failed to load SMS history. Please try again.');
+        setIsRateLimited(false);
       }
     } finally {
       setIsLoading(false);
     }
   };
 
-  const filteredMessages = messages.filter(message =>
+  // Single useEffect for all filter changes
+  useEffect(() => {
+    console.log('🔍 useEffect triggered with statusFilter:', statusFilter);
+    // Immediate fetch for all filters (no delay)
+    fetchSmsHistory();
+  }, [
+    currentPage, 
+    statusFilter, 
+    dateFilter, 
+    apiKeyFilter, 
+    senderIdFilter, 
+    phoneFilter,
+    searchTerm, 
+    minCost, 
+    maxCost, 
+    startDate, 
+    endDate
+  ]);
+
+  const filteredMessages = messages.filter((message: SmsMessage) =>
     message.to.toLowerCase().includes(searchTerm.toLowerCase()) ||
     message.message_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (message.message && message.message.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -214,7 +246,7 @@ export default function SmsHistoryPage() {
       setIsExporting(true);
       
       // Fetch all data for export (without pagination)
-      const params: any = {
+      const params: Record<string, string | number> = {
         per_page: 1000 // Get maximum data
       };
 
@@ -251,14 +283,26 @@ export default function SmsHistoryPage() {
         params.phone = phoneFilter;
       }
 
-      const response = await SmsService.getSmsHistory(params);
-      const allMessages = response.data?.messages || [];
+      const response = await fetch('/api/sms-history', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(params),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const allMessages = data.data.messages || [];
       
       // Create CSV content
       const headers = ['Message ID', 'Phone Number', 'Status', 'Cost (₵)', 'Date', 'Message'];
       const csvContent = [
         headers.join(','),
-        ...allMessages.map(message => [
+        ...allMessages.map((message: SmsMessage) => [
           message.message_id,
           message.to,
           message.status,
@@ -312,6 +356,8 @@ export default function SmsHistoryPage() {
     setEndDate(new Date().toISOString().split('T')[0]);
     setCurrentPage(1);
   };
+
+
 
   if (isLoading) {
     return (
@@ -427,27 +473,41 @@ export default function SmsHistoryPage() {
                   />
                 </div>
 
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="bg-black/30 border-white/20 text-white rounded-xl h-12 focus:border-blue-500 focus:ring-blue-500/20">
-                    <SelectValue placeholder="Filter by status" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-gray-800 border-gray-700">
-                    <SelectItem value="all">All Status</SelectItem>
-                    {availableFilters?.status?.map((status: string) => (
-                      <SelectItem key={status} value={status}>
-                        {status.charAt(0).toUpperCase() + status.slice(1)}
-                      </SelectItem>
-                    )) || (
-                      <>
-                        <SelectItem value="sent">Sent</SelectItem>
-                        <SelectItem value="delivered">Delivered</SelectItem>
-                        <SelectItem value="failed">Failed</SelectItem>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="cancelled">Cancelled</SelectItem>
-                      </>
+                <div className="relative">
+                  <Select value={statusFilter} onValueChange={(value) => {
+                    console.log('🔍 Status filter changed to:', value);
+                    setStatusFilter(value);
+                  }}>
+                    <SelectTrigger className={`bg-black/30 border-white/20 text-white rounded-xl h-12 focus:border-blue-500 focus:ring-blue-500/20 ${
+                      statusFilter && statusFilter !== 'all' ? 'border-blue-500/50 bg-blue-500/10' : ''
+                    }`}>
+                      <SelectValue placeholder="Filter by status" />
+                    </SelectTrigger>
+                    {statusFilter && statusFilter !== 'all' && (
+                      <div className="absolute -top-2 -right-2 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                        <span className="text-xs text-white font-bold">✓</span>
+                      </div>
                     )}
-                  </SelectContent>
-                </Select>
+                    <SelectContent className="bg-gray-800 border-gray-700">
+                      <SelectItem value="all">All Status</SelectItem>
+                      {/* availableFilters?.status?.map((status: string) => ( */}
+                        <SelectItem key="sent" value="sent">Sent</SelectItem>
+                        <SelectItem key="delivered" value="delivered">Delivered</SelectItem>
+                        <SelectItem key="failed" value="failed">Failed</SelectItem>
+                        <SelectItem key="pending" value="pending">Pending</SelectItem>
+                        <SelectItem key="cancelled" value="cancelled">Cancelled</SelectItem>
+                      {/* )) || ( */}
+                        {/* <>
+                          <SelectItem value="sent">Sent</SelectItem>
+                          <SelectItem value="delivered">Delivered</SelectItem>
+                          <SelectItem value="failed">Failed</SelectItem>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="cancelled">Cancelled</SelectItem>
+                        </> */}
+                      {/* ) */}
+                    </SelectContent>
+                  </Select>
+                </div>
 
                 <Select value={apiKeyFilter} onValueChange={setApiKeyFilter}>
                   <SelectTrigger className="bg-black/30 border-white/20 text-white rounded-xl h-12 focus:border-blue-500 focus:ring-blue-500/20">
@@ -455,20 +515,21 @@ export default function SmsHistoryPage() {
                   </SelectTrigger>
                   <SelectContent className="bg-gray-800 border-gray-700">
                     <SelectItem value="all">All API Keys</SelectItem>
-                    {availableFilters?.api_keys?.map((key: any) => (
-                      <SelectItem key={key.id} value={key.id}>
-                        {key.name}
-                      </SelectItem>
-                    ))}
+                    {/* availableFilters?.api_keys?.map((key: any) => ( */}
+                      <SelectItem key="key1" value="key1">API Key 1</SelectItem>
+                      <SelectItem key="key2" value="key2">API Key 2</SelectItem>
+                      <SelectItem key="key3" value="key3">API Key 3</SelectItem>
+                    {/* )) */}
                   </SelectContent>
                 </Select>
 
                 <Button
                   onClick={fetchSmsHistory}
-                  className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl h-12 font-medium"
+                  disabled={isRateLimited}
+                  className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl h-12 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <RefreshCw className="h-4 w-4 mr-2" />
-                  Refresh
+                  {isRateLimited ? 'Rate Limited' : 'Refresh'}
                 </Button>
               </div>
 
@@ -481,20 +542,23 @@ export default function SmsHistoryPage() {
                       <SelectValue placeholder="Select date range" />
                     </SelectTrigger>
                     <SelectContent className="bg-gray-800 border-gray-700">
-                      {availableFilters?.date_filter?.map((filter: string) => (
-                        <SelectItem key={filter} value={filter}>
-                          {filter.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                        </SelectItem>
-                      )) || (
-                        <>
+                      {/* availableFilters?.date_filter?.map((filter: string) => ( */}
+                        <SelectItem key="today" value="today">Today</SelectItem>
+                        <SelectItem key="yesterday" value="yesterday">Yesterday</SelectItem>
+                        <SelectItem key="this_week" value="this_week">This Week</SelectItem>
+                        <SelectItem key="this_month" value="this_month">This Month</SelectItem>
+                        <SelectItem key="last_month" value="last_month">Last Month</SelectItem>
+                        <SelectItem key="custom" value="custom">Custom Range</SelectItem>
+                      {/* )) || ( */}
+                        {/* <>
                           <SelectItem value="today">Today</SelectItem>
                           <SelectItem value="yesterday">Yesterday</SelectItem>
                           <SelectItem value="this_week">This Week</SelectItem>
                           <SelectItem value="this_month">This Month</SelectItem>
                           <SelectItem value="last_month">Last Month</SelectItem>
                           <SelectItem value="custom">Custom Range</SelectItem>
-                        </>
-                      )}
+                        </> */}
+                      {/* ) */}
                     </SelectContent>
                   </Select>
                 </div>
@@ -620,6 +684,51 @@ export default function SmsHistoryPage() {
               </div>
               <span>SMS Messages</span>
             </CardTitle>
+            
+            {/* Active Filters Display */}
+            {(statusFilter && statusFilter !== 'all') || 
+             (dateFilter && dateFilter !== 'custom') || 
+             (apiKeyFilter && apiKeyFilter !== 'all') || 
+             senderIdFilter || 
+             phoneFilter || 
+             minCost || 
+             maxCost ? (
+              <div className="mt-4 flex flex-wrap gap-2">
+                <span className="text-gray-400 text-sm">Active filters:</span>
+                {statusFilter && statusFilter !== 'all' && (
+                  <Badge className="bg-blue-500/20 border-blue-500/30 text-blue-300">
+                    Status: {statusFilter}
+                  </Badge>
+                )}
+                {dateFilter && dateFilter !== 'custom' && (
+                  <Badge className="bg-green-500/20 border-green-500/30 text-green-300">
+                    Date: {dateFilter.replace('_', ' ')}
+                  </Badge>
+                )}
+                {apiKeyFilter && apiKeyFilter !== 'all' && (
+                  <Badge className="bg-purple-500/20 border-purple-500/30 text-purple-300">
+                    API Key: {apiKeyFilter}
+                  </Badge>
+                )}
+                {senderIdFilter && (
+                  <Badge className="bg-orange-500/20 border-orange-500/30 text-orange-300">
+                    Sender: {senderIdFilter}
+                  </Badge>
+                )}
+                {phoneFilter && (
+                  <Badge className="bg-red-500/20 border-red-500/30 text-red-300">
+                    Phone: {phoneFilter}
+                  </Badge>
+                )}
+                {(minCost || maxCost) && (
+                  <Badge className="bg-yellow-500/20 border-yellow-500/30 text-yellow-300">
+                    Cost: {minCost || '0'} - {maxCost || '∞'}
+                  </Badge>
+                )}
+              </div>
+            ) : null}
+            
+
           </CardHeader>
           <CardContent className="p-8">
             {/* Error Display */}
@@ -631,7 +740,7 @@ export default function SmsHistoryPage() {
                     <p className="text-red-400 font-medium">{error}</p>
                     <p className="text-red-300 text-sm mt-1">
                       {error.includes('Too many requests') 
-                        ? 'The API is rate limited. Please wait a moment before trying again.'
+                        ? `The API is rate limited. Please wait ${rateLimitCountdown} seconds before trying again.`
                         : 'Please check your connection and try again.'
                       }
                     </p>
@@ -639,14 +748,16 @@ export default function SmsHistoryPage() {
                   <Button
                     onClick={() => {
                       setError(null);
+                      setIsRateLimited(false);
                       fetchSmsHistory();
                     }}
+                    disabled={isRateLimited}
                     variant="outline"
                     size="sm"
-                    className="border-red-500/20 text-red-400 hover:bg-red-500/10"
+                    className="border-red-500/20 text-red-400 hover:bg-red-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <RefreshCw className="h-4 w-4 mr-2" />
-                    Retry
+                    {isRateLimited ? 'Wait...' : 'Retry'}
                   </Button>
                 </div>
               </div>

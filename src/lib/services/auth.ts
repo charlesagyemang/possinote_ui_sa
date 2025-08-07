@@ -1,42 +1,104 @@
 import { api } from '../api';
-import { Customer, RegisterData } from '@/types';
 
-export interface SignupResponse {
+interface LoginResponse {
   success: boolean;
+  data?: unknown;
+  error?: string;
   message: string;
-  customer: Customer;
-  api_key: string;
 }
 
-export interface SignupData extends RegisterData {
+interface TestConnectionResponse {
+  success: boolean;
+  data?: unknown;
+  error?: string;
+}
+
+interface RegisterData {
+  name: string;
+  email: string;
+  phone: string;
+  company_name: string;
   plan_type: 'free' | 'starter' | 'business' | 'enterprise';
   monthly_limit: number;
 }
 
+interface RegisterResponse {
+  success: boolean;
+  api_key?: string;
+  customer?: unknown;
+  message?: string;
+}
+
 export class AuthService {
-  static async login(email: string, password: string) {
-    const response = await api.post('/auth/login', { email, password });
-    return response.data;
+  static async loginWithApiKey(apiKey: string): Promise<LoginResponse> {
+    // Store the API key
+    localStorage.setItem('api_key', apiKey);
+    localStorage.setItem('api_token', apiKey);
+    
+    // Test the connection
+    try {
+      const response = await api.get('/health');
+      return {
+        success: true,
+        data: response.data,
+        message: 'Login successful'
+      };
+    } catch (error: unknown) {
+      // Remove invalid API key
+      localStorage.removeItem('api_key');
+      localStorage.removeItem('api_token');
+      
+      const errorMessage = error instanceof Error ? error.message : 'Invalid API key';
+      return {
+        success: false,
+        error: errorMessage,
+        message: 'Login failed'
+      };
+    }
   }
 
-  static async register(userData: SignupData): Promise<SignupResponse> {
-    const response = await api.post('/signup', {
-      customer: {
-        name: userData.name,
-        email: userData.email,
-        phone: userData.phone,
-        company_name: userData.company_name,
-        plan_type: userData.plan_type,
-        monthly_limit: userData.monthly_limit
-      }
-    });
-    
-    // Store the API key in both locations for compatibility
-    if (response.data.api_key) {
-      localStorage.setItem('api_key', response.data.api_key);
-      localStorage.setItem('api_token', response.data.api_key);
+  static async testConnection(): Promise<TestConnectionResponse> {
+    try {
+      const response = await api.get('/health');
+      return {
+        success: true,
+        data: response.data
+      };
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Connection failed';
+      return {
+        success: false,
+        error: errorMessage
+      };
     }
-    
-    return response.data;
+  }
+
+  static async register(data: RegisterData): Promise<RegisterResponse> {
+    try {
+      const response = await api.post('/auth/register', data);
+      return {
+        success: true,
+        api_key: response.data.api_key,
+        customer: response.data.customer,
+        message: 'Registration successful'
+      };
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Registration failed';
+      return {
+        success: false,
+        message: errorMessage
+      };
+    }
+  }
+
+  static logout() {
+    localStorage.removeItem('api_key');
+    localStorage.removeItem('api_token');
+    window.location.href = '/login';
+  }
+
+  static isAuthenticated(): boolean {
+    const apiKey = localStorage.getItem('api_key') || localStorage.getItem('api_token');
+    return !!apiKey;
   }
 } 

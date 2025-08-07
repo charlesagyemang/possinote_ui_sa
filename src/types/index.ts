@@ -21,12 +21,14 @@ export interface ApiKey {
   key_prefix: string;
   is_active: boolean;
   last_used_at: string | null;
+  expires_at: string | null;
   created_at: string;
   permissions: {
     sms: string[];
     email: string[];
     analytics: string[];
     api_keys: string[];
+    senders: string[];
   };
 }
 
@@ -48,7 +50,7 @@ export interface SmsMessage {
   to: string;
   message: string;
   sender_id: string;
-  status: 'pending' | 'sent' | 'delivered' | 'failed';
+  status: 'pending' | 'sent' | 'delivered' | 'failed' | 'cancelled';
   cost: number;
   created_at: string;
 }
@@ -78,12 +80,14 @@ export interface RegisterData {
 
 export interface CreateApiKeyData {
   name: string;
-  permissions: {
+  permissions?: {
     sms: string[];
     email: string[];
     analytics: string[];
     api_keys: string[];
+    senders: string[];
   };
+  expires_at?: string;
 }
 
 export interface SmsHistoryParams {

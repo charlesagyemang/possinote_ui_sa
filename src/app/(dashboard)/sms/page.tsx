@@ -1,17 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { SmsService } from '@/lib/services/sms';
+import { SendersService, Sender } from '@/lib/services/senders';
+import { AuthService } from '@/lib/services/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Send, Users, AlertCircle, Upload, FileText, Eye, Download, Sparkles, Zap, Target, CheckCircle } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { MessageSquare, Send, Users, AlertCircle, Upload, FileText, Eye, Download, Sparkles, Zap, Target, CheckCircle, Plus, Settings } from 'lucide-react';
+import SenderNamesModal from '@/components/SenderNamesModal';
 
 const smsSchema = z.object({
   to: z.string().min(1, 'Phone number is required'),
@@ -49,26 +53,76 @@ export default function SmsPage() {
     phone: '',
   });
 
+  // Sender Names states
+  const [showSenderNamesModal, setShowSenderNamesModal] = useState(false);
+  const [senders, setSenders] = useState<Sender[]>([]);
+  const [isAddingSenderName, setIsAddingSenderName] = useState(false);
+  const [isLoadingSenders, setIsLoadingSenders] = useState(true);
+
   // Test API connection
   const testApiConnection = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:2025/api/v1'}/health`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
-      console.log('API health check response:', response.status, response.statusText);
-      if (response.ok) {
+      const response = await AuthService.testConnection();
+      if (response.success) {
         setSuccessMessage('API connection successful!');
+        console.log('API health check response:', response.data);
       } else {
-        setErrorMessage(`API connection failed: ${response.status} ${response.statusText}`);
+        setErrorMessage(`API connection failed: ${response.error}`);
       }
     } catch (error) {
       console.error('API connection test failed:', error);
       setErrorMessage('API connection test failed - check if your Rails backend is running');
     }
   };
+
+  // Fetch senders
+  const fetchSenders = async () => {
+    try {
+      setIsLoadingSenders(true);
+      const response = await SendersService.getSenders();
+      if (response.success) {
+        setSenders(response.data.senders);
+      } else {
+        console.error('Failed to fetch senders:', response.error);
+      }
+    } catch (error) {
+      console.error('Failed to fetch senders:', error);
+    } finally {
+      setIsLoadingSenders(false);
+    }
+  };
+
+  // Handle adding sender name
+  const handleAddSenderName = async (data: { name: string; description: string }) => {
+    setIsAddingSenderName(true);
+    setSuccessMessage('');
+    setErrorMessage('');
+    
+    try {
+      const response = await SendersService.createSender(data);
+      
+      if (response.success) {
+        setSuccessMessage(response.data.message || `Sender name "${data.name}" added successfully!`);
+        setShowSenderNamesModal(false);
+        // Refresh the senders list
+        await fetchSenders();
+      } else {
+        setErrorMessage(response.error || 'Failed to add sender name. Please try again.');
+      }
+      
+    } catch (error: unknown) {
+      console.error('Failed to add sender name:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to add sender name. Please try again.';
+      setErrorMessage(errorMessage);
+    } finally {
+      setIsAddingSenderName(false);
+    }
+  };
+
+  // Fetch senders on component mount
+  useEffect(() => {
+    fetchSenders();
+  }, []);
 
   const form = useForm({
     resolver: zodResolver(smsSchema),
@@ -86,34 +140,15 @@ export default function SmsPage() {
     
     try {
       console.log('Sending SMS with data:', data);
-      const response = await SmsService.sendSms(data);
+      const response = await SmsService.sendSms(data.to, data.message, data.sender_id);
       console.log('SMS response:', response);
       setSuccessMessage('SMS sent successfully!');
       form.reset();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('SMS error:', error);
       
-      // Handle validation errors specifically
-      if (error.response?.status === 422 && error.response?.data?.errors) {
-        console.error('Validation errors:', error.response.data.errors);
-        const validationErrors = Object.entries(error.response.data.errors)
-          .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`)
-          .join('; ');
-        setErrorMessage(`Validation errors: ${validationErrors}`);
-      } else {
-        const errorMsg = error.response?.data?.message || 
-                        error.response?.data?.error || 
-                        error.message || 
-                        'Failed to send SMS';
-        setErrorMessage(`Error: ${errorMsg}`);
-      }
-      
-      // Log additional debugging info
-      if (error.response) {
-        console.error('Response status:', error.response.status);
-        console.error('Response data:', error.response.data);
-        console.error('Response headers:', error.response.headers);
-      }
+      const errorMessage = error instanceof Error ? error.message : 'Failed to send SMS';
+      setErrorMessage(`Error: ${errorMessage}`);
     } finally {
       setIsLoading(false);
     }
@@ -140,44 +175,34 @@ export default function SmsPage() {
   };
 
   // Handle file upload
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const text = e.target?.result as string;
-      const data = parseCSV(text);
+    try {
+      const text = await file.text();
+      const lines = text.split('\n');
+      const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
       
-      if (data.length > 0) {
-        setCsvData(data);
-        setCsvHeaders(Object.keys(data[0]));
-        
-        // Auto-detect columns
-        const headers = Object.keys(data[0]);
-        const nameColumn = headers.find(h => 
-          h.toLowerCase().includes('name') || 
-          h.toLowerCase().includes('full') ||
-          h.toLowerCase().includes('first')
-        );
-        const phoneColumn = headers.find(h => 
-          h.toLowerCase().includes('phone') || 
-          h.toLowerCase().includes('mobile') ||
-          h.toLowerCase().includes('number') ||
-          h.toLowerCase().includes('tel')
-        );
-        
-        setColumnMapping({
-          name: nameColumn || headers[0],
-          phone: phoneColumn || headers[1],
+      setCsvHeaders(headers);
+      
+      const data: CsvRow[] = lines.slice(1)
+        .filter(line => line.trim())
+        .map((line, index) => {
+          const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
+          const row: CsvRow = { id: index.toString() };
+          headers.forEach((header, i) => {
+            row[header] = values[i] || '';
+          });
+          return row;
         });
-        
-        setSuccessMessage(`CSV uploaded successfully! Found ${data.length} recipients.`);
-      } else {
-        setErrorMessage('No valid data found in CSV file.');
-      }
-    };
-    reader.readAsText(file);
+      
+      setCsvData(data);
+      setShowPreview(true);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to parse CSV file';
+      setErrorMessage(errorMessage);
+    }
   };
 
   // Process template and generate messages
@@ -231,16 +256,10 @@ export default function SmsPage() {
     setErrorMessage('');
     
     try {
-      const messages = processedRecipients.map(recipient => ({
-        to: recipient.phone,
-        message: recipient.message,
-      }));
+      const recipients = processedRecipients.map(recipient => recipient.phone);
 
-      console.log('Sending advanced bulk SMS with data:', { messages, sender_id: 'Possitech' });
-      const response = await SmsService.sendBulkSms({
-        messages,
-        sender_id: 'Possitech',
-      });
+      console.log('Sending advanced bulk SMS with data:', { recipients, sender_id: 'Possitech' });
+      const response = await SmsService.sendBulkSms(recipients, templateMessage, 'Possitech');
       
       console.log('Advanced bulk SMS response:', response);
       
@@ -257,21 +276,11 @@ export default function SmsPage() {
       setShowPreview(false);
       setColumnMapping({ name: '', phone: '' });
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Advanced bulk SMS error:', error);
       
-      if (error.response?.status === 422 && error.response?.data?.errors) {
-        const validationErrors = Object.entries(error.response.data.errors)
-          .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`)
-          .join('; ');
-        setErrorMessage(`Validation errors: ${validationErrors}`);
-      } else {
-        const errorMsg = error.response?.data?.message || 
-                        error.response?.data?.error || 
-                        error.message || 
-                        'Failed to send advanced bulk SMS';
-        setErrorMessage(`Error: ${errorMsg}`);
-      }
+      const errorMessage = error instanceof Error ? error.message : 'Failed to send advanced bulk SMS';
+      setErrorMessage(`Error: ${errorMessage}`);
     } finally {
       setIsLoading(false);
     }
@@ -289,21 +298,15 @@ export default function SmsPage() {
       return;
     }
 
-    const messages = recipients.map(to => ({
-      to: to.trim(),
-      message: bulkMessage,
-    }));
+    const phoneNumbers = recipients.map(to => to.trim());
 
     setIsLoading(true);
     setSuccessMessage('');
     setErrorMessage('');
     
     try {
-      console.log('Sending bulk SMS with data:', { messages, sender_id: 'Possitech' });
-      const response = await SmsService.sendBulkSms({
-        messages,
-        sender_id: 'Possitech',
-      });
+      console.log('Sending bulk SMS with data:', { phoneNumbers, sender_id: 'Possitech' });
+      const response = await SmsService.sendBulkSms(phoneNumbers, bulkMessage, 'Possitech');
       console.log('Bulk SMS response:', response);
       
       // Show detailed success message with batch info
@@ -312,30 +315,11 @@ export default function SmsPage() {
       setSuccessMessage(successMsg);
       setBulkRecipients('');
       setBulkMessage('');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Bulk SMS error:', error);
       
-      // Handle validation errors specifically
-      if (error.response?.status === 422 && error.response?.data?.errors) {
-        console.error('Validation errors:', error.response.data.errors);
-        const validationErrors = Object.entries(error.response.data.errors)
-          .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`)
-          .join('; ');
-        setErrorMessage(`Validation errors: ${validationErrors}`);
-      } else {
-        const errorMsg = error.response?.data?.message || 
-                        error.response?.data?.error || 
-                        error.message || 
-                        'Failed to send bulk SMS';
-        setErrorMessage(`Error: ${errorMsg}`);
-      }
-      
-      // Log additional debugging info
-      if (error.response) {
-        console.error('Response status:', error.response.status);
-        console.error('Response data:', error.response.data);
-        console.error('Response headers:', error.response.headers);
-      }
+      const errorMessage = error instanceof Error ? error.message : 'Failed to send bulk SMS';
+      setErrorMessage(`Error: ${errorMessage}`);
     } finally {
       setIsLoading(false);
     }
@@ -389,6 +373,94 @@ export default function SmsPage() {
           </div>
         </div>
 
+        {/* Sender Names Management */}
+        <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border-b border-white/10">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-white text-xl flex items-center space-x-3">
+                <div className="p-2 bg-indigo-500/20 rounded-xl">
+                  <Settings className="h-5 w-5 text-indigo-400" />
+                </div>
+                <span>Sender Names</span>
+              </CardTitle>
+              <Button
+                onClick={() => setShowSenderNamesModal(true)}
+                className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-xl px-4 py-2 font-medium"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Sender Name
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              <p className="text-gray-400 text-sm">
+                Manage your approved sender names for SMS messages. Sender names must be pre-approved by mobile network operators.
+              </p>
+              
+              {isLoadingSenders ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="text-center space-y-4">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500 mx-auto"></div>
+                    <p className="text-gray-400 text-sm">Loading sender names...</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex flex-wrap gap-3">
+                    {senders.map((sender) => (
+                      <div key={sender.id} className="relative">
+                        <Badge
+                          className={`px-4 py-2 text-sm font-medium ${
+                            sender.status === 'approved'
+                              ? 'bg-gradient-to-r from-green-500/20 to-emerald-500/20 border-green-500/30 text-green-300'
+                              : sender.status === 'pending'
+                              ? 'bg-gradient-to-r from-yellow-500/20 to-amber-500/20 border-yellow-500/30 text-yellow-300'
+                              : 'bg-gradient-to-r from-red-500/20 to-pink-500/20 border-red-500/30 text-red-300'
+                          }`}
+                        >
+                          {sender.name}
+                          {sender.status === 'approved' && (
+                            <CheckCircle className="h-3 w-3 ml-1" />
+                          )}
+                        </Badge>
+                        <div className="absolute -top-1 -right-1">
+                          <Badge
+                            className={`text-xs px-2 py-1 ${
+                              sender.status === 'approved'
+                                ? 'bg-green-500 text-white'
+                                : sender.status === 'pending'
+                                ? 'bg-yellow-500 text-black'
+                                : 'bg-red-500 text-white'
+                            }`}
+                          >
+                            {sender.status}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                    {senders.length === 0 && (
+                      <p className="text-gray-500 text-sm italic">No sender names available. Add your first sender name.</p>
+                    )}
+                  </div>
+                  
+                  {senders.some(s => s.status === 'pending') && (
+                    <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3">
+                      <p className="text-yellow-400 text-sm">
+                        ⏳ Some sender names are pending approval from Mobile Network Operators.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              <div className="text-xs text-gray-500 mt-4">
+                <p>💡 Tip: Use approved sender names to improve message delivery rates and build trust with recipients.</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Status Messages */}
         {successMessage && (
           <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 backdrop-blur-xl rounded-2xl p-4">
@@ -440,11 +512,31 @@ export default function SmsPage() {
 
                   <div className="space-y-3">
                     <Label htmlFor="sender_id" className="text-gray-300 font-medium">Sender ID</Label>
-                    <Input
-                      {...form.register('sender_id')}
-                      placeholder="Possitech"
-                      className="bg-black/30 border-white/20 text-white placeholder-gray-400 rounded-xl h-12 focus:border-blue-500 focus:ring-blue-500/20"
-                    />
+                    <Select
+                      value={form.watch('sender_id')}
+                      onValueChange={(value) => form.setValue('sender_id', value)}
+                    >
+                      <SelectTrigger className="bg-black/30 border-white/20 text-white rounded-xl h-12 focus:border-blue-500 focus:ring-blue-500/20">
+                        <SelectValue placeholder="Select sender name" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-gray-800 border-gray-700">
+                        {senders
+                          .filter(sender => sender.status === 'approved')
+                          .map((sender) => (
+                            <SelectItem key={sender.id} value={sender.name}>
+                              {sender.name}
+                            </SelectItem>
+                          ))}
+                        {senders.filter(s => s.status === 'approved').length === 0 && (
+                          <SelectItem value="no-senders" disabled>
+                            No approved sender names available
+                          </SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                    {form.formState.errors.sender_id && (
+                      <p className="text-red-400 text-sm">{form.formState.errors.sender_id.message}</p>
+                    )}
                   </div>
                 </div>
 
@@ -822,6 +914,14 @@ export default function SmsPage() {
           </Card>
         </div>
       </div>
+
+      {/* Sender Names Modal */}
+      <SenderNamesModal
+        isOpen={showSenderNamesModal}
+        onClose={() => setShowSenderNamesModal(false)}
+        onSubmit={handleAddSenderName}
+        isLoading={isAddingSenderName}
+      />
     </div>
   );
 } 
