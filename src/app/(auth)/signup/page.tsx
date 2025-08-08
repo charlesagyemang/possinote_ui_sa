@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import { UserPlus, Key, Copy, Check, ArrowLeft, Zap, Mail, Phone, Building, User, Sparkles, Shield, CheckCircle } from 'lucide-react';
+import { UserPlus, Key, Copy, Check, ArrowLeft, Zap, Mail, Phone, Building, User, Sparkles, Shield, CheckCircle, CreditCard } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 
 const signupSchema = z.object({
@@ -24,20 +24,41 @@ const signupSchema = z.object({
 });
 
 const plans = {
-  free: { name: 'Free', monthly_limit: 100, price: '₵0' },
-  starter: { name: 'Starter', monthly_limit: 1000, price: '₵29' },
-  business: { name: 'Business', monthly_limit: 10000, price: '₵99' },
-  enterprise: { name: 'Enterprise', monthly_limit: 1000000, price: 'Custom' }
+  free: { name: 'Free', initial_credits: 100, price: '₵0', description: 'Perfect for testing' },
+  starter: { name: 'Starter Bundle', initial_credits: 10, price: '₵5', description: 'Perfect for testing and small projects' },
+  growth: { name: 'Growth Bundle', initial_credits: 100, price: '₵45', description: 'Great for growing businesses' },
+  business: { name: 'Business Bundle', initial_credits: 200, price: '₵85', description: 'For established businesses' },
+  enterprise: { name: 'Enterprise', initial_credits: 1000000, price: 'Custom', description: 'For large-scale operations' }
 };
 
 export default function SignupPage() {
   const searchParams = useSearchParams();
   const selectedPlan = searchParams.get('plan') || 'starter';
+  
+  // No mapping needed since we're using plan IDs directly
+  const planType = selectedPlan as 'free' | 'starter' | 'business' | 'enterprise';
+  
+  // Get the actual initial credits for each plan type (what the API gives)
+  const getPlanInitialCredits = (planType: string): number => {
+    switch (planType) {
+      case 'free':
+        return 10;
+      case 'starter':
+        return 1000;
+      case 'business':
+        return 10000;
+      case 'enterprise':
+        return 1000000;
+      default:
+        return 1000;
+    }
+  };
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [apiKey, setApiKey] = useState('');
   const [copied, setCopied] = useState(false);
+  const [initialCredits, setInitialCredits] = useState(0);
   
   const form = useForm({
     resolver: zodResolver(signupSchema),
@@ -56,14 +77,17 @@ export default function SignupPage() {
     
     try {
       const response = await AuthService.register({
-        ...data,
-        plan_type: selectedPlan as 'free' | 'starter' | 'business' | 'enterprise',
-        monthly_limit: plans[selectedPlan as keyof typeof plans].monthly_limit
+        customer: {
+          ...data,
+          plan_type: planType,
+          monthly_limit: getPlanInitialCredits(planType)
+        }
       });
       
       if (response.success) {
         setSuccess(true);
         setApiKey(response.api_key || '');
+        setInitialCredits(response.initial_credits || 0);
         
         // Store the API key in localStorage
         localStorage.setItem('api_token', response.api_key || '');
@@ -74,10 +98,10 @@ export default function SignupPage() {
           login(response.api_key, response.customer as Customer);
         }
         
-        // Redirect to dashboard after 3 seconds
+        // Redirect to dashboard after 5 seconds
         setTimeout(() => {
           window.location.href = '/dashboard';
-        }, 3000);
+        }, 5000);
       }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Signup failed. Please try again.';
@@ -116,6 +140,33 @@ export default function SignupPage() {
             </div>
           </div>
           
+          {/* Initial Credits Card */}
+          <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-b border-white/10">
+              <CardTitle className="text-white text-xl flex items-center space-x-3">
+                <div className="p-2 bg-blue-500/20 rounded-xl">
+                  <CreditCard className="h-5 w-5 text-blue-400" />
+                </div>
+                <span>Welcome Bonus</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="text-center space-y-3">
+                <div className="text-3xl font-bold text-blue-400">
+                  {initialCredits.toLocaleString()} Credits
+                </div>
+                <p className="text-gray-400 text-sm">
+                  Your account comes with {initialCredits.toLocaleString()} initial credits to get you started!
+                </p>
+                <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 rounded-2xl p-3">
+                  <p className="text-green-300 text-sm font-medium">
+                    🎉 You can start sending SMS and Email notifications immediately!
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
           <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden">
             <CardHeader className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-b border-white/10">
               <CardTitle className="text-white text-2xl flex items-center space-x-3">
@@ -152,7 +203,7 @@ export default function SignupPage() {
                 </div>
                 <div className="text-center">
                   <p className="text-sm text-gray-400">
-                    Redirecting to dashboard in 3 seconds...
+                    Redirecting to dashboard in 5 seconds...
                   </p>
                   <div className="mt-2 w-full bg-gray-700 rounded-full h-1">
                     <div className="bg-gradient-to-r from-blue-500 to-purple-600 h-1 rounded-full animate-pulse"></div>
@@ -194,9 +245,12 @@ export default function SignupPage() {
           <div className="p-4 bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-white/10 rounded-2xl">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-white font-medium">{plans[selectedPlan as keyof typeof plans].name} Plan</h3>
+                <h3 className="text-white font-medium">{plans[selectedPlan as keyof typeof plans].name}</h3>
                 <p className="text-sm text-gray-400">
-                  {plans[selectedPlan as keyof typeof plans].monthly_limit.toLocaleString()} SMS/Email per month
+                  {plans[selectedPlan as keyof typeof plans].initial_credits.toLocaleString()} initial credits
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {plans[selectedPlan as keyof typeof plans].description}
                 </p>
               </div>
               <Badge className="bg-gradient-to-r from-blue-500 to-purple-600 text-white border-0">

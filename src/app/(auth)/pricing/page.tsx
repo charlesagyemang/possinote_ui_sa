@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Check, Star, Zap, Shield, Sparkles, ArrowRight, Users, MessageSquare, BarChart3, Clock, Globe, Award } from 'lucide-react';
+import { Check, Star, Zap, Shield, Sparkles, ArrowRight, Users, MessageSquare, BarChart3, Clock, Globe, Award, CreditCard, DollarSign } from 'lucide-react';
 import Link from 'next/link';
 
 const plans = [
@@ -11,74 +11,82 @@ const plans = [
     id: 'free',
     name: 'Free',
     price: '₵0',
-    monthly_limit: 100,
+    initial_credits: 10,
     description: 'Perfect for testing and small projects',
     features: [
-      '100 SMS/Email per month',
+      '10 initial credits',
       'Basic analytics',
       'API access',
-      'Email support'
+      'Email support',
+      'Valid for 12 months'
     ],
     popular: false,
     color: 'from-gray-500 to-slate-600',
     bgColor: 'from-gray-500/10 to-slate-600/10',
-    icon: Users
+    icon: Users,
+    savings: null
   },
   {
     id: 'starter',
     name: 'Starter',
-    price: '₵29',
-    monthly_limit: 1000,
+    price: '₵69',
+    initial_credits: 1000,
     description: 'Great for growing businesses',
     features: [
-      '1,000 SMS/Email per month',
+      '1,000 initial credits',
       'Advanced analytics',
       'Priority support',
       'Custom sender IDs',
-      'Bulk messaging'
+      'Bulk messaging',
+      'Valid for 12 months'
     ],
     popular: true,
     color: 'from-blue-500 to-purple-600',
     bgColor: 'from-blue-500/10 to-purple-600/10',
-    icon: MessageSquare
+    icon: MessageSquare,
+    savings: null
   },
   {
     id: 'business',
     name: 'Business',
-    price: '₵99',
-    monthly_limit: 10000,
+    price: '₵599',
+    initial_credits: 10000,
     description: 'For established businesses',
     features: [
-      '10,000 SMS/Email per month',
+      '10,000 initial credits',
       'Real-time analytics',
       '24/7 support',
       'Custom integrations',
       'Advanced reporting',
-      'Webhook support'
+      'Webhook support',
+      'Valid for 12 months'
     ],
     popular: false,
     color: 'from-purple-500 to-pink-600',
     bgColor: 'from-purple-500/10 to-pink-600/10',
-    icon: BarChart3
+    icon: BarChart3,
+    savings: null
   },
   {
     id: 'enterprise',
     name: 'Enterprise',
     price: 'Custom',
-    monthly_limit: 1000000,
+    initial_credits: 1000000,
     description: 'For large-scale operations',
     features: [
-      '1M+ SMS/Email per month',
+      '1,000,000 initial credits',
       'Dedicated account manager',
       'Custom pricing',
       'SLA guarantees',
       'Advanced security',
-      'White-label options'
+      'White-label options',
+      'Flexible terms'
     ],
     popular: false,
     color: 'from-green-500 to-emerald-600',
     bgColor: 'from-green-500/10 to-emerald-600/10',
-    icon: Award
+    icon: Award,
+    savings: null
   }
 ];
 
@@ -100,11 +108,11 @@ export default function PricingPage() {
             Choose Your Plan
           </h2>
           <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-            Start with our free tier and scale as you grow. All plans include our core notification features with enterprise-grade reliability.
+            Start with our free tier and scale as you grow. All plans include initial credits to get you started.
           </p>
         </div>
 
-        {/* Pricing Cards */}
+        {/* Plan Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
           {plans.map((plan) => (
             <Card 
@@ -133,7 +141,7 @@ export default function PricingPage() {
                   
                   <div className="text-4xl font-bold text-white">
                     {plan.price}
-                    {plan.price !== 'Custom' && <span className="text-lg text-gray-400">/month</span>}
+                    {plan.price !== 'Custom' && <span className="text-lg text-gray-400">/plan</span>}
                   </div>
                   
                   <p className="text-gray-400 text-sm">
@@ -145,10 +153,10 @@ export default function PricingPage() {
               <CardContent className="p-8 space-y-6">
                 <div className="text-center p-4 bg-gradient-to-r from-white/5 to-white/10 rounded-2xl">
                   <div className="text-3xl font-bold text-white">
-                    {plan.monthly_limit.toLocaleString()}
+                    {plan.initial_credits.toLocaleString()}
                   </div>
                   <div className="text-sm text-gray-400">
-                    SMS/Email per month
+                    Initial Credits
                   </div>
                 </div>
                 
@@ -182,6 +190,50 @@ export default function PricingPage() {
               </CardContent>
             </Card>
           ))}
+        </div>
+
+        {/* How It Works */}
+        <div className="mb-16">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-white mb-4">
+              How It Works
+            </h2>
+            <p className="text-gray-400 text-lg">
+              Simple, transparent pricing with no hidden fees
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="text-center p-8 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-3xl border border-white/10">
+              <div className="p-4 bg-blue-500/20 rounded-2xl w-fit mx-auto mb-6">
+                <CreditCard className="h-8 w-8 text-blue-400" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-4">1. Choose Your Plan</h3>
+              <p className="text-gray-400">
+                Select a plan that fits your needs. Each plan comes with initial credits to get you started.
+              </p>
+            </div>
+            
+            <div className="text-center p-8 bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-3xl border border-white/10">
+              <div className="p-4 bg-green-500/20 rounded-2xl w-fit mx-auto mb-6">
+                <MessageSquare className="h-8 w-8 text-green-400" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-4">2. Send Messages</h3>
+              <p className="text-gray-400">
+                Use our API to send SMS and email notifications. Each message costs credits based on the service.
+              </p>
+            </div>
+            
+            <div className="text-center p-8 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-3xl border border-white/10">
+              <div className="p-4 bg-purple-500/20 rounded-2xl w-fit mx-auto mb-6">
+                <DollarSign className="h-8 w-8 text-purple-400" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-4">3. Top Up When Needed</h3>
+              <p className="text-gray-400">
+                Buy more credits anytime. No monthly commitments or hidden fees.
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Features Section */}
@@ -243,30 +295,30 @@ export default function PricingPage() {
             <div className="p-6 bg-black/20 backdrop-blur-xl border border-white/10 rounded-2xl">
               <h3 className="text-lg font-semibold text-white mb-3 flex items-center space-x-2">
                 <Clock className="h-5 w-5 text-blue-400" />
-                <span>Can I change my plan later?</span>
+                <span>Do initial credits expire?</span>
               </h3>
               <p className="text-gray-400">
-                Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately.
+                Initial credits are valid for 12 months from account creation. You can use them anytime within that period.
               </p>
             </div>
             
             <div className="p-6 bg-black/20 backdrop-blur-xl border border-white/10 rounded-2xl">
               <h3 className="text-lg font-semibold text-white mb-3 flex items-center space-x-2">
                 <Shield className="h-5 w-5 text-green-400" />
-                <span>What happens if I exceed my limit?</span>
+                <span>What happens when I run out of credits?</span>
               </h3>
               <p className="text-gray-400">
-                You&apos;ll receive a notification when you reach 80% of your limit. You can upgrade your plan to continue sending.
+                You&apos;ll receive a notification when you reach 10% of your credits. You can top up anytime to continue sending.
               </p>
             </div>
             
             <div className="p-6 bg-black/20 backdrop-blur-xl border border-white/10 rounded-2xl">
               <h3 className="text-lg font-semibold text-white mb-3 flex items-center space-x-2">
                 <Award className="h-5 w-5 text-purple-400" />
-                <span>Do you offer refunds?</span>
+                <span>Can I get a refund?</span>
               </h3>
               <p className="text-gray-400">
-                We offer a 30-day money-back guarantee for all paid plans. Contact support for assistance.
+                We offer a 30-day money-back guarantee for unused credits. Contact support for assistance.
               </p>
             </div>
             
@@ -276,7 +328,7 @@ export default function PricingPage() {
                 <span>Is there a setup fee?</span>
               </h3>
               <p className="text-gray-400">
-                No setup fees for any plan. You only pay for the features and limits you choose.
+                No setup fees. You only pay for the plan you choose. Create an account and start sending immediately.
               </p>
             </div>
           </div>
@@ -289,13 +341,13 @@ export default function PricingPage() {
               Ready to Get Started?
             </h2>
             <p className="text-gray-400 mb-6">
-              Perfect for small businesses and startups. Get started with SMS notifications today.
+              Create your account and choose your plan. Start sending notifications in minutes.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/signup">
                 <Button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl px-8 py-3 text-lg font-medium shadow-lg shadow-blue-500/25">
                   <div className="flex items-center space-x-2">
-                    <span>Start Free Trial</span>
+                    <span>Create Account</span>
                     <ArrowRight className="h-4 w-4" />
                   </div>
                 </Button>

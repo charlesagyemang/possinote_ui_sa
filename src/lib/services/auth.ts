@@ -14,18 +14,21 @@ interface TestConnectionResponse {
 }
 
 interface RegisterData {
-  name: string;
-  email: string;
-  phone: string;
-  company_name: string;
-  plan_type: 'free' | 'starter' | 'business' | 'enterprise';
-  monthly_limit: number;
+  customer: {
+    name: string;
+    email: string;
+    phone: string;
+    company_name: string;
+    plan_type: 'free' | 'starter' | 'business' | 'enterprise';
+    monthly_limit: number;
+  };
 }
 
 interface RegisterResponse {
   success: boolean;
   api_key?: string;
   customer?: unknown;
+  initial_credits?: number;
   message?: string;
 }
 
@@ -75,11 +78,12 @@ export class AuthService {
 
   static async register(data: RegisterData): Promise<RegisterResponse> {
     try {
-      const response = await api.post('/auth/register', data);
+      const response = await api.post('/signup', data);
       return {
         success: true,
         api_key: response.data.api_key,
         customer: response.data.customer,
+        initial_credits: response.data.initial_credits,
         message: 'Registration successful'
       };
     } catch (error: unknown) {

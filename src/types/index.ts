@@ -8,8 +8,6 @@ export interface Customer {
   status: 'active' | 'suspended' | 'inactive';
   plan_type: 'free' | 'starter' | 'business' | 'enterprise';
   monthly_limit: number;
-  current_month_usage: number;
-  usage_percentage: number;
   created_at: string;
   updated_at: string;
 }
@@ -33,12 +31,20 @@ export interface ApiKey {
 }
 
 export interface UsageData {
-  current_month_usage: number;
-  monthly_limit: number;
-  usage_percentage: number;
-  remaining_quota: number;
-  can_send_notifications: boolean;
+  credit_balance: number;
+  credit_usage_this_month: number;
+  credit_added_this_month: number;
+  net_credits_this_month: number;
+  can_send_sms: boolean;
+  can_send_email: boolean;
   month: string;
+  credit_breakdown: {
+    sms_usage: number;
+    email_usage: number;
+    top_up: number;
+    refund: number;
+    migration_credit: number;
+  };
   breakdown: {
     sms: number;
     email: number;
@@ -109,4 +115,36 @@ export interface UsageHistoryParams {
   end_date: string;
   page?: number;
   per_page?: number;
+}
+
+export interface CreditBalance {
+  credit_balance: number;
+  usage_this_month: number;
+  added_this_month: number;
+}
+
+export interface CreditTransaction {
+  id: string;
+  amount: number;
+  transaction_type: 'sms_usage' | 'email_usage' | 'top_up' | 'refund' | 'migration_credit';
+  description: string;
+  reference_id?: string;
+  created_at: string;
+}
+
+export interface TopUpData {
+  amount: number;
+}
+
+export interface CreditHistoryResponse {
+  success: boolean;
+  data: {
+    transactions: CreditTransaction[];
+    pagination: {
+      current_page: number;
+      total_pages: number;
+      total_count: number;
+      per_page: number;
+    };
+  };
 } 

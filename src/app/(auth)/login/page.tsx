@@ -88,7 +88,7 @@ export default function LoginPage() {
 
           <div className="mt-8 text-center">
             <p className="text-sm text-gray-400 text-center">
-              Don&apos;t have an API key? <a href="/signup" className="text-purple-400 hover:text-purple-300">Sign up</a> to get one.
+              Don&apos;t have an API key? <a href="/pricing" className="text-purple-400 hover:text-purple-300">Sign up</a> to get one.
             </p>
           </div>
           <div className="mt-4 text-center">

@@ -8,6 +8,15 @@ import { Badge } from '@/components/ui/badge';
 import { Activity, DollarSign, TrendingUp, AlertTriangle, Users, MessageSquare, Key, BarChart3, ArrowRight, Zap, Target, CheckCircle } from 'lucide-react';
 
 interface UsageData {
+  // Credit-based fields (new)
+  credit_balance?: string | number;
+  credit_usage_this_month?: string | number;
+  credit_added_this_month?: string | number;
+  net_credits_this_month?: string | number;
+  can_send_sms?: boolean;
+  can_send_email?: boolean;
+  
+  // Legacy fields (for backward compatibility)
   current_month_usage?: string | number;
   monthly_limit?: string | number;
   usage_percentage?: string | number;
@@ -17,6 +26,13 @@ interface UsageData {
   breakdown?: {
     sms?: string | number;
     email?: string | number;
+  };
+  credit_breakdown?: {
+    sms_usage?: string | number;
+    email_usage?: string | number;
+    top_up?: string | number;
+    refund?: string | number;
+    migration_credit?: string | number;
   };
 }
 
@@ -44,6 +60,14 @@ export default function DashboardPage() {
   }
 
   const usage = currentUsage as UsageData | null;
+  const usageData = usage as UsageData | null;
+
+  // Debug logging for account status
+  console.log('🔍 Dashboard Usage Data:', usage);
+  console.log('🔍 Usage Data:', usageData);
+  console.log('🔍 can_send_sms:', usageData?.can_send_sms, 'type:', typeof usageData?.can_send_sms);
+  console.log('🔍 can_send_email:', usageData?.can_send_email, 'type:', typeof usageData?.can_send_email);
+  console.log('🔍 can_send_notifications:', usageData?.can_send_notifications, 'type:', typeof usageData?.can_send_notifications);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-6">
@@ -63,67 +87,67 @@ export default function DashboardPage() {
         
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden hover:bg-black/30 transition-all duration-300">
-            <CardHeader className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-b border-white/10">
-              <CardTitle className="text-white text-lg flex items-center justify-between">
-                <span>Current Usage</span>
-                <div className="p-2 bg-blue-500/20 rounded-xl">
-                  <DollarSign className="h-5 w-5 text-blue-400" />
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="text-3xl font-bold text-white mb-3">
-                ₵{parseFloat(String(usage?.current_month_usage || '0')).toFixed(2)}
-              </div>
-              <Progress 
-                value={Number(usage?.usage_percentage || 0)} 
-                className="h-2 bg-white/10 mb-3"
-              />
-              <p className="text-sm text-gray-400">
-                {parseFloat(String(usage?.usage_percentage || '0')).toFixed(2)}% of monthly limit
-              </p>
-            </CardContent>
-          </Card>
-
+          {/* Credit Balance */}
           <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden hover:bg-black/30 transition-all duration-300">
             <CardHeader className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-b border-white/10">
               <CardTitle className="text-white text-lg flex items-center justify-between">
-                <span>Monthly Limit</span>
+                <span>Credit Balance</span>
                 <div className="p-2 bg-green-500/20 rounded-xl">
-                  <TrendingUp className="h-5 w-5 text-green-400" />
+                  <DollarSign className="h-5 w-5 text-green-400" />
                 </div>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
-              <div className="text-3xl font-bold text-white mb-3">
-                ₵{parseFloat(String(usage?.monthly_limit || '0')).toFixed(2)}
+              <div className="text-3xl font-bold text-green-400 mb-3">
+                {parseFloat(String(usageData?.credit_balance || '0')).toLocaleString()}
               </div>
               <p className="text-sm text-gray-400">
-                Your monthly spending limit
+                Available credits
               </p>
             </CardContent>
           </Card>
 
+          {/* Monthly Usage */}
           <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden hover:bg-black/30 transition-all duration-300">
-            <CardHeader className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-b border-white/10">
+            <CardHeader className="bg-gradient-to-r from-red-500/10 to-pink-500/10 border-b border-white/10">
               <CardTitle className="text-white text-lg flex items-center justify-between">
-                <span>Remaining Quota</span>
-                <div className="p-2 bg-purple-500/20 rounded-xl">
-                  <Activity className="h-5 w-5 text-purple-400" />
+                <span>Monthly Usage</span>
+                <div className="p-2 bg-red-500/20 rounded-xl">
+                  <TrendingUp className="h-5 w-5 text-red-400" />
                 </div>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
-              <div className="text-3xl font-bold text-white mb-3">
-                ₵{parseFloat(String(usage?.remaining_quota || '0')).toFixed(2)}
+              <div className="text-3xl font-bold text-red-400 mb-3">
+                {parseFloat(String(usageData?.credit_usage_this_month || '0')).toLocaleString()}
               </div>
               <p className="text-sm text-gray-400">
-                Available for this month
+                Credits used this month
               </p>
             </CardContent>
           </Card>
 
+          {/* Credits Added */}
+          <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden hover:bg-black/30 transition-all duration-300">
+            <CardHeader className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-b border-white/10">
+              <CardTitle className="text-white text-lg flex items-center justify-between">
+                <span>Credits Added</span>
+                <div className="p-2 bg-blue-500/20 rounded-xl">
+                  <Activity className="h-5 w-5 text-blue-400" />
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="text-3xl font-bold text-blue-400 mb-3">
+                {parseFloat(String(usageData?.credit_added_this_month || '0')).toLocaleString()}
+              </div>
+              <p className="text-sm text-gray-400">
+                Top-ups this month
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Account Status */}
           <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden hover:bg-black/30 transition-all duration-300">
             <CardHeader className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-b border-white/10">
               <CardTitle className="text-white text-lg flex items-center justify-between">
@@ -136,18 +160,18 @@ export default function DashboardPage() {
             <CardContent className="p-6">
               <div className="flex items-center space-x-3 mb-3">
                 <Badge 
-                  variant={usage?.can_send_notifications ? "default" : "destructive"}
+                  variant={Boolean(usageData?.can_send_sms) || Boolean(usageData?.can_send_notifications) ? "default" : "destructive"}
                   className={`text-sm px-3 py-1 rounded-xl ${
-                    usage?.can_send_notifications 
+                    Boolean(usageData?.can_send_sms) || Boolean(usageData?.can_send_notifications)
                       ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white' 
                       : 'bg-gradient-to-r from-red-500 to-pink-600 text-white'
                   }`}
                 >
-                  {usage?.can_send_notifications ? 'Active' : 'Limited'}
+                  {Boolean(usageData?.can_send_sms) || Boolean(usageData?.can_send_notifications) ? 'Active' : 'Limited'}
                 </Badge>
               </div>
               <p className="text-sm text-gray-400">
-                {usage?.can_send_notifications ? 'Can send notifications' : 'Usage limit reached'}
+                SMS: {Boolean(usageData?.can_send_sms) ? '✓' : '✗'} | Email: {Boolean(usageData?.can_send_email) ? '✓' : '✗'}
               </p>
             </CardContent>
           </Card>
@@ -166,10 +190,10 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent className="p-6">
               <div className="text-3xl font-bold text-white mb-3">
-                ₵{parseFloat(String(usage?.breakdown?.sms || '0')).toFixed(2)}
+                ₵{parseFloat(String(usageData?.credit_breakdown?.sms_usage || usageData?.breakdown?.sms || '0')).toFixed(2)}
               </div>
               <p className="text-sm text-gray-400">
-                SMS notifications this month
+                SMS cost this month
               </p>
             </CardContent>
           </Card>
@@ -185,10 +209,10 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent className="p-6">
               <div className="text-3xl font-bold text-white mb-3">
-                ₵{parseFloat(String(usage?.breakdown?.email || '0')).toFixed(2)}
+                ₵{parseFloat(String(usageData?.credit_breakdown?.email_usage || usageData?.breakdown?.email || '0')).toFixed(2)}
               </div>
               <p className="text-sm text-gray-400">
-                Email notifications this month
+                Email cost this month
               </p>
             </CardContent>
           </Card>
@@ -251,61 +275,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Account Status */}
-        <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden">
-          <CardHeader className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-b border-white/10">
-            <CardTitle className="text-white text-2xl flex items-center space-x-3">
-              <div className="p-2 bg-amber-500/20 rounded-xl">
-                <CheckCircle className="h-6 w-6 text-amber-400" />
-              </div>
-              <span>Account Status</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-4">
-                <h3 className="text-white font-medium text-lg">Current Month</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-400">Month:</span>
-                    <span className="text-white font-medium">{usage?.month || 'N/A'}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-400">Usage:</span>
-                    <span className="text-white font-medium">₵{parseFloat(String(usage?.current_month_usage || '0')).toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-400">Percentage:</span>
-                    <span className="text-white font-medium">{parseFloat(String(usage?.usage_percentage || '0')).toFixed(2)}%</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="space-y-4">
-                <h3 className="text-white font-medium text-lg">Limits & Quota</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-400">Monthly Limit:</span>
-                    <span className="text-white font-medium">₵{parseFloat(String(usage?.monthly_limit || '0')).toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-400">Remaining:</span>
-                    <span className="text-white font-medium">₵{parseFloat(String(usage?.remaining_quota || '0')).toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-400">Status:</span>
-                    <Badge 
-                      variant={usage?.can_send_notifications ? "default" : "destructive"}
-                      className={usage?.can_send_notifications ? "bg-green-500/20 border-green-500/30 text-green-300" : "bg-red-500/20 border-red-500/30 text-red-300"}
-                    >
-                      {usage?.can_send_notifications ? 'Active' : 'Limited'}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+
       </div>
     </div>
   );

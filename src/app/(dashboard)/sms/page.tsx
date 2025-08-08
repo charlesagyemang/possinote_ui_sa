@@ -46,6 +46,20 @@ export default function SmsPage() {
   const [csvData, setCsvData] = useState<CsvRow[]>([]);
   const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
   const [templateMessage, setTemplateMessage] = useState('');
+
+  // Custom function to set template message and auto-process if conditions are met
+  const setTemplateMessageAndProcess = (message: string) => {
+    setTemplateMessage(message);
+    
+    // Auto-process if CSV data is loaded and column mapping is set
+    if (csvData.length > 0 && columnMapping.name && columnMapping.phone && message.trim()) {
+      console.log('🔄 Auto-processing template after message change');
+      // Use setTimeout to ensure state is updated before processing
+      setTimeout(() => {
+        processTemplate();
+      }, 100);
+    }
+  };
   const [processedRecipients, setProcessedRecipients] = useState<ProcessedRecipient[]>([]);
   const [showPreview, setShowPreview] = useState(false);
   const [columnMapping, setColumnMapping] = useState({
@@ -180,9 +194,15 @@ export default function SmsPage() {
     if (!file) return;
 
     try {
+      console.log('📁 File upload started:', file.name, 'Size:', file.size);
       const text = await file.text();
+      console.log('📄 File content preview:', text.substring(0, 200) + '...');
+      
       const lines = text.split('\n');
+      console.log('📊 Total lines in file:', lines.length);
+      
       const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+      console.log('📋 Headers found:', headers);
       
       setCsvHeaders(headers);
       
@@ -197,9 +217,50 @@ export default function SmsPage() {
           return row;
         });
       
+      console.log('📊 Processed CSV data:', data.length, 'rows');
+      console.log('📊 Sample row:', data[0]);
+      
       setCsvData(data);
       setShowPreview(true);
+      setSuccessMessage(`File uploaded successfully! Found ${data.length} rows.`);
+      
+      // Auto-select column mapping based on common header names
+      const autoNameColumn = headers.find(h => 
+        h.toLowerCase().includes('name') || 
+        h.toLowerCase().includes('fullname') || 
+        h.toLowerCase().includes('firstname')
+      );
+      const autoPhoneColumn = headers.find(h => 
+        h.toLowerCase().includes('phone') || 
+        h.toLowerCase().includes('mobile') || 
+        h.toLowerCase().includes('number') ||
+        h.toLowerCase().includes('tel')
+      );
+      
+      if (autoNameColumn || autoPhoneColumn) {
+        setColumnMapping({
+          name: autoNameColumn || '',
+          phone: autoPhoneColumn || ''
+        });
+        console.log('🔧 Auto-selected columns:', { name: autoNameColumn, phone: autoPhoneColumn });
+      }
+      
+      // Auto-process template if template message and column mapping are already set
+      if ((templateMessage.trim() || (autoNameColumn && autoPhoneColumn)) && (autoNameColumn || columnMapping.name) && (autoPhoneColumn || columnMapping.phone)) {
+        console.log('🔄 Auto-processing template after CSV upload');
+        
+        // Set default template if none exists
+        if (!templateMessage.trim() && autoNameColumn && autoPhoneColumn) {
+          setTemplateMessage(`Hello {{${autoNameColumn}}}, thank you for your interest. We'll contact you soon at {{${autoPhoneColumn}}}.`);
+        }
+        
+        // Use setTimeout to ensure state is updated before processing
+        setTimeout(() => {
+          processTemplate();
+        }, 100);
+      }
     } catch (error: unknown) {
+      console.error('❌ File upload error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to parse CSV file';
       setErrorMessage(errorMessage);
     }
@@ -212,13 +273,22 @@ export default function SmsPage() {
       return;
     }
 
+    console.log('🔧 Processing template with data:', {
+      templateMessage: templateMessage.substring(0, 100) + '...',
+      columnMapping,
+      csvDataLength: csvData.length
+    });
+
     const recipients: ProcessedRecipient[] = [];
     
     for (const row of csvData) {
       const name = row[columnMapping.name] || 'Customer';
       const phone = row[columnMapping.phone] || '';
       
-      if (!phone) continue;
+      if (!phone) {
+        console.log('⚠️ Skipping row with no phone:', row);
+        continue;
+      }
       
       // Replace template variables
       let message = templateMessage;
@@ -239,6 +309,11 @@ export default function SmsPage() {
       });
     }
     
+    console.log('✅ Template processing complete:', {
+      totalRecipients: recipients.length,
+      sampleRecipient: recipients[0]
+    });
+    
     setProcessedRecipients(recipients);
     setShowPreview(true);
     setSuccessMessage(`Processed ${recipients.length} recipients. Review the preview before sending.`);
@@ -256,10 +331,19 @@ export default function SmsPage() {
     setErrorMessage('');
     
     try {
-      const recipients = processedRecipients.map(recipient => recipient.phone);
+      // Create personalized messages array
+      const messages = processedRecipients.map(recipient => ({
+        to: recipient.phone,
+        message: recipient.message
+      }));
 
-      console.log('Sending advanced bulk SMS with data:', { recipients, sender_id: 'Possitech' });
-      const response = await SmsService.sendBulkSms(recipients, templateMessage, 'Possitech');
+      console.log('Sending personalized bulk SMS with data:', { 
+        messageCount: messages.length, 
+        sender_id: 'Possitech',
+        sampleMessage: messages[0]?.message 
+      });
+      
+      const response = await SmsService.sendPersonalizedBulkSms(messages, 'Possitech');
       
       console.log('Advanced bulk SMS response:', response);
       
@@ -729,7 +813,7 @@ export default function SmsPage() {
                     <Label className="text-gray-300 font-medium">Message Template</Label>
                     <Textarea
                       value={templateMessage}
-                      onChange={(e) => setTemplateMessage(e.target.value)}
+                      onChange={(e) => setTemplateMessageAndProcess(e.target.value)}
                       placeholder="Hello {{name}}, thank you for your interest. We'll contact you at {{phone}}."
                       maxLength={160}
                       className="bg-black/30 border-white/20 text-white placeholder-gray-400 rounded-xl focus:border-purple-500 focus:ring-purple-500/20"
@@ -739,7 +823,7 @@ export default function SmsPage() {
                       <Button 
                         variant="outline" 
                         size="sm" 
-                        onClick={() => setTemplateMessage("Hello {{name}}, thank you for your interest in {{company}}. We'll contact you soon at {{phone}}.")}
+                        onClick={() => setTemplateMessageAndProcess("Hello {{name}}, thank you for your interest in {{company}}. We'll contact you soon at {{phone}}.")}
                         className="text-xs bg-gradient-to-r from-blue-500/20 to-purple-500/20 border-blue-500/30 text-blue-300 hover:from-blue-500/30 hover:to-purple-500/30"
                       >
                         Welcome Template
@@ -788,6 +872,11 @@ export default function SmsPage() {
 
                   {/* Action Buttons */}
                   <div className="flex gap-4">
+                    {/* Debug info */}
+                    <div className="text-xs text-gray-400 mb-2">
+                      Debug: CSV={csvData.length}, Template={templateMessage.trim() ? '✓' : '✗'}, Name={columnMapping.name || '✗'}, Phone={columnMapping.phone || '✗'}
+                    </div>
+                    
                     <Button 
                       onClick={processTemplate}
                       disabled={!csvData.length || !templateMessage.trim() || !columnMapping.name || !columnMapping.phone}
