@@ -20,6 +20,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { EmailService } from '@/lib/services/email';
+import { usePaymentRequired } from '@/components/PaymentRequiredProvider';
 
 interface EmailResult {
   email: string;
@@ -30,6 +31,7 @@ interface EmailResult {
 }
 
 export default function EmailPage() {
+  const { showPaymentRequired } = usePaymentRequired();
   const [activeTab, setActiveTab] = useState('single');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -113,6 +115,19 @@ export default function EmailPage() {
       }
     } catch (error: unknown) {
       console.error('Email send failed:', error);
+      
+      // Handle 402 Payment Required error
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { status?: number; data?: { message?: string } } };
+        if (axiosError.response?.status === 402) {
+          showPaymentRequired(
+            axiosError.response?.data?.message || 'Insufficient credits to send email. Please reload your account.',
+            '/billing'
+          );
+          return;
+        }
+      }
+      
       setError('Failed to send email. Please try again.');
     } finally {
       setIsLoading(false);
@@ -170,6 +185,19 @@ export default function EmailPage() {
     } catch (error: unknown) {
       console.error('❌ BULK EMAIL NETWORK ERROR:');
       console.error('🚨 Error object:', error);
+      
+      // Handle 402 Payment Required error
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { status?: number; data?: { message?: string } } };
+        if (axiosError.response?.status === 402) {
+          showPaymentRequired(
+            axiosError.response?.data?.message || 'Insufficient credits to send bulk email. Please reload your account.',
+            '/billing'
+          );
+          return;
+        }
+      }
+      
       if (error instanceof Error) {
         console.error('📝 Error message:', error.message);
         console.error('📚 Error stack:', error.stack);
@@ -196,7 +224,7 @@ export default function EmailPage() {
       console.log('📁 File content:', content);
       
       // Handle both comma-separated and newline-separated emails
-      let emails: string[] = [];
+      const emails: string[] = [];
       
       // First, split by newlines
       const lines = content.split('\n').filter(line => line.trim());

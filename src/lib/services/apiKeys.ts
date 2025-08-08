@@ -1,5 +1,5 @@
 import { api } from '../api';
-import { ApiKey, CreateApiKeyData } from '@/types';
+import { CreateApiKeyData } from '@/types';
 
 export class ApiKeyService {
   static async getApiKeys() {

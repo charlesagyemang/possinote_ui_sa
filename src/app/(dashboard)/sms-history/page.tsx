@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, XCircle, AlertCircle, Clock, ChevronLeft, ChevronRight, Filter, Search, Calendar, Phone, DollarSign, RefreshCw, MessageSquare, Eye, FileDown } from 'lucide-react';
+import { CheckCircle, XCircle, AlertCircle, Clock, ChevronLeft, ChevronRight, Filter, Search, Phone, DollarSign, RefreshCw, MessageSquare, FileDown } from 'lucide-react';
 import { SmsService, SmsMessage, Pagination } from '@/lib/services/sms';
 
 export default function SmsHistoryPage() {

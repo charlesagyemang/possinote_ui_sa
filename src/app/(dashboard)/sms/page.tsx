@@ -4,9 +4,11 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import * as XLSX from 'xlsx';
+import Papa from 'papaparse';
 import { SmsService } from '@/lib/services/sms';
 import { SendersService, Sender } from '@/lib/services/senders';
-import { AuthService } from '@/lib/services/auth';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -14,8 +16,9 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MessageSquare, Send, Users, AlertCircle, Upload, FileText, Eye, Download, Sparkles, Zap, Target, CheckCircle, Plus, Settings } from 'lucide-react';
+import { MessageSquare, Send, Users, AlertCircle, Upload, FileText, Eye, Download, Sparkles, Zap, Target, CheckCircle, Plus, Settings, FileSpreadsheet, FileJson } from 'lucide-react';
 import SenderNamesModal from '@/components/SenderNamesModal';
+import { usePaymentRequired } from '@/components/PaymentRequiredProvider';
 
 const smsSchema = z.object({
   to: z.string().min(1, 'Phone number is required'),
@@ -23,18 +26,27 @@ const smsSchema = z.object({
   sender_id: z.string().min(1, 'Sender ID is required'),
 });
 
-interface CsvRow {
-  [key: string]: string;
+interface DataRow {
+  [key: string]: string | number;
 }
 
 interface ProcessedRecipient {
   name: string;
   phone: string;
   message: string;
-  originalData: CsvRow;
+  originalData: DataRow;
+}
+
+interface FileInfo {
+  name: string;
+  type: 'csv' | 'excel' | 'json' | 'tsv';
+  size: number;
+  columns: string[];
+  rowCount: number;
 }
 
 export default function SmsPage() {
+  const { showPaymentRequired } = usePaymentRequired();
   const [isLoading, setIsLoading] = useState(false);
   const [bulkMode, setBulkMode] = useState(false);
   const [bulkRecipients, setBulkRecipients] = useState('');
@@ -43,16 +55,17 @@ export default function SmsPage() {
   const [errorMessage, setErrorMessage] = useState('');
 
   // Advanced bulk SMS states
-  const [csvData, setCsvData] = useState<CsvRow[]>([]);
-  const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
+  const [fileData, setFileData] = useState<DataRow[]>([]);
+  const [fileHeaders, setFileHeaders] = useState<string[]>([]);
+  const [fileInfo, setFileInfo] = useState<FileInfo | null>(null);
   const [templateMessage, setTemplateMessage] = useState('');
 
   // Custom function to set template message and auto-process if conditions are met
   const setTemplateMessageAndProcess = (message: string) => {
     setTemplateMessage(message);
     
-    // Auto-process if CSV data is loaded and column mapping is set
-    if (csvData.length > 0 && columnMapping.name && columnMapping.phone && message.trim()) {
+    // Auto-process if file data is loaded, phone column is selected, and message is set
+    if (fileData.length > 0 && phoneColumn && message.trim()) {
       console.log('🔄 Auto-processing template after message change');
       // Use setTimeout to ensure state is updated before processing
       setTimeout(() => {
@@ -62,10 +75,7 @@ export default function SmsPage() {
   };
   const [processedRecipients, setProcessedRecipients] = useState<ProcessedRecipient[]>([]);
   const [showPreview, setShowPreview] = useState(false);
-  const [columnMapping, setColumnMapping] = useState({
-    name: '',
-    phone: '',
-  });
+  const [phoneColumn, setPhoneColumn] = useState('');
 
   // Sender Names states
   const [showSenderNamesModal, setShowSenderNamesModal] = useState(false);
@@ -73,21 +83,7 @@ export default function SmsPage() {
   const [isAddingSenderName, setIsAddingSenderName] = useState(false);
   const [isLoadingSenders, setIsLoadingSenders] = useState(true);
 
-  // Test API connection
-  const testApiConnection = async () => {
-    try {
-      const response = await AuthService.testConnection();
-      if (response.success) {
-        setSuccessMessage('API connection successful!');
-        console.log('API health check response:', response.data);
-      } else {
-        setErrorMessage(`API connection failed: ${response.error}`);
-      }
-    } catch (error) {
-      console.error('API connection test failed:', error);
-      setErrorMessage('API connection test failed - check if your Rails backend is running');
-    }
-  };
+
 
   // Fetch senders
   const fetchSenders = async () => {
@@ -161,6 +157,18 @@ export default function SmsPage() {
     } catch (error: unknown) {
       console.error('SMS error:', error);
       
+      // Handle 402 Payment Required error
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { status?: number; data?: { message?: string } } };
+        if (axiosError.response?.status === 402) {
+          showPaymentRequired(
+            axiosError.response?.data?.message || 'Insufficient credits to send SMS. Please reload your account.',
+            '/billing'
+          );
+          return;
+        }
+      }
+      
       const errorMessage = error instanceof Error ? error.message : 'Failed to send SMS';
       setErrorMessage(`Error: ${errorMessage}`);
     } finally {
@@ -168,92 +176,142 @@ export default function SmsPage() {
     }
   };
 
-  // CSV parsing function
-  const parseCSV = (csvText: string): CsvRow[] => {
-    const lines = csvText.split('\n').filter(line => line.trim());
-    if (lines.length === 0) return [];
-
-    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-    const rows: CsvRow[] = [];
-
-    for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
-      const row: CsvRow = {};
-      headers.forEach((header, index) => {
-        row[header] = values[index] || '';
+  // Enhanced file parsing functions
+  const parseCSV = async (csvText: string): Promise<DataRow[]> => {
+    return new Promise((resolve, reject) => {
+      Papa.parse(csvText, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (results) => {
+          resolve(results.data as DataRow[]);
+        },
+        error: (error: unknown) => {
+          reject(error);
+        }
       });
-      rows.push(row);
-    }
-
-    return rows;
+    });
   };
 
-  // Handle file upload
+  const parseExcel = (file: File): Promise<DataRow[]> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet);
+          resolve(jsonData as DataRow[]);
+        } catch (error) {
+          reject(error);
+        }
+      };
+      reader.onerror = reject;
+      reader.readAsArrayBuffer(file);
+    });
+  };
+
+  const parseJSON = (jsonText: string): DataRow[] => {
+    try {
+      const data = JSON.parse(jsonText);
+      if (Array.isArray(data)) {
+        return data;
+      } else if (typeof data === 'object' && data !== null) {
+        return [data];
+      }
+      throw new Error('Invalid JSON format');
+    } catch {
+      throw new Error('Failed to parse JSON file');
+    }
+  };
+
+  const parseTSV = async (tsvText: string): Promise<DataRow[]> => {
+    return new Promise((resolve, reject) => {
+      Papa.parse(tsvText, {
+        header: true,
+        skipEmptyLines: true,
+        delimiter: '\t',
+        complete: (results) => {
+          resolve(results.data as DataRow[]);
+        },
+        error: (error: unknown) => {
+          reject(error);
+        }
+      });
+    });
+  };
+
+  // Enhanced file upload handler
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     try {
       console.log('📁 File upload started:', file.name, 'Size:', file.size);
-      const text = await file.text();
-      console.log('📄 File content preview:', text.substring(0, 200) + '...');
       
-      const lines = text.split('\n');
-      console.log('📊 Total lines in file:', lines.length);
+      let data: DataRow[] = [];
+      let fileType: 'csv' | 'excel' | 'json' | 'tsv' = 'csv';
       
-      const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+      // Determine file type and parse accordingly
+      if (file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls')) {
+        fileType = 'excel';
+        data = await parseExcel(file);
+      } else if (file.name.toLowerCase().endsWith('.json')) {
+        fileType = 'json';
+        const text = await file.text();
+        data = parseJSON(text);
+      } else if (file.name.toLowerCase().endsWith('.tsv')) {
+        fileType = 'tsv';
+        const text = await file.text();
+        data = await parseTSV(text);
+      } else {
+        // Default to CSV
+        const text = await file.text();
+        data = await parseCSV(text);
+      }
+      
+      if (data.length === 0) {
+        throw new Error('No data found in file');
+      }
+      
+      // Extract headers from first row
+      const headers = Object.keys(data[0]);
       console.log('📋 Headers found:', headers);
       
-      setCsvHeaders(headers);
+      // Create file info
+      const fileInfo: FileInfo = {
+        name: file.name,
+        type: fileType,
+        size: file.size,
+        columns: headers,
+        rowCount: data.length
+      };
       
-      const data: CsvRow[] = lines.slice(1)
-        .filter(line => line.trim())
-        .map((line, index) => {
-          const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
-          const row: CsvRow = { id: index.toString() };
-          headers.forEach((header, i) => {
-            row[header] = values[i] || '';
-          });
-          return row;
-        });
-      
-      console.log('📊 Processed CSV data:', data.length, 'rows');
-      console.log('📊 Sample row:', data[0]);
-      
-      setCsvData(data);
+      setFileHeaders(headers);
+      setFileData(data);
+      setFileInfo(fileInfo);
       setShowPreview(true);
-      setSuccessMessage(`File uploaded successfully! Found ${data.length} rows.`);
       
-      // Auto-select column mapping based on common header names
-      const autoNameColumn = headers.find(h => 
-        h.toLowerCase().includes('name') || 
-        h.toLowerCase().includes('fullname') || 
-        h.toLowerCase().includes('firstname')
-      );
+      // Auto-detect phone column
       const autoPhoneColumn = headers.find(h => 
         h.toLowerCase().includes('phone') || 
         h.toLowerCase().includes('mobile') || 
         h.toLowerCase().includes('number') ||
-        h.toLowerCase().includes('tel')
+        h.toLowerCase().includes('tel') ||
+        h.toLowerCase().includes('contact')
       );
       
-      if (autoNameColumn || autoPhoneColumn) {
-        setColumnMapping({
-          name: autoNameColumn || '',
-          phone: autoPhoneColumn || ''
-        });
-        console.log('🔧 Auto-selected columns:', { name: autoNameColumn, phone: autoPhoneColumn });
+      if (autoPhoneColumn) {
+        setPhoneColumn(autoPhoneColumn);
+        console.log('🔧 Auto-detected phone column:', autoPhoneColumn);
       }
       
-      // Auto-process template if template message and column mapping are already set
-      if ((templateMessage.trim() || (autoNameColumn && autoPhoneColumn)) && (autoNameColumn || columnMapping.name) && (autoPhoneColumn || columnMapping.phone)) {
-        console.log('🔄 Auto-processing template after CSV upload');
-        
-        // Set default template if none exists
-        if (!templateMessage.trim() && autoNameColumn && autoPhoneColumn) {
-          setTemplateMessage(`Hello {{${autoNameColumn}}}, thank you for your interest. We'll contact you soon at {{${autoPhoneColumn}}}.`);
-        }
-        
+      setSuccessMessage(`File uploaded successfully! Found ${data.length} rows with ${headers.length} columns. ${autoPhoneColumn ? `Phone column auto-detected: ${autoPhoneColumn}` : 'Please select phone column below.'}`);
+      
+      // Auto-process template if template message is already set and phone column is detected
+      if (templateMessage.trim() && autoPhoneColumn) {
+        console.log('🔄 Auto-processing template after file upload');
         // Use setTimeout to ensure state is updated before processing
         setTimeout(() => {
           processTemplate();
@@ -261,45 +319,53 @@ export default function SmsPage() {
       }
     } catch (error: unknown) {
       console.error('❌ File upload error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to parse CSV file';
+      const errorMessage = error instanceof Error ? error.message : 'Failed to parse file';
       setErrorMessage(errorMessage);
     }
   };
 
   // Process template and generate messages
   const processTemplate = () => {
-    if (!templateMessage.trim() || !columnMapping.name || !columnMapping.phone) {
-      setErrorMessage('Please fill in template message and select name/phone columns.');
+    console.log('🔧 processTemplate called with:', {
+      templateMessage: templateMessage.trim(),
+      phoneColumn,
+      fileDataLength: fileData.length
+    });
+    
+    if (!templateMessage.trim()) {
+      setErrorMessage('Please fill in template message.');
+      return;
+    }
+    
+    if (!phoneColumn) {
+      setErrorMessage('Please select a phone column.');
       return;
     }
 
     console.log('🔧 Processing template with data:', {
       templateMessage: templateMessage.substring(0, 100) + '...',
-      columnMapping,
-      csvDataLength: csvData.length
+      fileDataLength: fileData.length
     });
 
     const recipients: ProcessedRecipient[] = [];
     
-    for (const row of csvData) {
-      const name = row[columnMapping.name] || 'Customer';
-      const phone = row[columnMapping.phone] || '';
+    for (const row of fileData) {
+      const phone = String(row[phoneColumn] || '');
       
       if (!phone) {
         console.log('⚠️ Skipping row with no phone:', row);
         continue;
       }
       
-      // Replace template variables
+      // Replace template variables dynamically
       let message = templateMessage;
       Object.keys(row).forEach(key => {
         const regex = new RegExp(`{{${key}}}`, 'gi');
-        message = message.replace(regex, row[key] || '');
+        message = message.replace(regex, String(row[key] || ''));
       });
       
-      // Also replace common variables
-      message = message.replace(/{{name}}/gi, name);
-      message = message.replace(/{{phone}}/gi, phone);
+      // Find name from available columns for display purposes
+      const name = String(row.name || row.fullname || row.firstname || row.customer || 'Customer');
       
       recipients.push({
         name,
@@ -353,15 +419,28 @@ export default function SmsPage() {
       setSuccessMessage(successMsg);
       
       // Reset form
-      setCsvData([]);
-      setCsvHeaders([]);
+      setFileData([]);
+      setFileHeaders([]);
+      setFileInfo(null);
+      setPhoneColumn('');
       setTemplateMessage('');
       setProcessedRecipients([]);
       setShowPreview(false);
-      setColumnMapping({ name: '', phone: '' });
       
     } catch (error: unknown) {
       console.error('Advanced bulk SMS error:', error);
+      
+      // Handle 402 Payment Required error
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { status?: number; data?: { message?: string } } };
+        if (axiosError.response?.status === 402) {
+          showPaymentRequired(
+            axiosError.response?.data?.message || 'Insufficient credits to send bulk SMS. Please reload your account.',
+            '/billing'
+          );
+          return;
+        }
+      }
       
       const errorMessage = error instanceof Error ? error.message : 'Failed to send advanced bulk SMS';
       setErrorMessage(`Error: ${errorMessage}`);
@@ -401,6 +480,18 @@ export default function SmsPage() {
       setBulkMessage('');
     } catch (error: unknown) {
       console.error('Bulk SMS error:', error);
+      
+      // Handle 402 Payment Required error
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { status?: number; data?: { message?: string } } };
+        if (axiosError.response?.status === 402) {
+          showPaymentRequired(
+            axiosError.response?.data?.message || 'Insufficient credits to send bulk SMS. Please reload your account.',
+            '/billing'
+          );
+          return;
+        }
+      }
       
       const errorMessage = error instanceof Error ? error.message : 'Failed to send bulk SMS';
       setErrorMessage(`Error: ${errorMessage}`);
@@ -728,7 +819,7 @@ export default function SmsPage() {
                   <div className="p-2 bg-purple-500/20 rounded-xl">
                     <Sparkles className="h-6 w-6 text-purple-400" />
                   </div>
-                  <span>Advanced Bulk SMS (CSV Upload)</span>
+                  <span>Dynamic Bulk SMS</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-8">
@@ -742,68 +833,100 @@ export default function SmsPage() {
                       
                       <input
                         type="file"
-                        accept=".csv"
+                        accept=".csv,.xlsx,.xls,.json,.tsv"
                         onChange={handleFileUpload}
                         className="block w-full text-sm text-gray-400 file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-gradient-to-r file:from-purple-500 file:to-pink-500 file:text-white hover:file:from-purple-600 hover:file:to-pink-600 transition-all duration-300"
                       />
                       
-                      <p className="text-xs text-gray-500 mt-4">Example CSV format: name,phone,company</p>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => {
-                          const csvContent = "name,phone,company\nJohn Doe,+233244123456,Acme Corp\nJane Smith,+233244123457,Tech Solutions\nBob Wilson,+233244123458,Startup Inc";
-                          const blob = new Blob([csvContent], { type: 'text/csv' });
-                          const url = window.URL.createObjectURL(blob);
-                          const a = document.createElement('a');
-                          a.href = url;
-                          a.download = 'sample_recipients.csv';
-                          a.click();
-                          window.URL.revokeObjectURL(url);
-                        }}
-                        className="mt-4 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border-purple-500/30 text-purple-300 hover:from-purple-500/30 hover:to-pink-500/30"
-                      >
-                        <Download className="h-4 w-4 mr-2" />
-                        Download Sample CSV
-                      </Button>
+                      <div className="flex flex-wrap gap-2 mt-4 justify-center">
+                        <Badge variant="outline" className="text-xs bg-blue-500/20 border-blue-500/30 text-blue-300">
+                          <FileText className="h-3 w-3 mr-1" />
+                          CSV
+                        </Badge>
+                        <Badge variant="outline" className="text-xs bg-green-500/20 border-green-500/30 text-green-300">
+                          <FileSpreadsheet className="h-3 w-3 mr-1" />
+                          Excel
+                        </Badge>
+                        <Badge variant="outline" className="text-xs bg-yellow-500/20 border-yellow-500/30 text-yellow-300">
+                          <FileJson className="h-3 w-3 mr-1" />
+                          JSON
+                        </Badge>
+                        <Badge variant="outline" className="text-xs bg-purple-500/20 border-purple-500/30 text-purple-300">
+                          <FileText className="h-3 w-3 mr-1" />
+                          TSV
+                        </Badge>
+                      </div>
+                      
+                      <p className="text-xs text-gray-500 mt-4">Supported formats: CSV, Excel (.xlsx/.xls), JSON, TSV</p>
+                      <div className="flex gap-2 mt-4 justify-center">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => {
+                            const csvContent = "name,phone,company\nJohn Doe,+233244123456,Acme Corp\nJane Smith,+233244123457,Tech Solutions\nBob Wilson,+233244123458,Startup Inc";
+                            const blob = new Blob([csvContent], { type: 'text/csv' });
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = 'sample_recipients.csv';
+                            a.click();
+                            window.URL.revokeObjectURL(url);
+                          }}
+                          className="bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border-blue-500/30 text-blue-300 hover:from-blue-500/30 hover:to-cyan-500/30"
+                        >
+                          <Download className="h-4 w-4 mr-2" />
+                          CSV Sample
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => {
+                            const jsonContent = JSON.stringify([
+                              { name: "John Doe", phone: "+233244123456", company: "Acme Corp" },
+                              { name: "Jane Smith", phone: "+233244123457", company: "Tech Solutions" },
+                              { name: "Bob Wilson", phone: "+233244123458", company: "Startup Inc" }
+                            ], null, 2);
+                            const blob = new Blob([jsonContent], { type: 'application/json' });
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = 'sample_recipients.json';
+                            a.click();
+                            window.URL.revokeObjectURL(url);
+                          }}
+                          className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-yellow-500/30 text-yellow-300 hover:from-yellow-500/30 hover:to-orange-500/30"
+                        >
+                          <Download className="h-4 w-4 mr-2" />
+                          JSON Sample
+                        </Button>
+                      </div>
                     </div>
-                    {csvData.length > 0 && (
+                    {fileData.length > 0 && (
                       <div className="flex items-center space-x-2 text-green-400">
                         <CheckCircle className="h-5 w-5" />
-                        <span className="font-medium">CSV loaded with {csvData.length} recipients</span>
+                        <span className="font-medium">{fileInfo?.type.toUpperCase()} loaded with {fileData.length} recipients</span>
                       </div>
                     )}
                   </div>
 
-                  {/* Column Mapping */}
-                  {csvHeaders.length > 0 && (
+
+
+                  {/* Phone Column Mapping */}
+                  {fileHeaders.length > 0 && (
                     <div className="space-y-4">
-                      <Label className="text-gray-300 font-medium">Column Mapping</Label>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                          <Label className="text-sm text-gray-400">Name Column</Label>
-                          <select
-                            value={columnMapping.name}
-                            onChange={(e) => setColumnMapping({ ...columnMapping, name: e.target.value })}
-                            className="w-full bg-black/30 border-white/20 text-white rounded-xl p-3 focus:border-purple-500 focus:ring-purple-500/20"
-                          >
-                            {csvHeaders.map(header => (
-                              <option key={header} value={header}>{header}</option>
-                            ))}
-                          </select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-sm text-gray-400">Phone Column</Label>
-                          <select
-                            value={columnMapping.phone}
-                            onChange={(e) => setColumnMapping({ ...columnMapping, phone: e.target.value })}
-                            className="w-full bg-black/30 border-white/20 text-white rounded-xl p-3 focus:border-purple-500 focus:ring-purple-500/20"
-                          >
-                            {csvHeaders.map(header => (
-                              <option key={header} value={header}>{header}</option>
-                            ))}
-                          </select>
-                        </div>
+                      <Label className="text-gray-300 font-medium">Phone Column (Required)</Label>
+                      <div className="space-y-2">
+                        <Label className="text-sm text-gray-400">Select the column containing phone numbers</Label>
+                        <select
+                          value={phoneColumn}
+                          onChange={(e) => setPhoneColumn(e.target.value)}
+                          className="w-full bg-black/30 border-white/20 text-white rounded-xl p-3 focus:border-purple-500 focus:ring-purple-500/20"
+                        >
+                          <option value="">Select phone column...</option>
+                          {fileHeaders.map((header: string) => (
+                            <option key={header} value={header}>{header}</option>
+                          ))}
+                        </select>
                       </div>
                     </div>
                   )}
@@ -814,37 +937,12 @@ export default function SmsPage() {
                     <Textarea
                       value={templateMessage}
                       onChange={(e) => setTemplateMessageAndProcess(e.target.value)}
-                      placeholder="Hello {{name}}, thank you for your interest. We'll contact you at {{phone}}."
+                      placeholder="Hello {{finney}}, thank you for your interest. We'll contact you at {{booty}}."
                       maxLength={160}
                       className="bg-black/30 border-white/20 text-white placeholder-gray-400 rounded-xl focus:border-purple-500 focus:ring-purple-500/20"
                       rows={4}
                     />
-                    <div className="flex gap-2 flex-wrap">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => setTemplateMessageAndProcess("Hello {{name}}, thank you for your interest in {{company}}. We'll contact you soon at {{phone}}.")}
-                        className="text-xs bg-gradient-to-r from-blue-500/20 to-purple-500/20 border-blue-500/30 text-blue-300 hover:from-blue-500/30 hover:to-purple-500/30"
-                      >
-                        Welcome Template
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => setTemplateMessage("Hi {{name}}, your order has been confirmed. We'll deliver to {{phone}}. Thank you!")}
-                        className="text-xs bg-gradient-to-r from-green-500/20 to-emerald-500/20 border-green-500/30 text-green-300 hover:from-green-500/30 hover:to-emerald-500/30"
-                      >
-                        Order Confirmation
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => setTemplateMessage("Dear {{name}}, your appointment is confirmed for tomorrow. Contact {{phone}} if you need to reschedule.")}
-                        className="text-xs bg-gradient-to-r from-orange-500/20 to-red-500/20 border-orange-500/30 text-orange-300 hover:from-orange-500/30 hover:to-red-500/30"
-                      >
-                        Appointment Reminder
-                      </Button>
-                    </div>
+
                     <div className="flex justify-between items-center">
                       <p className="text-sm text-gray-400">
                         {templateMessage.length}/160 characters
@@ -856,7 +954,7 @@ export default function SmsPage() {
                         <Badge variant="outline" className="text-xs cursor-pointer bg-purple-500/20 border-purple-500/30 text-purple-300 hover:bg-purple-500/30" onClick={() => setTemplateMessage(templateMessage + '{{phone}}')}>
                           Add {'{{phone}}'}
                         </Badge>
-                        {csvHeaders.map(header => (
+                        {fileHeaders.map((header: string) => (
                           <Badge 
                             key={header} 
                             variant="outline" 
@@ -871,31 +969,50 @@ export default function SmsPage() {
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex gap-4">
+                  <div className="space-y-4">
                     {/* Debug info */}
-                    <div className="text-xs text-gray-400 mb-2">
-                      Debug: CSV={csvData.length}, Template={templateMessage.trim() ? '✓' : '✗'}, Name={columnMapping.name || '✗'}, Phone={columnMapping.phone || '✗'}
+                    <div className="text-xs text-gray-400 bg-black/20 rounded-lg p-2">
+                      <div>Debug Info:</div>
+                      <div>• File loaded: {fileData.length} rows</div>
+                      <div>• Available columns: {fileHeaders.join(', ')}</div>
+                      <div>• Phone column: {phoneColumn || '✗'}</div>
+                      <div>• Template: {templateMessage.trim() ? '✓' : '✗'}</div>
+                      <div>• Button disabled: {(!fileData.length || !templateMessage.trim() || !phoneColumn) ? 'Yes' : 'No'}</div>
                     </div>
                     
-                    <Button 
-                      onClick={processTemplate}
-                      disabled={!csvData.length || !templateMessage.trim() || !columnMapping.name || !columnMapping.phone}
-                      className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl h-12 text-lg font-medium shadow-lg shadow-emerald-500/25 transition-all duration-300"
-                    >
-                      <Eye className="h-5 w-5 mr-2" />
-                      Preview Messages
-                    </Button>
-                    
-                    {showPreview && (
+                    <div className="flex gap-4">
                       <Button 
-                        onClick={sendAdvancedBulkSms}
-                        disabled={isLoading || processedRecipients.length === 0}
-                        className="flex-1 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white rounded-xl h-12 text-lg font-medium shadow-lg shadow-purple-500/25 transition-all duration-300"
+                        onClick={() => {
+                          console.log('🔘 Preview button clicked!');
+                          console.log('🔘 Button state:', {
+                            fileDataLength: fileData.length,
+                            templateMessage: templateMessage.trim(),
+                            phoneColumn,
+                            availableColumns: fileHeaders
+                          });
+                          processTemplate();
+                        }}
+                        disabled={!fileData.length || !templateMessage.trim() || !phoneColumn}
+                        className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl h-12 text-lg font-medium shadow-lg shadow-emerald-500/25 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <Send className="h-5 w-5 mr-2" />
-                        {isLoading ? 'Sending...' : `Send to ${processedRecipients.length} Recipients`}
+                        <Eye className="h-5 w-5 mr-2" />
+                        Preview Messages
+                        {(!fileData.length || !templateMessage.trim() || !phoneColumn) && (
+                          <span className="ml-2 text-xs opacity-75">(Upload file, select phone column, and add template)</span>
+                        )}
                       </Button>
-                    )}
+                    
+                                          {showPreview && (
+                        <Button 
+                          onClick={sendAdvancedBulkSms}
+                          disabled={isLoading || processedRecipients.length === 0}
+                          className="flex-1 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white rounded-xl h-12 text-lg font-medium shadow-lg shadow-purple-500/25 transition-all duration-300"
+                        >
+                          <Send className="h-5 w-5 mr-2" />
+                          {isLoading ? 'Sending...' : `Send to ${processedRecipients.length} Recipients`}
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -984,15 +1101,19 @@ export default function SmsPage() {
               <div className="space-y-4 text-sm text-gray-300">
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-green-400 rounded-full mt-2 flex-shrink-0"></div>
-                  <p>CSV should have columns: name, phone (or similar)</p>
+                  <p>Support for CSV, Excel, JSON, and TSV file formats</p>
                 </div>
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-green-400 rounded-full mt-2 flex-shrink-0"></div>
-                  <p>Use {'{{name}}'}, {'{{phone}}'}, or {'{{column_name}}'} for template variables</p>
+                  <p>Auto-detect phone column or select manually</p>
                 </div>
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-green-400 rounded-full mt-2 flex-shrink-0"></div>
-                  <p>Download sample CSV to get started quickly</p>
+                  <p>All columns automatically available as template variables</p>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <div className="w-2 h-2 bg-green-400 rounded-full mt-2 flex-shrink-0"></div>
+                  <p>Use {'{{column_name}}'} syntax for any column in your file</p>
                 </div>
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-green-400 rounded-full mt-2 flex-shrink-0"></div>

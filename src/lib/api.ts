@@ -33,10 +33,44 @@ api.interceptors.response.use(
       window.location.href = '/login';
     }
     
-    // Handle rate limiting
+    // Handle payment required (402)
+    if (error.response?.status === 402) {
+      console.warn('Payment required. Insufficient credits.');
+      // Store the 402 error state
+      localStorage.setItem('payment_required', 'true');
+      localStorage.setItem('payment_required_timestamp', Date.now().toString());
+      
+      // Show payment required modal/notification
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('payment-required', {
+          detail: {
+            message: error.response?.data?.message || 'Insufficient credits. Please reload your account.',
+            redirectUrl: error.response?.data?.redirect_url || '/billing'
+          }
+        }));
+      }
+    }
+    
+    // Handle rate limiting (429)
     if (error.response?.status === 429) {
       console.warn('Rate limit exceeded. Please wait before making more requests.');
-      // You could show a toast notification here
+      
+      // Store rate limit info
+      const retryAfter = error.response.headers['retry-after'] || 60;
+      const rateLimitInfo = {
+        retryAfter: parseInt(retryAfter.toString()),
+        timestamp: Date.now(),
+        message: error.response?.data?.message || 'Too many requests. Please wait before trying again.'
+      };
+      
+      localStorage.setItem('rate_limit_info', JSON.stringify(rateLimitInfo));
+      
+      // Dispatch rate limit event for global handling
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('rate-limit-exceeded', {
+          detail: rateLimitInfo
+        }));
+      }
     }
     
     return Promise.reject(error);

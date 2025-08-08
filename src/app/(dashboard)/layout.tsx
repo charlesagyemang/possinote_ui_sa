@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useAuthStore } from '@/stores/authStore';
+
 import DashboardLayout from '@/components/layout/DashboardLayout';
 
 export default function DashboardLayoutWrapper({
@@ -9,7 +9,7 @@ export default function DashboardLayoutWrapper({
 }: {
   children: React.ReactNode;
 }) {
-  const { isAuthenticated } = useAuthStore();
+
   const [isLoading, setIsLoading] = useState(true);
   const [hasToken, setHasToken] = useState(false);
 

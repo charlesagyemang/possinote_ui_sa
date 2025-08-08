@@ -8,10 +8,7 @@ interface UsageHistoryParams {
   per_page?: number;
 }
 
-interface UsageData {
-  current_usage?: unknown;
-  usage_history?: unknown[];
-}
+
 
 export const useUsageStore = create<{
   currentUsage: unknown | null;
@@ -31,16 +28,14 @@ export const useUsageStore = create<{
     } catch (error: unknown) {
       console.error('Failed to fetch current usage:', error);
       
-      if (error instanceof Error && error.message.includes('429')) {
-        // Wait 2 seconds and retry once
-        setTimeout(async () => {
-          try {
-            const retryResponse = await UsageService.getCurrentUsage();
-            set({ currentUsage: retryResponse.data });
-          } catch (retryError) {
-            console.error('Retry failed:', retryError);
-          }
-        }, 2000);
+      // Check if it's a 429 error
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { status?: number } };
+        if (axiosError.response?.status === 429) {
+          // The API interceptor will handle the rate limit modal
+          // We don't need to retry here as the user will see the modal
+          console.log('Rate limit hit for usage fetch - modal will be shown');
+        }
       }
     } finally {
       set({ isLoading: false });
@@ -53,6 +48,15 @@ export const useUsageStore = create<{
       set({ usageHistory: response.data.records || [] });
     } catch (error: unknown) {
       console.error('Failed to fetch usage history:', error);
+      
+      // Check if it's a 429 error
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { status?: number } };
+        if (axiosError.response?.status === 429) {
+          // The API interceptor will handle the rate limit modal
+          console.log('Rate limit hit for usage history fetch - modal will be shown');
+        }
+      }
     } finally {
       set({ isLoading: false });
     }

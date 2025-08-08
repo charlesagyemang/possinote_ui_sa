@@ -2,11 +2,9 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
   Home, 
-  Key, 
   BarChart3, 
   MessageSquare, 
   Settings,
-  CreditCard,
   Zap,
   Sparkles,
   Mail
@@ -14,13 +12,11 @@ import {
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home, color: 'from-blue-500 to-purple-600' },
-  { name: 'API Keys', href: '/api-keys', icon: Key, color: 'from-green-500 to-emerald-600' },
   { name: 'Usage', href: '/usage', icon: BarChart3, color: 'from-purple-500 to-pink-600' },
   { name: 'SMS', href: '/sms', icon: MessageSquare, color: 'from-cyan-500 to-blue-600' },
   { name: 'SMS History', href: '/sms-history', icon: MessageSquare, color: 'from-indigo-500 to-purple-600' },
   { name: 'Email', href: '/email', icon: Mail, color: 'from-orange-500 to-red-600' },
   { name: 'Email History', href: '/email-history', icon: Mail, color: 'from-red-500 to-pink-600' },
-  { name: 'Billing', href: '/billing', icon: CreditCard, color: 'from-amber-500 to-orange-600' },
   { name: 'Settings', href: '/settings', icon: Settings, color: 'from-gray-500 to-slate-600' },
 ];
 

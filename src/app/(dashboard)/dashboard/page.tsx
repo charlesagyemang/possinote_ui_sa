@@ -3,9 +3,8 @@
 import { useEffect } from 'react';
 import { useUsageStore } from '@/stores/usageStore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Activity, DollarSign, TrendingUp, AlertTriangle, Users, MessageSquare, Key, BarChart3, ArrowRight, Zap, Target, CheckCircle } from 'lucide-react';
+import { Activity, DollarSign, TrendingUp, AlertTriangle, Users, MessageSquare, Key, BarChart3, ArrowRight, Zap, Target } from 'lucide-react';
 
 interface UsageData {
   // Credit-based fields (new)
@@ -190,10 +189,10 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent className="p-6">
               <div className="text-3xl font-bold text-white mb-3">
-                ₵{parseFloat(String(usageData?.credit_breakdown?.sms_usage || usageData?.breakdown?.sms || '0')).toFixed(2)}
+                {parseFloat(String(usageData?.credit_breakdown?.sms_usage || usageData?.breakdown?.sms || '0')).toFixed(2)} credits
               </div>
               <p className="text-sm text-gray-400">
-                SMS cost this month
+                SMS credits used this month
               </p>
             </CardContent>
           </Card>
@@ -209,10 +208,10 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent className="p-6">
               <div className="text-3xl font-bold text-white mb-3">
-                ₵{parseFloat(String(usageData?.credit_breakdown?.email_usage || usageData?.breakdown?.email || '0')).toFixed(2)}
+                {parseFloat(String(usageData?.credit_breakdown?.email_usage || usageData?.breakdown?.email || '0')).toFixed(2)} credits
               </div>
               <p className="text-sm text-gray-400">
-                Email cost this month
+                Email credits used this month
               </p>
             </CardContent>
           </Card>

@@ -7,17 +7,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { UsageData, CreditTransaction } from '@/types';
 import { 
-  DollarSign, 
   TrendingUp, 
   Activity, 
   Calendar, 
   BarChart3, 
   Target, 
   ArrowUpRight, 
-  ArrowDownRight, 
   Plus, 
   CreditCard, 
   History, 
@@ -29,7 +27,7 @@ import {
 
 export default function UsagePage() {
   const [currentUsage, setCurrentUsage] = useState<UsageData | null>(null);
-  const [usageHistory, setUsageHistory] = useState<unknown[]>([]);
+
   const [creditTransactions, setCreditTransactions] = useState<CreditTransaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showTopUpModal, setShowTopUpModal] = useState(false);
@@ -65,13 +63,12 @@ export default function UsagePage() {
         try {
           const parsed = JSON.parse(cachedData);
           setCurrentUsage(parsed.currentUsage);
-          setUsageHistory(parsed.usageHistory);
           setCreditTransactions(parsed.creditTransactions);
           setIsLoading(false);
           return;
-        } catch (e) {
-          // If cache is corrupted, continue with fresh fetch
-        }
+              } catch {
+        // If cache is corrupted, continue with fresh fetch
+      }
       }
     }
 
@@ -82,7 +79,7 @@ export default function UsagePage() {
       setIsLoading(true);
       setHasError(false);
 
-      const [currentResponse, historyResponse, creditHistoryResponse] = await Promise.all([
+      const [currentResponse, , creditHistoryResponse] = await Promise.all([
         UsageService.getCurrentUsage(),
         UsageService.getUsageHistory({
           start_date: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
@@ -92,27 +89,26 @@ export default function UsagePage() {
       ]);
 
       setCurrentUsage(currentResponse.data);
-      setUsageHistory(historyResponse.data.records || []);
+
       setCreditTransactions(creditHistoryResponse.data.transactions || []);
       
       // Cache the data for 2 minutes
       try {
         const cacheData = {
           currentUsage: currentResponse.data,
-          usageHistory: historyResponse.data.records || [],
           creditTransactions: creditHistoryResponse.data.transactions || []
         };
         sessionStorage.setItem('usage_data_cache', JSON.stringify(cacheData));
         sessionStorage.setItem('usage_data_cache_time', now.toString());
-      } catch (e) {
+      } catch {
         // Ignore cache errors
       }
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to fetch usage data:', error);
       
       // Only retry for 429 errors, and only once
-      if (error?.response?.status === 429 && !isRetry) {
+      if (error && typeof error === 'object' && 'response' in error && (error as { response?: { status?: number } }).response?.status === 429 && !isRetry) {
         // Clear any existing timeout
         if (retryTimeoutRef.current) {
           clearTimeout(retryTimeoutRef.current);
@@ -129,7 +125,7 @@ export default function UsagePage() {
       try {
         sessionStorage.removeItem('usage_data_cache');
         sessionStorage.removeItem('usage_data_cache_time');
-      } catch (e) {
+      } catch {
         // Ignore cache errors
       }
       
@@ -155,7 +151,7 @@ export default function UsagePage() {
         }
       });
       
-      setUsageHistory([]);
+
       setCreditTransactions([
         {
           id: '1',
@@ -230,20 +226,49 @@ export default function UsagePage() {
     { date: '2024-01-05', cost: 4.50, requests: 1 },
   ];
 
-  const breakdownData = currentUsage?.breakdown ? [
-    { name: 'SMS', value: Number(currentUsage.breakdown.sms || 0), color: '#3B82F6' },
-    { name: 'Email', value: Number(currentUsage.breakdown.email || 0), color: '#10B981' },
-  ] : [
-    { name: 'SMS', value: 1.50, color: '#3B82F6' },
-    { name: 'Email', value: 1.00, color: '#10B981' },
-  ];
+  // Debug the current usage data
+  console.log('🔍 Current Usage Data:', currentUsage);
+  console.log('🔍 Breakdown Data:', currentUsage?.breakdown);
+  console.log('🔍 Credit Breakdown Data:', currentUsage?.credit_breakdown);
 
-  const creditBreakdownData = currentUsage?.credit_breakdown ? [
-    { name: 'SMS Usage', value: Number(currentUsage.credit_breakdown.sms_usage || 0), color: '#EF4444' },
-    { name: 'Email Usage', value: Number(currentUsage.credit_breakdown.email_usage || 0), color: '#F59E0B' },
-    { name: 'Top Up', value: Number(currentUsage.credit_breakdown.top_up || 0), color: '#10B981' },
-    { name: 'Refund', value: Number(currentUsage.credit_breakdown.refund || 0), color: '#8B5CF6' },
-  ] : [];
+  // Create breakdown data with better fallbacks
+  const breakdownData = (() => {
+    // First try credit_breakdown (more detailed)
+    if (currentUsage?.credit_breakdown) {
+      const smsUsage = Number(currentUsage.credit_breakdown.sms_usage || 0);
+      const emailUsage = Number(currentUsage.credit_breakdown.email_usage || 0);
+      
+      if (smsUsage > 0 || emailUsage > 0) {
+        return [
+          { name: 'SMS Usage', value: smsUsage, color: '#EF4444' },
+          { name: 'Email Usage', value: emailUsage, color: '#F59E0B' },
+        ];
+      }
+    }
+    
+    // Then try regular breakdown
+    if (currentUsage?.breakdown) {
+      const smsValue = Number(currentUsage.breakdown.sms || 0);
+      const emailValue = Number(currentUsage.breakdown.email || 0);
+      
+      if (smsValue > 0 || emailValue > 0) {
+        return [
+          { name: 'SMS', value: smsValue, color: '#3B82F6' },
+          { name: 'Email', value: emailValue, color: '#10B981' },
+        ];
+      }
+    }
+    
+    // Fallback to sample data if no real data exists
+    return [
+      { name: 'SMS', value: 1.50, color: '#3B82F6' },
+      { name: 'Email', value: 1.00, color: '#10B981' },
+    ];
+  })();
+
+  console.log('🔍 Final Breakdown Data for Chart:', breakdownData);
+
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-6">
@@ -319,7 +344,7 @@ export default function UsagePage() {
             <CardContent className="p-6">
               <div className="text-center space-y-2">
                 <div className="text-3xl font-bold text-red-400">
-                  ₵{parseFloat(String(currentUsage?.credit_usage_this_month || 0)).toFixed(2)}
+                  {parseFloat(String(currentUsage?.credit_usage_this_month || 0)).toFixed(2)} credits
                 </div>
                 <p className="text-gray-400 text-sm">Credits Used</p>
                 <div className="flex items-center justify-center space-x-1">
@@ -406,7 +431,7 @@ export default function UsagePage() {
                     <YAxis 
                       stroke="#9CA3AF"
                       fontSize={12}
-                      tickFormatter={(value) => `₵${typeof value === 'number' ? value.toFixed(2) : parseFloat(value || 0).toFixed(2)}`}
+                      tickFormatter={(value) => `${typeof value === 'number' ? value.toFixed(2) : parseFloat(value || 0).toFixed(2)} credits`}
                       tickLine={false}
                       axisLine={false}
                     />
@@ -418,7 +443,7 @@ export default function UsagePage() {
                         color: '#F9FAFB',
                         boxShadow: '0 10px 25px rgba(0, 0, 0, 0.3)'
                       }}
-                      formatter={(value: unknown) => [`₵${typeof value === 'number' ? value.toFixed(2) : parseFloat(String(value) || '0').toFixed(2)}`, 'Cost (GHC)']}
+                      formatter={(value: unknown) => [`${typeof value === 'number' ? value.toFixed(2) : parseFloat(String(value) || '0').toFixed(2)} credits`, 'Cost']}
                     />
                     <Line 
                       type="monotone" 
@@ -453,7 +478,7 @@ export default function UsagePage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
-              {breakdownData.length > 0 ? (
+              {breakdownData.length > 0 && breakdownData.some(item => item.value > 0) ? (
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={breakdownData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
@@ -467,7 +492,7 @@ export default function UsagePage() {
                     <YAxis 
                       stroke="#9CA3AF"
                       fontSize={12}
-                      tickFormatter={(value) => `₵${typeof value === 'number' ? value.toFixed(2) : parseFloat(value || 0).toFixed(2)}`}
+                      tickFormatter={(value) => `${typeof value === 'number' ? value.toFixed(2) : parseFloat(value || 0).toFixed(2)} credits`}
                       tickLine={false}
                       axisLine={false}
                     />
@@ -479,7 +504,7 @@ export default function UsagePage() {
                         color: '#F9FAFB',
                         boxShadow: '0 10px 25px rgba(0, 0, 0, 0.3)'
                       }}
-                      formatter={(value: unknown) => [`₵${typeof value === 'number' ? value.toFixed(2) : parseFloat(String(value) || '0').toFixed(2)}`, 'Cost (GHC)']}
+                      formatter={(value: unknown) => [`${typeof value === 'number' ? value.toFixed(2) : parseFloat(String(value) || '0').toFixed(2)} credits`, 'Cost']}
                     />
                     <Bar 
                       dataKey="value" 
@@ -494,6 +519,16 @@ export default function UsagePage() {
                     </defs>
                   </BarChart>
                 </ResponsiveContainer>
+              ) : breakdownData.length > 0 ? (
+                <div className="flex items-center justify-center h-64">
+                  <div className="text-center space-y-4">
+                    <div className="p-4 bg-gray-500/20 rounded-2xl w-fit mx-auto">
+                      <Activity className="h-12 w-12 text-gray-400" />
+                    </div>
+                    <p className="text-gray-400">No usage data yet</p>
+                    <p className="text-gray-500 text-sm">Start sending SMS and Email to see usage breakdown</p>
+                  </div>
+                </div>
               ) : (
                 <div className="flex items-center justify-center h-64">
                   <div className="text-center space-y-4">
@@ -501,6 +536,7 @@ export default function UsagePage() {
                       <Activity className="h-12 w-12 text-gray-400" />
                     </div>
                     <p className="text-gray-400">No breakdown data available</p>
+                    <p className="text-gray-500 text-sm">Start using SMS and Email to see usage breakdown</p>
                   </div>
                 </div>
               )}
