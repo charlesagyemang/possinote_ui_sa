@@ -14,11 +14,27 @@ interface SmsHistoryParams {
   max_cost?: number;
 }
 
+export interface SmsMessage {
+  message_id: string;
+  to: string;
+  status: 'pending' | 'sent' | 'delivered' | 'failed' | 'cancelled';
+  created_at: string;
+  cost: string;
+  message?: string;
+}
+
+export interface Pagination {
+  current_page: number;
+  total_pages: number;
+  total_count: number;
+  per_page: number;
+}
+
 interface SmsResponse {
   success: boolean;
   data?: {
-    messages?: unknown[];
-    pagination?: unknown;
+    messages?: SmsMessage[];
+    pagination?: Pagination;
   };
   message?: string;
 }
@@ -26,9 +42,11 @@ interface SmsResponse {
 export class SmsService {
   static async sendSms(to: string, message: string, senderId?: string) {
     const payload = {
-      to,
-      message,
-      sender_id: senderId
+      sms: {
+        to,
+        message,
+        sender_id: senderId
+      }
     };
 
     const response = await api.post('/sms/send', payload);
@@ -37,9 +55,23 @@ export class SmsService {
 
   static async sendBulkSms(recipients: string[], message: string, senderId?: string) {
     const payload = {
-      recipients,
-      message,
-      sender_id: senderId
+      sms: {
+        recipients,
+        message,
+        sender_id: senderId
+      }
+    };
+
+    const response = await api.post('/sms/bulk', payload);
+    return response.data;
+  }
+
+  static async sendPersonalizedBulkSms(messages: Array<{ to: string; message: string }>, senderId?: string) {
+    const payload = {
+      bulk_sms: {
+        messages,
+        sender_id: senderId
+      }
     };
 
     const response = await api.post('/sms/bulk', payload);
