@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import Papa from 'papaparse';
+import * as XLSX from 'xlsx';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -60,6 +62,16 @@ export default function EmailPage() {
     invalid_count: number;
   } | null>(null);
 
+  // Dynamic bulk (file-driven) states
+  type DataRow = { [key: string]: string | number };
+  const [fileData, setFileData] = useState<DataRow[]>([]);
+  const [fileHeaders, setFileHeaders] = useState<string[]>([]);
+  const [emailColumn, setEmailColumn] = useState<string>('');
+  const [subjectTemplate, setSubjectTemplate] = useState<string>('');
+  const [contentTemplate, setContentTemplate] = useState<string>('');
+  const [emailPreviews, setEmailPreviews] = useState<Array<{ email: string; subject: string; content: string; originalData: DataRow }>>([]);
+  const [showDynamicPreview, setShowDynamicPreview] = useState<boolean>(false);
+
   const validateEmails = async () => {
     if (!bulkEmails.recipients.trim()) {
       setError('Please enter email addresses');
@@ -83,6 +95,155 @@ export default function EmailPage() {
       setError('Failed to validate emails. Please try again.');
     } finally {
       setIsValidating(false);
+    }
+  };
+
+  // ===== Dynamic bulk helpers (CSV/TSV/Excel/JSON) =====
+  const parseCSV = async (csvText: string): Promise<DataRow[]> => {
+    return new Promise((resolve, reject) => {
+      Papa.parse(csvText, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (results) => resolve(results.data as DataRow[]),
+        error: (error: unknown) => reject(error)
+      });
+    });
+  };
+
+  const parseTSV = async (tsvText: string): Promise<DataRow[]> => {
+    return new Promise((resolve, reject) => {
+      Papa.parse(tsvText, {
+        header: true,
+        skipEmptyLines: true,
+        delimiter: '\t',
+        complete: (results) => resolve(results.data as DataRow[]),
+        error: (error: unknown) => reject(error)
+      });
+    });
+  };
+
+  const parseExcel = (file: File): Promise<DataRow[]> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet);
+          resolve(jsonData as DataRow[]);
+        } catch (err) {
+          reject(err);
+        }
+      };
+      reader.onerror = reject;
+      reader.readAsArrayBuffer(file);
+    });
+  };
+
+  const parseJSON = (jsonText: string): DataRow[] => {
+    const data = JSON.parse(jsonText);
+    if (Array.isArray(data)) return data;
+    if (data && typeof data === 'object') return [data];
+    throw new Error('Invalid JSON format');
+  };
+
+  const handleDynamicFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      let rows: DataRow[] = [];
+      if (file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls')) {
+        rows = await parseExcel(file);
+      } else if (file.name.toLowerCase().endsWith('.tsv')) {
+        rows = await parseTSV(await file.text());
+      } else if (file.name.toLowerCase().endsWith('.json')) {
+        rows = parseJSON(await file.text());
+      } else {
+        rows = await parseCSV(await file.text());
+      }
+      if (!rows.length) throw new Error('No data found in file');
+      const headers = Object.keys(rows[0]);
+      setFileHeaders(headers);
+      setFileData(rows);
+      const autoEmail = headers.find(h => h.toLowerCase().includes('email')) || '';
+      setEmailColumn(prev => prev || autoEmail);
+      setSuccess(`Loaded ${rows.length} rows. Columns: ${headers.join(', ')}`);
+    } catch (err) {
+      console.error('Dynamic file parse error:', err);
+      setError('Failed to parse file');
+    }
+  };
+
+  const buildTemplate = (tpl: string, row: DataRow): string => {
+    let out = tpl;
+    Object.keys(row).forEach((key) => {
+      const regex = new RegExp(`{{${key}}}`, 'gi');
+      out = out.replace(regex, String(row[key] ?? ''));
+    });
+    return out;
+  };
+
+  const previewDynamicEmails = () => {
+    if (!fileData.length || !emailColumn || !subjectTemplate.trim() || !contentTemplate.trim()) {
+      setError('Upload file, select email column, and add subject/content templates');
+      return;
+    }
+    const previews: Array<{ email: string; subject: string; content: string; originalData: DataRow }>= [];
+    for (const row of fileData) {
+      const email = String(row[emailColumn] || '').trim();
+      if (!email) continue;
+      const subject = buildTemplate(subjectTemplate, row);
+      const content = buildTemplate(contentTemplate, row);
+      previews.push({ email, subject, content, originalData: row });
+    }
+    setEmailPreviews(previews);
+    setShowDynamicPreview(true);
+    setSuccess(`Prepared ${previews.length} personalized emails. Review before sending.`);
+  };
+
+  const sendDynamicBulkEmails = async () => {
+    if (!emailPreviews.length) {
+      setError('No emails to send');
+      return;
+    }
+    setIsLoading(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const concurrency = 5;
+      let index = 0;
+      let successCount = 0;
+      let failCount = 0;
+      const worker = async () => {
+        while (index < emailPreviews.length) {
+          const current = index++;
+          const item = emailPreviews[current];
+          try {
+            const resp = await EmailService.sendEmail(item.email, item.subject, item.content);
+            if (resp.success) successCount++; else failCount++;
+          } catch {
+            failCount++;
+          }
+        }
+      };
+      const workers = Array.from({ length: Math.min(concurrency, emailPreviews.length) }, () => worker());
+      await Promise.all(workers);
+      setSuccess(`Personalized emails sent. Successful: ${successCount}, Failed: ${failCount}`);
+      // reset
+      setFileData([]);
+      setFileHeaders([]);
+      setEmailColumn('');
+      setSubjectTemplate('');
+      setContentTemplate('');
+      setEmailPreviews([]);
+      setShowDynamicPreview(false);
+    } catch (err) {
+      console.error('Dynamic bulk email send error:', err);
+      setError('Failed to send personalized bulk emails');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -518,6 +679,109 @@ export default function EmailPage() {
                     </div>
                   )}
                 </Button>
+              </CardContent>
+            </Card>
+
+            {/* Dynamic Bulk Email (File Upload) */}
+            <Card className="bg-slate-800/50 border-slate-700">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center space-x-2">
+                  <FileText className="h-5 w-5 text-purple-400" />
+                  <span>Dynamic Bulk Email (File Upload)</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* File Upload */}
+                <div className="space-y-2">
+                  <Label className="text-gray-300">Upload CSV/Excel/JSON/TSV</Label>
+                  <input
+                    type="file"
+                    accept=".csv,.xlsx,.xls,.json,.tsv"
+                    onChange={handleDynamicFileUpload}
+                    className="block w-full text-sm text-gray-400 file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-gradient-to-r file:from-purple-500 file:to-pink-500 file:text-white hover:file:from-purple-600 hover:file:to-pink-600"
+                  />
+                  {fileData.length > 0 && (
+                    <p className="text-sm text-green-400">Loaded {fileData.length} rows • Columns: {fileHeaders.join(', ')}</p>
+                  )}
+                </div>
+
+                {/* Email Column */}
+                {fileHeaders.length > 0 && (
+                  <div className="space-y-2">
+                    <Label className="text-gray-300">Email Column (required)</Label>
+                    <select
+                      value={emailColumn}
+                      onChange={(e) => setEmailColumn(e.target.value)}
+                      className="w-full bg-slate-700 border-slate-600 rounded-xl p-3 text-white"
+                    >
+                      <option value="">Select email column...</option>
+                      {fileHeaders.map(h => (
+                        <option key={h} value={h}>{h}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Templates */}
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-gray-300">Subject Template</Label>
+                    <Input
+                      value={subjectTemplate}
+                      onChange={(e) => setSubjectTemplate(e.target.value)}
+                      placeholder="Welcome {{first_name}} to {{company}}"
+                      className="bg-slate-700 border-slate-600 text-white"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-gray-300">Content Template</Label>
+                    <Textarea
+                      value={contentTemplate}
+                      onChange={(e) => setContentTemplate(e.target.value)}
+                      placeholder="Hello {{first_name}}, we are excited to have you at {{company}}."
+                      rows={6}
+                      className="bg-slate-700 border-slate-600 text-white"
+                    />
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {fileHeaders.map(h => (
+                        <Badge key={h} variant="outline" className="text-xs cursor-pointer bg-purple-500/20 border-purple-500/30 text-purple-300" onClick={() => setContentTemplate(contentTemplate + `{{${h}}}`)}>
+                          {`{{${h}}}`}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-3">
+                  <Button onClick={previewDynamicEmails} disabled={!fileData.length || !emailColumn || !subjectTemplate.trim() || !contentTemplate.trim()} className="bg-emerald-600 hover:bg-emerald-700">
+                    Preview Personalized Emails
+                  </Button>
+                  {showDynamicPreview && (
+                    <Button onClick={sendDynamicBulkEmails} disabled={isLoading || emailPreviews.length === 0} className="bg-purple-600 hover:bg-purple-700">
+                      {isLoading ? 'Sending...' : `Send ${emailPreviews.length} Emails`}
+                    </Button>
+                  )}
+                </div>
+
+                {/* Preview */}
+                {showDynamicPreview && emailPreviews.length > 0 && (
+                  <div className="space-y-2">
+                    <Label className="text-gray-300">Preview (first 5)</Label>
+                    {emailPreviews.slice(0, 5).map((p, idx) => (
+                      <div key={idx} className="border border-slate-700 rounded-xl p-4">
+                        <div className="flex justify-between text-sm text-gray-400 mb-2">
+                          <span>{p.email}</span>
+                          <span>Subject: <span className="text-gray-200">{p.subject}</span></span>
+                        </div>
+                        <p className="text-gray-200 text-sm whitespace-pre-wrap">{p.content}</p>
+                      </div>
+                    ))}
+                    {emailPreviews.length > 5 && (
+                      <p className="text-xs text-gray-500">...and {emailPreviews.length - 5} more</p>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
 
