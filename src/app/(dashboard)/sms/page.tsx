@@ -53,6 +53,8 @@ export default function SmsPage() {
   const [bulkMessage, setBulkMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  // Sender ID for bulk actions
+  const [selectedBulkSenderId, setSelectedBulkSenderId] = useState<string>('');
 
   // Advanced bulk SMS states
   const [fileData, setFileData] = useState<DataRow[]>([]);
@@ -92,6 +94,11 @@ export default function SmsPage() {
       const response = await SendersService.getSenders();
       if (response.success) {
         setSenders(response.data.senders);
+        // Auto-select first approved sender for bulk if not set
+        const firstApproved = (response.data.senders || []).find((s: Sender) => s.status === 'approved');
+        if (!selectedBulkSenderId && firstApproved) {
+          setSelectedBulkSenderId(firstApproved.name);
+        }
       } else {
         console.error('Failed to fetch senders:', response.error);
       }
@@ -392,6 +399,11 @@ export default function SmsPage() {
       return;
     }
 
+    if (!selectedBulkSenderId) {
+      setErrorMessage('Please select a sender ID.');
+      return;
+    }
+
     setIsLoading(true);
     setSuccessMessage('');
     setErrorMessage('');
@@ -405,11 +417,11 @@ export default function SmsPage() {
 
       console.log('Sending personalized bulk SMS with data:', { 
         messageCount: messages.length, 
-        sender_id: 'Possitech',
+        sender_id: selectedBulkSenderId,
         sampleMessage: messages[0]?.message 
       });
       
-      const response = await SmsService.sendPersonalizedBulkSms(messages, 'Possitech');
+      const response = await SmsService.sendPersonalizedBulkSms(messages, selectedBulkSenderId);
       
       console.log('Advanced bulk SMS response:', response);
       
@@ -463,13 +475,18 @@ export default function SmsPage() {
 
     const phoneNumbers = recipients.map(to => to.trim());
 
+    if (!selectedBulkSenderId) {
+      setErrorMessage('Please select a sender ID.');
+      return;
+    }
+
     setIsLoading(true);
     setSuccessMessage('');
     setErrorMessage('');
     
     try {
-      console.log('Sending bulk SMS with data:', { phoneNumbers, sender_id: 'Possitech' });
-      const response = await SmsService.sendBulkSms(phoneNumbers, bulkMessage, 'Possitech');
+      console.log('Sending bulk SMS with data:', { phoneNumbers, sender_id: selectedBulkSenderId });
+      const response = await SmsService.sendBulkSms(phoneNumbers, bulkMessage, selectedBulkSenderId);
       console.log('Bulk SMS response:', response);
       
       // Show detailed success message with batch info
@@ -764,6 +781,32 @@ export default function SmsPage() {
               </CardHeader>
               <CardContent className="p-8">
                 <div className="space-y-6">
+                  {/* Sender ID selection for simple bulk */}
+                  <div className="space-y-3">
+                    <Label htmlFor="bulk_sender_id" className="text-gray-300 font-medium">Sender ID</Label>
+                    <Select
+                      value={selectedBulkSenderId}
+                      onValueChange={(value) => setSelectedBulkSenderId(value)}
+                    >
+                      <SelectTrigger className="bg-black/30 border-white/20 text-white rounded-xl h-12 focus:border-green-500 focus:ring-green-500/20">
+                        <SelectValue placeholder="Select sender name" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-gray-800 border-gray-700">
+                        {senders
+                          .filter(sender => sender.status === 'approved')
+                          .map((sender) => (
+                            <SelectItem key={sender.id} value={sender.name}>
+                              {sender.name}
+                            </SelectItem>
+                          ))}
+                        {senders.filter(s => s.status === 'approved').length === 0 && (
+                          <SelectItem value="no-senders" disabled>
+                            No approved sender names available
+                          </SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <div className="space-y-3">
                     <Label htmlFor="recipients" className="text-gray-300 font-medium">Recipients (one per line)</Label>
                     <Textarea
@@ -802,7 +845,7 @@ export default function SmsPage() {
 
                   <Button 
                     onClick={sendBulkSms} 
-                    disabled={isLoading || !bulkRecipients.trim() || !bulkMessage.trim()}
+                    disabled={isLoading || !bulkRecipients.trim() || !bulkMessage.trim() || !selectedBulkSenderId}
                     className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl h-12 text-lg font-medium shadow-lg shadow-green-500/25 transition-all duration-300"
                   >
                     <Send className="h-5 w-5 mr-2" />
@@ -931,6 +974,33 @@ export default function SmsPage() {
                     </div>
                   )}
 
+                  {/* Sender ID selection for advanced bulk */}
+                  <div className="space-y-3">
+                    <Label htmlFor="adv_bulk_sender_id" className="text-gray-300 font-medium">Sender ID</Label>
+                    <Select
+                      value={selectedBulkSenderId}
+                      onValueChange={(value) => setSelectedBulkSenderId(value)}
+                    >
+                      <SelectTrigger className="bg-black/30 border-white/20 text-white rounded-xl h-12 focus:border-purple-500 focus:ring-purple-500/20">
+                        <SelectValue placeholder="Select sender name" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-gray-800 border-gray-700">
+                        {senders
+                          .filter(sender => sender.status === 'approved')
+                          .map((sender) => (
+                            <SelectItem key={sender.id} value={sender.name}>
+                              {sender.name}
+                            </SelectItem>
+                          ))}
+                        {senders.filter(s => s.status === 'approved').length === 0 && (
+                          <SelectItem value="no-senders" disabled>
+                            No approved sender names available
+                          </SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   {/* Template Message */}
                   <div className="space-y-4">
                     <Label className="text-gray-300 font-medium">Message Template</Label>
@@ -975,9 +1045,10 @@ export default function SmsPage() {
                       <div>Debug Info:</div>
                       <div>• File loaded: {fileData.length} rows</div>
                       <div>• Available columns: {fileHeaders.join(', ')}</div>
+                      <div>• Sender ID: {selectedBulkSenderId || '✗'}</div>
                       <div>• Phone column: {phoneColumn || '✗'}</div>
                       <div>• Template: {templateMessage.trim() ? '✓' : '✗'}</div>
-                      <div>• Button disabled: {(!fileData.length || !templateMessage.trim() || !phoneColumn) ? 'Yes' : 'No'}</div>
+                      <div>• Button disabled: {(!fileData.length || !templateMessage.trim() || !phoneColumn || !selectedBulkSenderId) ? 'Yes' : 'No'}</div>
                     </div>
                     
                     <div className="flex gap-4">
@@ -992,20 +1063,20 @@ export default function SmsPage() {
                           });
                           processTemplate();
                         }}
-                        disabled={!fileData.length || !templateMessage.trim() || !phoneColumn}
+                        disabled={!fileData.length || !templateMessage.trim() || !phoneColumn || !selectedBulkSenderId}
                         className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl h-12 text-lg font-medium shadow-lg shadow-emerald-500/25 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <Eye className="h-5 w-5 mr-2" />
                         Preview Messages
-                        {(!fileData.length || !templateMessage.trim() || !phoneColumn) && (
-                          <span className="ml-2 text-xs opacity-75">(Upload file, select phone column, and add template)</span>
+                        {(!fileData.length || !templateMessage.trim() || !phoneColumn || !selectedBulkSenderId) && (
+                          <span className="ml-2 text-xs opacity-75">(Upload file, select sender + phone column, and add template)</span>
                         )}
                       </Button>
                     
                                           {showPreview && (
                         <Button 
                           onClick={sendAdvancedBulkSms}
-                          disabled={isLoading || processedRecipients.length === 0}
+                          disabled={isLoading || processedRecipients.length === 0 || !selectedBulkSenderId}
                           className="flex-1 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white rounded-xl h-12 text-lg font-medium shadow-lg shadow-purple-500/25 transition-all duration-300"
                         >
                           <Send className="h-5 w-5 mr-2" />
