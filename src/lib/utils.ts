@@ -5,6 +5,19 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+/**
+ * Convert CSS style object (with kebab-case keys) to React style object (with camelCase keys)
+ */
+export function cssToReactStyle(cssStyles: Record<string, string>): React.CSSProperties {
+  const styleObject: React.CSSProperties = {};
+  Object.entries(cssStyles).forEach(([key, value]) => {
+    // Convert kebab-case to camelCase for React
+    const camelKey = key.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
+    styleObject[camelKey as keyof React.CSSProperties] = value;
+  });
+  return styleObject;
+}
+
 // Rate limiting utilities
 export function isRateLimited(): boolean {
   if (typeof window === 'undefined') return false;

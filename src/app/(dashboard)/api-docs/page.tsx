@@ -564,65 +564,7 @@ export default function ApiDocsPage() {
         </CardContent>
       </Card>
 
-      {/* SDK Examples */}
-      <Card className="bg-slate-800 border-slate-700">
-        <CardHeader>
-          <CardTitle className="text-white">SDK Examples</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <Tabs defaultValue="javascript" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-2 bg-slate-700">
-              <TabsTrigger value="javascript">JavaScript/Node.js</TabsTrigger>
-              <TabsTrigger value="python">Python</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="javascript">
-              <CodeBlock identifier="js-example" language="javascript">{`const possiNotify = require('possinotify-sdk');
 
-// Send single SMS
-const smsResult = await possiNotify.sms.send({
-  to: '+233541348180',
-  message: 'Hello!',
-  sender_id: 'MyBrand'
-});
-
-// Send bulk SMS
-const bulkSmsResult = await possiNotify.sms.bulk({
-  messages: [
-    { to: '+233541348180', message: 'Hello John!' },
-    { to: '+233277119919', message: 'Hello Jane!' }
-  ],
-  sender_id: 'MyBrand'
-});
-
-// Check status
-const status = await possiNotify.sms.status(smsResult.message_id);`}</CodeBlock>
-            </TabsContent>
-            
-            <TabsContent value="python">
-              <CodeBlock identifier="python-example" language="python">{`import possinotify
-
-# Send single email
-email_result = possinotify.email.send(
-    recipient='user@example.com',
-    subject='Welcome!',
-    content='<h1>Welcome</h1>',
-    sender_name='Team'
-)
-
-# Send bulk email
-bulk_result = possinotify.email.bulk(
-    recipients=['user1@example.com', 'user2@example.com'],
-    subject='Newsletter',
-    content='<h1>Newsletter</h1>'
-)
-
-# Check status
-status = possinotify.email.status(email_result.message_id)`}</CodeBlock>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
 
       {/* Best Practices */}
       <Card className="bg-slate-800 border-slate-700">

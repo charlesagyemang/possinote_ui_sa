@@ -155,6 +155,60 @@ export class EmailService {
     }
   }
 
+  static async sendBulkEmails(emails: Array<{ to: string; subject: string; html: string }>): Promise<BulkEmailResponse> {
+    // For now, we'll send emails individually since the backend might not support personalized bulk emails
+    // This can be optimized later with a proper bulk endpoint
+    const results = [];
+    let successCount = 0;
+    let failCount = 0;
+
+    console.log('📧 SENDING PERSONALIZED BULK EMAILS:');
+    console.log('📊 Total emails to send:', emails.length);
+
+    for (const email of emails) {
+      try {
+        const response = await this.sendEmail(email.to, email.subject, email.html);
+        if (response.success) {
+          successCount++;
+          results.push({
+            email: email.to,
+            success: true,
+            message_id: response.message_id,
+            submitted_at: response.submitted_at
+          });
+        } else {
+          failCount++;
+          results.push({
+            email: email.to,
+            success: false,
+            error: response.error || 'Failed to send email'
+          });
+        }
+      } catch (error) {
+        failCount++;
+        results.push({
+          email: email.to,
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
+    }
+
+    console.log('✅ BULK EMAIL COMPLETE:');
+    console.log('📊 Success:', successCount);
+    console.log('📊 Failed:', failCount);
+
+    return {
+      success: successCount > 0,
+      message: `Sent ${successCount} emails successfully, ${failCount} failed`,
+      queued_count: successCount,
+      total_count: emails.length,
+      sent_count: successCount,
+      failed_count: failCount,
+      results
+    };
+  }
+
   static async validateEmails(emails: string[]): Promise<EmailValidationResponse> {
     const payload = {
       emails
