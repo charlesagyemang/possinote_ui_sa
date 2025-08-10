@@ -21,8 +21,8 @@ const plans = [
       'Valid for 12 months'
     ],
     popular: false,
-    color: 'from-gray-500 to-slate-600',
-    bgColor: 'from-gray-500/10 to-slate-600/10',
+    color: 'from-teal-500 to-emerald-600',
+    bgColor: 'from-teal-500/10 to-emerald-600/10',
     icon: Users,
     savings: null
   },
@@ -34,15 +34,14 @@ const plans = [
     description: 'Great for growing businesses',
     features: [
       '1,000 initial credits',
-      'Advanced analytics',
-      'Priority support',
-      'Custom sender IDs',
-      'Bulk messaging',
+      'Basic analytics',
+      'API access',
+      'Email support',
       'Valid for 12 months'
     ],
     popular: true,
-    color: 'from-blue-500 to-purple-600',
-    bgColor: 'from-blue-500/10 to-purple-600/10',
+    color: 'from-teal-500 to-emerald-600',
+    bgColor: 'from-teal-500/10 to-emerald-600/10',
     icon: MessageSquare,
     savings: null
   },
@@ -54,16 +53,14 @@ const plans = [
     description: 'For established businesses',
     features: [
       '10,000 initial credits',
-      'Real-time analytics',
-      '24/7 support',
-      'Custom integrations',
-      'Advanced reporting',
-      'Webhook support',
+      'Basic analytics',
+      'API access',
+      'Email support',
       'Valid for 12 months'
     ],
     popular: false,
-    color: 'from-purple-500 to-pink-600',
-    bgColor: 'from-purple-500/10 to-pink-600/10',
+    color: 'from-teal-500 to-emerald-600',
+    bgColor: 'from-teal-500/10 to-emerald-600/10',
     icon: BarChart3,
     savings: null
   }
