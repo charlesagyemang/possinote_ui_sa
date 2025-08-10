@@ -15,10 +15,10 @@ const plans = [
     description: 'Perfect for testing and small projects',
     features: [
       '10 initial credits',
-      'Basic analytics',
+      'Advanced analytics',
       'API access',
       'Email support',
-      'Valid for 12 months'
+      'Credits never expire'
     ],
     popular: false,
     color: 'from-teal-500 to-emerald-600',
@@ -34,10 +34,10 @@ const plans = [
     description: 'Great for growing businesses',
     features: [
       '1,000 initial credits',
-      'Basic analytics',
+      'Advanced analytics',
       'API access',
       'Email support',
-      'Valid for 12 months'
+      'Credits never expire'
     ],
     popular: true,
     color: 'from-teal-500 to-emerald-600',
@@ -53,10 +53,10 @@ const plans = [
     description: 'For established businesses',
     features: [
       '10,000 initial credits',
-      'Basic analytics',
+      'Advanced analytics',
       'API access',
       'Email support',
-      'Valid for 12 months'
+      'Credits never expire'
     ],
     popular: false,
     color: 'from-teal-500 to-emerald-600',
@@ -284,7 +284,7 @@ export default function PricingPage() {
                 <span>Do initial credits expire?</span>
               </h3>
               <p className="text-gray-400">
-                Initial credits are valid for 12 months from account creation. You can use them anytime within that period.
+                No, your credits never expire. They are kept safely in your account and you can use them whenever you want.
               </p>
             </div>
             
@@ -304,7 +304,7 @@ export default function PricingPage() {
                 <span>Can I get a refund?</span>
               </h3>
               <p className="text-gray-400">
-                We offer a 30-day money-back guarantee for unused credits. Contact support for assistance.
+                No refunds are offered. However, your credits are kept safely in your account and you can use them whenever you want - they don&apos;t expire.
               </p>
             </div>
             
