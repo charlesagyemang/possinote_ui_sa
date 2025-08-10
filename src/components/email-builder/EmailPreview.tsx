@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
+// import { Badge } from '@/components/ui/badge'; // TODO: Implement badge functionality
 import { 
   Smartphone, 
   Monitor, 
@@ -48,7 +48,7 @@ export function EmailPreview({ template, variables, onVariablesChange }: EmailPr
     if (Object.keys(newVariables).length > 0) {
       onVariablesChange({ ...variables, ...newVariables });
     }
-  }, [templateVariables]);
+  }, [templateVariables, onVariablesChange, variables]);
 
   // Render template with variables
   useEffect(() => {

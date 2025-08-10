@@ -16,7 +16,7 @@ import {
   Building,
   Calendar
 } from 'lucide-react';
-import { EmailTemplate, TemplatePreviewData, EmailVariable } from '@/types/emailTemplates';
+import { EmailTemplate, TemplatePreviewData } from '@/types/emailTemplates';
 import { EmailTemplateService } from '@/lib/services/emailTemplates';
 
 interface VariablePanelProps {

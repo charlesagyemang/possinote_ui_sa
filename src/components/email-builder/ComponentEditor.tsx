@@ -64,7 +64,7 @@ export function ComponentEditor({
   showProperties = false
 }: ComponentEditorProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [isEditingStyles, setIsEditingStyles] = useState(false);
+  // const [isEditingStyles, setIsEditingStyles] = useState(false); // TODO: Implement style editing
   
   const Icon = componentIcons[component.type];
   const colorClass = componentColors[component.type];

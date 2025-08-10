@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import SimpleEmailBuilder from '@/components/email-builder/SimpleEmailBuilder';
 import { EmailTemplate, TemplatePreviewData } from '@/types/emailTemplates';
@@ -17,6 +17,22 @@ export default function EmailTemplateBuilderPage() {
 
   const templateId = searchParams.get('id');
   const templateData = searchParams.get('template');
+
+  const loadTemplate = useCallback(async () => {
+    if (!templateId) return;
+    
+    try {
+      setIsLoading(true);
+      const loadedTemplate = await EmailTemplateService.getTemplate(templateId);
+      setTemplate(loadedTemplate);
+    } catch (error) {
+      console.error('Failed to load template:', error);
+      // Redirect to templates list if template not found
+      router.push('/email-templates');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [templateId, router]);
 
   useEffect(() => {
     if (templateId) {
@@ -40,23 +56,7 @@ export default function EmailTemplateBuilderPage() {
         console.error('Failed to parse template data:', error);
       }
     }
-  }, [templateId, templateData]);
-
-  const loadTemplate = async () => {
-    if (!templateId) return;
-    
-    try {
-      setIsLoading(true);
-      const loadedTemplate = await EmailTemplateService.getTemplate(templateId);
-      setTemplate(loadedTemplate);
-    } catch (error) {
-      console.error('Failed to load template:', error);
-      // Redirect to templates list if template not found
-      router.push('/email-templates');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [templateId, templateData, loadTemplate]);
 
   const handleSave = async (savedTemplate: EmailTemplate) => {
     setTemplate(savedTemplate);

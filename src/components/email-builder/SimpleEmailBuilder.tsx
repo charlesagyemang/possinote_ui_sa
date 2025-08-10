@@ -13,7 +13,6 @@ import {
   Eye, 
   Send, 
   Code,
-  Palette,
   Variable,
   Copy,
   Check
@@ -92,7 +91,7 @@ export default function SimpleEmailBuilder({ initialTemplate, onSave, onSend }: 
     if (Object.keys(newVariables).length > 0) {
       setPreviewVariables(prev => ({ ...prev, ...newVariables }));
     }
-  }, [template.html, template.subject, extractVariables]);
+  }, [template.html, template.subject, extractVariables, previewVariables]);
 
   // Render preview HTML
   const renderPreviewHTML = useCallback(() => {

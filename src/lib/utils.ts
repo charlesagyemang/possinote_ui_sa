@@ -13,6 +13,7 @@ export function cssToReactStyle(cssStyles: Record<string, string>): React.CSSPro
   Object.entries(cssStyles).forEach(([key, value]) => {
     // Convert kebab-case to camelCase for React
     const camelKey = key.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (styleObject as any)[camelKey] = value;
   });
   return styleObject;

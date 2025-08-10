@@ -12,9 +12,6 @@ import {
   Eye, 
   Send, 
   Plus,
-  Palette,
-  Type,
-  Image,
   MousePointer,
   Layers
 } from 'lucide-react';

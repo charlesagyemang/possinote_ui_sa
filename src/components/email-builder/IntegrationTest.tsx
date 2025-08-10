@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EmailTemplateService } from '@/lib/services/emailTemplates';
-import { EmailTemplate } from '@/types/emailTemplates';
+// import { EmailTemplate } from '@/types/emailTemplates'; // TODO: Use EmailTemplate type
 
 export function IntegrationTest() {
   const [isLoading, setIsLoading] = useState(false);
