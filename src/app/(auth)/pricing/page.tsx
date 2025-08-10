@@ -294,7 +294,7 @@ export default function PricingPage() {
                 <span>What happens when I run out of credits?</span>
               </h3>
               <p className="text-gray-400">
-                You&apos;ll receive a notification when you reach 10% of your credits. You can top up anytime to continue sending.
+                When you run low on credits, you can top up anytime you need more. It&apos;s pay-as-you-go, not a monthly subscription.
               </p>
             </div>
             
