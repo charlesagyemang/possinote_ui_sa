@@ -70,6 +70,16 @@ const plans = [
 ];
 
 export default function PricingPage() {
+  const scrollToPlans = () => {
+    const plansSection = document.getElementById('plans');
+    if (plansSection) {
+      plansSection.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-teal-900 to-emerald-900 py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -92,7 +102,7 @@ export default function PricingPage() {
         </div>
 
         {/* Plan Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+        <div id="plans" className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
           {plans.map((plan) => (
             <Card 
               key={plan.id} 
@@ -315,7 +325,7 @@ export default function PricingPage() {
 
         {/* CTA Section */}
         <div className="text-center">
-          <div className="p-8 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-3xl border border-white/10">
+          <div className="p-8 bg-gradient-to-r from-teal-500/10 to-emerald-500/10 rounded-3xl border border-white/10">
             <h2 className="text-3xl font-bold text-white mb-4">
               Ready to Get Started?
             </h2>
@@ -323,14 +333,15 @@ export default function PricingPage() {
               Create your account and choose your plan. Start sending notifications in minutes.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/signup">
-                <Button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl px-8 py-3 text-lg font-medium shadow-lg shadow-blue-500/25">
-                  <div className="flex items-center space-x-2">
-                    <span>Create Account</span>
-                    <ArrowRight className="h-4 w-4" />
-                  </div>
-                </Button>
-              </Link>
+              <Button 
+                onClick={scrollToPlans}
+                className="bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white rounded-xl px-8 py-3 text-lg font-medium shadow-lg shadow-teal-500/25"
+              >
+                <div className="flex items-center space-x-2">
+                  <span>Create Account</span>
+                  <ArrowRight className="h-4 w-4" />
+                </div>
+              </Button>
               <Link href="/login">
                 <Button variant="outline" className="border-white/20 text-white hover:bg-white/10 rounded-xl px-8 py-3 text-lg font-medium">
                   Sign In
