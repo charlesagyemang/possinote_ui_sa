@@ -134,6 +134,7 @@ export interface CreditTransaction {
 
 export interface TopUpData {
   amount: number;
+  reference?: string;
 }
 
 export interface CreditHistoryResponse {

@@ -47,6 +47,10 @@ npm install
 # Create .env.local file
 NEXT_PUBLIC_API_URL=http://localhost:3000
 NEXT_PUBLIC_APP_NAME=PossiNotify Dashboard
+
+# Paystack Configuration (for payment processing)
+NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY=pk_test_your_public_key_here
+PAYSTACK_SECRET_KEY=sk_test_your_secret_key_here
 ```
 
 4. Run the development server:
@@ -98,6 +102,33 @@ The dashboard integrates with the PossiNotify API with the following endpoints:
 - `POST /api/v1/sms/send` - Send single SMS
 - `POST /api/v1/sms/bulk` - Send bulk SMS
 - `GET /api/v1/sms` - List SMS messages
+
+### Payment Processing
+- **Paystack Integration**: Secure payment processing for credit top-ups (GHS currency)
+- **Payment Flow**: 
+  1. User enters credit amount
+  2. Paystack payment modal opens
+  3. Payment is processed securely in Ghanaian Cedi (₵)
+  4. On successful payment, credits are added to account
+  5. On failed payment, no credits are added
+
+## Paystack Integration
+
+The application integrates Paystack for secure payment processing:
+
+### Setup
+1. Get your Paystack API keys from [Paystack Dashboard](https://dashboard.paystack.com/)
+2. Add the keys to your `.env.local` file:
+   ```
+   NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY=pk_test_your_public_key_here
+   PAYSTACK_SECRET_KEY=sk_test_your_secret_key_here
+   ```
+
+### Features
+- **Secure Payment**: All payments are processed through Paystack's secure infrastructure
+- **Payment Verification**: Payments are verified before credits are added
+- **User-Friendly**: Simple payment flow with clear feedback
+- **Error Handling**: Graceful handling of payment failures and cancellations
 
 ### Usage Analytics
 - `GET /api/v1/usage/current` - Current month usage

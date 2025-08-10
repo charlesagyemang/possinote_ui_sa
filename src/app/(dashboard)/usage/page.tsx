@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { UsageService } from '@/lib/services/usage';
 import { CreditService } from '@/lib/services/credits';
+import { PaystackService, PaystackResponse } from '@/lib/services/paystack';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,6 +35,8 @@ export default function UsagePage() {
   const [topUpAmount, setTopUpAmount] = useState('');
   const [isToppingUp, setIsToppingUp] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   
   // Add refs to prevent multiple simultaneous requests
   const isFetching = useRef(false);
@@ -185,26 +188,75 @@ export default function UsagePage() {
     fetchData();
   }, [fetchData]);
 
-  // Memoize the top-up handler
+  // Get user email from localStorage or prompt for it
+  useEffect(() => {
+    const storedEmail = localStorage.getItem('user_email');
+    if (storedEmail) {
+      setUserEmail(storedEmail);
+    }
+  }, []);
+
+  // Memoize the top-up handler with Paystack integration
   const handleTopUp = useCallback(async () => {
     if (!topUpAmount || parseFloat(topUpAmount) <= 0) return;
     
-    try {
-      setIsToppingUp(true);
-      const response = await CreditService.topUpCredits({ amount: parseFloat(topUpAmount) });
-      
-      if (response.success) {
-        setTopUpAmount('');
-        setShowTopUpModal(false);
-        // Refresh data after successful top-up
-        setTimeout(() => fetchData(false, true), 1000);
-      }
-    } catch (error) {
-      console.error('Failed to top up credits:', error);
-    } finally {
-      setIsToppingUp(false);
+    // If no email is stored, prompt user for it
+    if (!userEmail) {
+      const email = prompt('Please enter your email address for payment:');
+      if (!email) return;
+      setUserEmail(email);
+      localStorage.setItem('user_email', email);
     }
-  }, [topUpAmount, fetchData]);
+    
+    try {
+      setIsProcessingPayment(true);
+      
+      // Calculate amount in Ghanaian Cedi (1 credit = ₵0.10)
+      const amountInCedi = parseFloat(topUpAmount) / 10; // 100 credits = ₵10
+      const amountInPesewas = PaystackService.convertToKobo(amountInCedi);
+      const reference = PaystackService.generateReference();
+      
+      // Make email unique to prevent Paystack spam detection
+      const uniqueEmail = `${userEmail.split('@')[0]}+${Date.now()}@${userEmail.split('@')[1]}`;
+      
+      await PaystackService.initializePayment({
+        key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY!,
+        email: uniqueEmail,
+        amount: amountInPesewas,
+        currency: 'GHS',
+        ref: reference,
+        callback: (response: PaystackResponse) => {
+          console.log('Payment successful:', response);
+          
+          // Only call the top-up endpoint if payment is successful
+          setIsToppingUp(true);
+          CreditService.topUpCredits({ 
+            amount: parseFloat(topUpAmount),
+            reference: reference // Add reference to track the payment
+          }).then((topUpResponse) => {
+            if (topUpResponse.success) {
+              setTopUpAmount('');
+              setShowTopUpModal(false);
+              // Refresh data after successful top-up
+              setTimeout(() => fetchData(false, true), 1000);
+            }
+          }).catch((error) => {
+            console.error('Failed to top up credits after payment:', error);
+          }).finally(() => {
+            setIsToppingUp(false);
+          });
+        },
+        onClose: () => {
+          console.log('Payment cancelled by user');
+          setIsProcessingPayment(false);
+        }
+      });
+    } catch (error) {
+      console.error('Failed to initialize payment:', error);
+    } finally {
+      setIsProcessingPayment(false);
+    }
+  }, [topUpAmount, userEmail, fetchData]);
 
   if (isLoading) {
     return (
@@ -620,22 +672,33 @@ export default function UsagePage() {
                     onChange={(e) => setTopUpAmount(e.target.value)}
                     placeholder="Enter credits"
                     className="mt-1"
+                    disabled={isProcessingPayment}
                   />
+                  <p className="text-xs text-gray-400 mt-1">
+                    ₵{topUpAmount ? (parseFloat(topUpAmount) / 10).toFixed(2) : '0.00'} will be charged
+                  </p>
+                  <p className="text-xs text-blue-400 mt-1">
+                    💡 1 credit = ₵0.10 (100 credits = ₵10.00)
+                  </p>
                 </div>
+                
+
+                
                 <div className="flex space-x-3">
                   <Button
                     onClick={() => setShowTopUpModal(false)}
                     variant="outline"
                     className="flex-1"
+                    disabled={isProcessingPayment}
                   >
                     Cancel
                   </Button>
                   <Button
                     onClick={handleTopUp}
-                    disabled={isToppingUp || !topUpAmount || parseFloat(topUpAmount) <= 0}
+                    disabled={isProcessingPayment || isToppingUp || !topUpAmount || parseFloat(topUpAmount) <= 0}
                     className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
                   >
-                    {isToppingUp ? 'Topping Up...' : 'Top Up'}
+                    {isProcessingPayment ? 'Processing Payment...' : isToppingUp ? 'Topping Up...' : 'Pay'}
                   </Button>
                 </div>
               </div>
