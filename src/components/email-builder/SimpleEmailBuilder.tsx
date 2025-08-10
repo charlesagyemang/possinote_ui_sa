@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +16,8 @@ import {
   Code,
   Variable,
   Copy,
-  Check
+  Check,
+  ArrowLeft
 } from 'lucide-react';
 import { EmailTemplate, TemplatePreviewData } from '@/types/emailTemplates';
 import { EmailTemplateService } from '@/lib/services/emailTemplates';
@@ -27,6 +29,7 @@ interface SimpleEmailBuilderProps {
 }
 
 export default function SimpleEmailBuilder({ initialTemplate, onSave, onSend }: SimpleEmailBuilderProps) {
+  const router = useRouter();
   const [template, setTemplate] = useState<EmailTemplate>(initialTemplate || {
     id: '',
     name: 'New Template',
@@ -196,9 +199,19 @@ export default function SimpleEmailBuilder({ initialTemplate, onSave, onSend }: 
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Simple Email Template Builder</h1>
-            <p className="text-gray-400">Create email templates with HTML and variables</p>
+          <div className="flex items-center space-x-4">
+            <Button
+              variant="outline"
+              onClick={() => router.push('/email-templates')}
+              className="border-slate-600 text-gray-300 hover:bg-slate-700"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Templates
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold text-white mb-2">Simple Email Template Builder</h1>
+              <p className="text-gray-400">Create email templates with HTML and variables</p>
+            </div>
           </div>
           <div className="flex items-center space-x-2">
             <Button
@@ -228,11 +241,11 @@ export default function SimpleEmailBuilder({ initialTemplate, onSave, onSend }: 
           <div className="col-span-7">
             <Tabs defaultValue="editor" className="space-y-4">
               <TabsList className="grid w-full grid-cols-2 bg-slate-800/50">
-                <TabsTrigger value="editor" className="data-[state=active]:bg-purple-600">
+                <TabsTrigger value="editor" className="data-[state=active]:bg-gradient-to-r from-teal-600 to-emerald-600">
                   <Code className="h-4 w-4 mr-2" />
                   Editor
                 </TabsTrigger>
-                <TabsTrigger value="preview" className="data-[state=active]:bg-purple-600">
+                <TabsTrigger value="preview" className="data-[state=active]:bg-gradient-to-r from-teal-600 to-emerald-600">
                   <Eye className="h-4 w-4 mr-2" />
                   Preview
                 </TabsTrigger>
