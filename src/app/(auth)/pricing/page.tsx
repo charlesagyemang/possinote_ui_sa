@@ -29,7 +29,7 @@ const plans = [
   {
     id: 'starter',
     name: 'Starter',
-    price: '₵69',
+    price: '₵80',
     initial_credits: 1000,
     description: 'Great for growing businesses',
     features: [
@@ -49,7 +49,7 @@ const plans = [
   {
     id: 'business',
     name: 'Business',
-    price: '₵599',
+    price: '₵800',
     initial_credits: 10000,
     description: 'For established businesses',
     features: [
@@ -65,27 +65,6 @@ const plans = [
     color: 'from-purple-500 to-pink-600',
     bgColor: 'from-purple-500/10 to-pink-600/10',
     icon: BarChart3,
-    savings: null
-  },
-  {
-    id: 'enterprise',
-    name: 'Enterprise',
-    price: 'Custom',
-    initial_credits: 1000000,
-    description: 'For large-scale operations',
-    features: [
-      '1,000,000 initial credits',
-      'Dedicated account manager',
-      'Custom pricing',
-      'SLA guarantees',
-      'Advanced security',
-      'White-label options',
-      'Flexible terms'
-    ],
-    popular: false,
-    color: 'from-green-500 to-emerald-600',
-    bgColor: 'from-green-500/10 to-emerald-600/10',
-    icon: Award,
     savings: null
   }
 ];
@@ -113,7 +92,7 @@ export default function PricingPage() {
         </div>
 
         {/* Plan Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
           {plans.map((plan) => (
             <Card 
               key={plan.id} 
@@ -121,7 +100,7 @@ export default function PricingPage() {
                 plan.popular ? 'ring-2 ring-blue-500/50 shadow-lg shadow-blue-500/25' : ''
               }`}
             >
-              <CardHeader className={`bg-gradient-to-r ${plan.bgColor} border-b border-white/10 p-8`}>
+              <CardHeader className={`bg-gradient-to-r ${plan.bgColor} border-b border-white/10 p-10`}>
                 <div className="text-center space-y-4">
                   {plan.popular && (
                     <Badge className="bg-gradient-to-r from-blue-500 to-purple-600 text-white border-0 px-4 py-2 rounded-xl">
@@ -139,9 +118,9 @@ export default function PricingPage() {
                     </CardTitle>
                   </div>
                   
-                  <div className="text-4xl font-bold text-white">
+                  <div className="text-5xl font-bold text-white">
                     {plan.price}
-                    {plan.price !== 'Custom' && <span className="text-lg text-gray-400">/plan</span>}
+                    {plan.price !== 'Custom' && <span className="text-xl text-gray-400">/plan</span>}
                   </div>
                   
                   <p className="text-gray-400 text-sm">
@@ -150,9 +129,9 @@ export default function PricingPage() {
                 </div>
               </CardHeader>
               
-              <CardContent className="p-8 space-y-6">
+              <CardContent className="p-10 space-y-8">
                 <div className="text-center p-4 bg-gradient-to-r from-white/5 to-white/10 rounded-2xl">
-                  <div className="text-3xl font-bold text-white">
+                  <div className="text-4xl font-bold text-white">
                     {plan.initial_credits.toLocaleString()}
                   </div>
                   <div className="text-sm text-gray-400">

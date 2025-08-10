@@ -87,6 +87,41 @@ export class AuthService {
         message: 'Registration successful'
       };
     } catch (error: unknown) {
+      // Handle 422 validation errors
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { status?: number; statusText?: string; data?: { errors?: string[]; message?: string }; headers?: Record<string, string> } };
+        
+        if (axiosError.response?.status === 422) {
+          // Log the full 422 error payload for debugging
+          console.log('🔍 422 Error Payload:', {
+            status: axiosError.response.status,
+            statusText: axiosError.response.statusText,
+            data: axiosError.response.data,
+            headers: axiosError.response.headers
+          });
+          
+          const errors = axiosError.response?.data?.errors || [];
+          let errorMessage = 'Validation failed. Please check your input.';
+          
+          if (Array.isArray(errors) && errors.length > 0) {
+            errorMessage = errors.join('; ');
+          }
+          
+          return {
+            success: false,
+            message: errorMessage
+          };
+        }
+        
+        // Handle other errors
+        const errorMessage = axiosError.response?.data?.message || 'Registration failed';
+        return {
+          success: false,
+          message: errorMessage
+        };
+      }
+      
+      // Handle unknown errors
       const errorMessage = error instanceof Error ? error.message : 'Registration failed';
       return {
         success: false,

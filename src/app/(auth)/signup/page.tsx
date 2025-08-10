@@ -15,28 +15,37 @@ import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { UserPlus, Key, Copy, Check, ArrowLeft, Zap, Mail, Phone, Building, User, Sparkles, Shield, CheckCircle, CreditCard } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
+import { PaystackService, PaystackResponse } from '@/lib/services/paystack';
+import { useToast, ToastContainer } from '@/components/ui/toast';
 
 const signupSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
-  email: z.string().email('Invalid email address'),
-  phone: z.string().min(1, 'Phone number is required'),
-  company_name: z.string().min(1, 'Company name is required'),
+  name: z.string()
+    .min(2, 'Name must be at least 2 characters')
+    .max(100, 'Name must be less than 100 characters'),
+  email: z.string()
+    .email('Invalid email address')
+    .min(1, 'Email is required'),
+  phone: z.string()
+    .min(1, 'Phone number is required')
+    .regex(/^\+?[1-9]\d{1,14}$/, 'Phone number must be in international format (e.g., +233244123456)'),
+  company_name: z.string()
+    .min(2, 'Company name must be at least 2 characters')
+    .max(100, 'Company name must be less than 100 characters'),
 });
 
 const plans = {
-  free: { name: 'Free', initial_credits: 100, price: '₵0', description: 'Perfect for testing' },
-  starter: { name: 'Starter Bundle', initial_credits: 10, price: '₵5', description: 'Perfect for testing and small projects' },
-  growth: { name: 'Growth Bundle', initial_credits: 100, price: '₵45', description: 'Great for growing businesses' },
-  business: { name: 'Business Bundle', initial_credits: 200, price: '₵85', description: 'For established businesses' },
-  enterprise: { name: 'Enterprise', initial_credits: 1000000, price: 'Custom', description: 'For large-scale operations' }
+  free: { name: 'Free', initial_credits: 10, price: '₵0', description: 'Perfect for testing' },
+  starter: { name: 'Starter', initial_credits: 1000, price: '₵80', description: 'Great for growing businesses' },
+  business: { name: 'Business', initial_credits: 10000, price: '₵800', description: 'For established businesses' }
 };
 
 export default function SignupPage() {
   const searchParams = useSearchParams();
   const selectedPlan = searchParams.get('plan') || 'starter';
+  const { showToast } = useToast();
   
   // No mapping needed since we're using plan IDs directly
-  const planType = selectedPlan as 'free' | 'starter' | 'business' | 'enterprise';
+  const planType = selectedPlan as 'free' | 'starter' | 'business';
   
   // Get the actual initial credits for each plan type (what the API gives)
   const getPlanInitialCredits = (planType: string): number => {
@@ -47,13 +56,12 @@ export default function SignupPage() {
         return 1000;
       case 'business':
         return 10000;
-      case 'enterprise':
-        return 1000000;
       default:
         return 1000;
     }
   };
   const [isLoading, setIsLoading] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [apiKey, setApiKey] = useState('');
@@ -75,38 +83,162 @@ export default function SignupPage() {
     setError('');
     setSuccess(false);
     
+    // For free plan, proceed directly with registration
+    if (planType === 'free') {
+              try {
+          const response = await AuthService.register({
+            customer: {
+              ...data,
+              plan_type: planType,
+              monthly_limit: getPlanInitialCredits(planType)
+            }
+          });
+          
+          console.log('🔍 AuthService response:', response);
+          
+          if (response.success) {
+            setSuccess(true);
+            setApiKey(response.api_key || '');
+            setInitialCredits(response.initial_credits || 0);
+            
+            // Store the API key in localStorage
+            localStorage.setItem('api_token', response.api_key || '');
+            
+            // Update auth store
+            const login = useAuthStore.getState().login;
+            if (response.customer && response.api_key) {
+              login(response.api_key, response.customer as Customer);
+            }
+            
+            // Redirect to dashboard after 5 seconds
+            setTimeout(() => {
+              window.location.href = '/dashboard';
+            }, 5000);
+          } else {
+            // Handle unsuccessful response from AuthService
+            console.log('🔍 Registration failed:', response.message);
+            setError(response.message || 'Registration failed. Please try again.');
+            
+            // Show toast notification
+            showToast('error', 'Registration Failed', response.message || 'Registration failed. Please try again.');
+            
+            // If it's an email conflict, clear the email field for easy retry
+            if (response.message && response.message.includes('Email has already been taken')) {
+              form.setValue('email', '');
+            }
+          }
+        } catch (error: unknown) {
+          console.log('🔍 Free plan signup error:', error);
+          const errorMessage = error instanceof Error ? error.message : 'Signup failed. Please try again.';
+          console.log('🔍 Setting error message:', errorMessage);
+          setError(errorMessage);
+          
+          // Show toast notification
+          showToast('error', 'Registration Failed', errorMessage);
+          
+          // If it's an email conflict, clear the email field for easy retry
+          if (errorMessage.includes('Email has already been taken')) {
+            form.setValue('email', '');
+          }
+        } finally {
+          setIsLoading(false);
+        }
+      return;
+    }
+    
+    // For paid plans, process payment first
     try {
-      const response = await AuthService.register({
-        customer: {
-          ...data,
-          plan_type: planType,
-          monthly_limit: getPlanInitialCredits(planType)
+      setIsProcessingPayment(true);
+      
+      const selectedPlan = plans[planType];
+      const amountInCedi = parseFloat(selectedPlan.price.replace('₵', ''));
+      const amountInPesewas = PaystackService.convertToKobo(amountInCedi);
+      const reference = PaystackService.generateReference();
+      
+      // Make email unique to prevent Paystack spam detection
+      const uniqueEmail = `${data.email.split('@')[0]}+${Date.now()}@${data.email.split('@')[1]}`;
+      
+      await PaystackService.initializePayment({
+        key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY!,
+        email: uniqueEmail,
+        amount: amountInPesewas,
+        currency: 'GHS',
+        ref: reference,
+        callback: (response: PaystackResponse) => {
+          console.log('Payment successful:', response);
+          
+          // Only proceed with registration if payment is successful
+          AuthService.register({
+            customer: {
+              ...data,
+              plan_type: planType,
+              monthly_limit: getPlanInitialCredits(planType)
+            }
+          }).then((regResponse) => {
+            console.log('🔍 Paid plan AuthService response:', regResponse);
+            
+            if (regResponse.success) {
+              setSuccess(true);
+              setApiKey(regResponse.api_key || '');
+              setInitialCredits(regResponse.initial_credits || 0);
+              
+              // Store the API key in localStorage
+              localStorage.setItem('api_token', regResponse.api_key || '');
+              
+              // Update auth store
+              const login = useAuthStore.getState().login;
+              if (regResponse.customer && regResponse.api_key) {
+                login(regResponse.api_key, regResponse.customer as Customer);
+              }
+              
+              // Redirect to dashboard after 5 seconds
+              setTimeout(() => {
+                window.location.href = '/dashboard';
+              }, 5000);
+            } else {
+              // Handle unsuccessful response from AuthService
+              console.log('🔍 Paid plan registration failed:', regResponse.message);
+              setError(regResponse.message || 'Registration failed after payment. Please contact support.');
+              
+                          // Show toast notification
+            showToast('error', 'Registration Failed', regResponse.message || 'Registration failed after payment. Please contact support.');
+              
+              // If it's an email conflict, clear the email field for easy retry
+              if (regResponse.message && regResponse.message.includes('Email has already been taken')) {
+                form.setValue('email', '');
+              }
+            }
+          }).catch((error) => {
+            console.log('🔍 Paid plan registration error:', error);
+            const errorMessage = error instanceof Error ? error.message : 'Registration failed after payment. Please contact support.';
+            console.log('🔍 Setting error message:', errorMessage);
+            setError(errorMessage);
+            
+            // Show toast notification
+            showToast('error', 'Registration Failed', errorMessage);
+            
+            // If it's an email conflict, clear the email field for easy retry
+            if (errorMessage.includes('Email has already been taken')) {
+              form.setValue('email', '');
+            }
+          }).finally(() => {
+            setIsLoading(false);
+          });
+        },
+        onClose: () => {
+          console.log('Payment cancelled by user');
+          setIsProcessingPayment(false);
+          setIsLoading(false);
         }
       });
-      
-      if (response.success) {
-        setSuccess(true);
-        setApiKey(response.api_key || '');
-        setInitialCredits(response.initial_credits || 0);
-        
-        // Store the API key in localStorage
-        localStorage.setItem('api_token', response.api_key || '');
-        
-        // Update auth store
-        const login = useAuthStore.getState().login;
-        if (response.customer && response.api_key) {
-          login(response.api_key, response.customer as Customer);
-        }
-        
-        // Redirect to dashboard after 5 seconds
-        setTimeout(() => {
-          window.location.href = '/dashboard';
-        }, 5000);
-      }
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Signup failed. Please try again.';
+      const errorMessage = error instanceof Error ? error.message : 'Payment initialization failed. Please try again.';
       setError(errorMessage);
-    } finally {
+      
+      // Show toast notification
+      showToast('error', 'Payment Failed', errorMessage);
+      
+      setIsProcessingPayment(false);
       setIsLoading(false);
     }
   };
@@ -278,7 +410,15 @@ export default function SignupPage() {
                     <div className="p-2 bg-red-500/20 rounded-xl">
                       <Shield className="h-4 w-4 text-red-400" />
                     </div>
-                    <span className="text-red-300 font-medium">{error}</span>
+                    <div className="flex-1">
+                      <span className="text-red-300 font-medium">Registration Failed</span>
+                      <p className="text-red-200 text-sm mt-1">{error}</p>
+                      {error.includes('Email has already been taken') && (
+                        <p className="text-yellow-200 text-sm mt-2">
+                          💡 Try using a different email address or <a href="/login" className="underline">sign in</a> if you already have an account.
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
@@ -292,10 +432,12 @@ export default function SignupPage() {
                   <Input
                     {...form.register('name')}
                     type="text"
+                    maxLength={100}
                     className="bg-black/30 border-white/20 text-white placeholder-gray-400 rounded-xl h-12 pl-10 focus:border-green-500 focus:ring-green-500/20"
                     placeholder="Enter your full name"
                   />
                 </div>
+                <p className="text-xs text-gray-500">2-100 characters</p>
                 {form.formState.errors.name && (
                   <p className="text-red-400 text-sm">{form.formState.errors.name.message}</p>
                 )}
@@ -332,6 +474,7 @@ export default function SignupPage() {
                     placeholder="+233244123456"
                   />
                 </div>
+                <p className="text-xs text-gray-500">Enter phone number in international format (e.g., +233244123456)</p>
                 {form.formState.errors.phone && (
                   <p className="text-red-400 text-sm">{form.formState.errors.phone.message}</p>
                 )}
@@ -346,10 +489,12 @@ export default function SignupPage() {
                   <Input
                     {...form.register('company_name')}
                     type="text"
+                    maxLength={100}
                     className="bg-black/30 border-white/20 text-white placeholder-gray-400 rounded-xl h-12 pl-10 focus:border-green-500 focus:ring-green-500/20"
                     placeholder="Enter your company name"
                   />
                 </div>
+                <p className="text-xs text-gray-500">2-100 characters</p>
                 {form.formState.errors.company_name && (
                   <p className="text-red-400 text-sm">{form.formState.errors.company_name.message}</p>
                 )}
@@ -357,18 +502,32 @@ export default function SignupPage() {
               
               <Button
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || isProcessingPayment}
                 className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl h-12 text-lg font-medium shadow-lg shadow-green-500/25 transition-all duration-300"
               >
-                {isLoading ? (
+                {isProcessingPayment ? (
+                  <div className="flex items-center space-x-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span>Processing Payment...</span>
+                  </div>
+                ) : isLoading ? (
                   <div className="flex items-center space-x-2">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                     <span>Creating Account...</span>
                   </div>
                 ) : (
                   <div className="flex items-center space-x-2">
-                    <UserPlus className="h-5 w-5" />
-                    <span>Create Account</span>
+                    {planType === 'free' ? (
+                      <>
+                        <UserPlus className="h-5 w-5" />
+                        <span>Create Account</span>
+                      </>
+                    ) : (
+                      <>
+                        <CreditCard className="h-5 w-5" />
+                        <span>Pay & Create Account</span>
+                      </>
+                    )}
                   </div>
                 )}
               </Button>
@@ -409,6 +568,9 @@ export default function SignupPage() {
           </div>
         </div>
       </div>
+      
+      {/* Toast Container */}
+      <ToastContainer />
     </div>
   );
 } 
