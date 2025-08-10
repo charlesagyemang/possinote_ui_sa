@@ -83,15 +83,13 @@ export default function SimpleEmailBuilder({ initialTemplate, onSave, onSend }: 
     variables.forEach(varName => {
       if (!(varName in previewVariables)) {
         newVariables[varName] = `Sample ${varName}`;
-      } else {
-        newVariables[varName] = previewVariables[varName];
       }
     });
     
     if (Object.keys(newVariables).length > 0) {
       setPreviewVariables(prev => ({ ...prev, ...newVariables }));
     }
-  }, [template.html, template.subject, extractVariables, previewVariables]);
+  }, [template.html, template.subject, extractVariables]);
 
   // Render preview HTML
   const renderPreviewHTML = useCallback(() => {

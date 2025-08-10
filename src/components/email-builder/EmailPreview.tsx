@@ -40,15 +40,13 @@ export function EmailPreview({ template, variables, onVariablesChange }: EmailPr
     templateVariables.forEach(varName => {
       if (!(varName in variables)) {
         newVariables[varName] = `Sample ${varName}`;
-      } else {
-        newVariables[varName] = variables[varName];
       }
     });
     
     if (Object.keys(newVariables).length > 0) {
       onVariablesChange({ ...variables, ...newVariables });
     }
-  }, [templateVariables, onVariablesChange, variables]);
+  }, [templateVariables, onVariablesChange]);
 
   // Render template with variables
   useEffect(() => {
