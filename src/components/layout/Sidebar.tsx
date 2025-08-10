@@ -7,7 +7,8 @@ import {
   Settings,
   Zap,
   Sparkles,
-  Mail
+  Mail,
+  BookOpen
 } from 'lucide-react';
 
 const navigation = [
@@ -17,6 +18,7 @@ const navigation = [
   { name: 'SMS History', href: '/sms-history', icon: MessageSquare, color: 'from-indigo-500 to-purple-600' },
   { name: 'Email', href: '/email', icon: Mail, color: 'from-orange-500 to-red-600' },
   { name: 'Email History', href: '/email-history', icon: Mail, color: 'from-red-500 to-pink-600' },
+  { name: 'API Docs', href: '/api-docs', icon: BookOpen, color: 'from-green-500 to-emerald-600' },
   { name: 'Settings', href: '/settings', icon: Settings, color: 'from-gray-500 to-slate-600' },
 ];
 

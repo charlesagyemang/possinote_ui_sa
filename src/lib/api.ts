@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Use the environment variables directly since they already include the full path
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:2025/api/v1';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://notifyapi.possitech.net/api/v1';
 const ADMIN_BASE_URL = process.env.NEXT_PUBLIC_ADMIN_BASE_URL || 'http://localhost:2025/admin/api/v1';
 
 export const api = axios.create({
