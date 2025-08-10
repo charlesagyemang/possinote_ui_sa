@@ -255,7 +255,7 @@ export default function SignupPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-teal-900 to-emerald-900 flex items-center justify-center p-6">
         <div className="max-w-md w-full space-y-8">
           <div className="text-center space-y-4">
             <div className="flex items-center justify-center space-x-3">
@@ -274,17 +274,17 @@ export default function SignupPage() {
           
           {/* Initial Credits Card */}
           <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-b border-white/10">
+            <CardHeader className="bg-gradient-to-r from-teal-500/10 to-emerald-500/10 border-b border-white/10">
               <CardTitle className="text-white text-xl flex items-center space-x-3">
-                <div className="p-2 bg-blue-500/20 rounded-xl">
-                  <CreditCard className="h-5 w-5 text-blue-400" />
+                <div className="p-2 bg-teal-500/20 rounded-xl">
+                  <CreditCard className="h-5 w-5 text-teal-400" />
                 </div>
                 <span>Welcome Bonus</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
               <div className="text-center space-y-3">
-                <div className="text-3xl font-bold text-blue-400">
+                <div className="text-3xl font-bold text-teal-400">
                   {initialCredits.toLocaleString()} Credits
                 </div>
                 <p className="text-gray-400 text-sm">
@@ -317,7 +317,7 @@ export default function SignupPage() {
                       size="sm"
                       variant="outline"
                       onClick={copyApiKey}
-                      className="ml-2 flex-shrink-0 bg-blue-500/20 border-blue-500/30 text-blue-300 hover:bg-blue-500/30"
+                      className="ml-2 flex-shrink-0 bg-teal-500/20 border-teal-500/30 text-teal-300 hover:bg-teal-500/30"
                     >
                       {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                     </Button>
@@ -338,7 +338,7 @@ export default function SignupPage() {
                     Redirecting to dashboard in 5 seconds...
                   </p>
                   <div className="mt-2 w-full bg-gray-700 rounded-full h-1">
-                    <div className="bg-gradient-to-r from-blue-500 to-purple-600 h-1 rounded-full animate-pulse"></div>
+                    <div className="bg-gradient-to-r from-teal-500 to-emerald-600 h-1 rounded-full animate-pulse"></div>
                   </div>
                 </div>
               </div>
@@ -350,7 +350,7 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-teal-900 to-emerald-900 flex items-center justify-center p-6">
       <div className="max-w-md w-full space-y-8">
         {/* Header */}
         <div className="text-center space-y-4">
@@ -360,7 +360,7 @@ export default function SignupPage() {
           </Link>
           
           <div className="flex items-center justify-center space-x-3">
-            <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl">
+            <div className="p-3 bg-gradient-to-r from-teal-500 to-emerald-600 rounded-2xl">
               <Zap className="h-8 w-8 text-white" />
             </div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
@@ -374,7 +374,7 @@ export default function SignupPage() {
           </div>
           
           {/* Selected Plan Display */}
-          <div className="p-4 bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-white/10 rounded-2xl">
+          <div className="p-4 bg-gradient-to-r from-teal-500/10 to-emerald-500/10 border border-white/10 rounded-2xl">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-white font-medium">{plans[selectedPlan as keyof typeof plans].name}</h3>
@@ -385,7 +385,7 @@ export default function SignupPage() {
                   {plans[selectedPlan as keyof typeof plans].description}
                 </p>
               </div>
-              <Badge className="bg-gradient-to-r from-blue-500 to-purple-600 text-white border-0">
+              <Badge className="bg-gradient-to-r from-teal-500 to-emerald-600 text-white border-0">
                 {plans[selectedPlan as keyof typeof plans].price}
               </Badge>
             </div>

@@ -28,11 +28,11 @@ export default function Sidebar() {
 
   return (
     <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
-      <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-gradient-to-b from-slate-900/95 via-purple-900/95 to-slate-900/95 backdrop-blur-xl border-r border-white/10 px-6 pb-4">
+      <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-gradient-to-b from-slate-900/95 via-teal-900/95 to-emerald-900/95 backdrop-blur-xl border-r border-white/10 px-6 pb-4">
         {/* Logo/Brand */}
         <div className="flex h-20 shrink-0 items-center">
           <div className="flex items-center space-x-3">
-            <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl">
+            <div className="p-2 bg-gradient-to-r from-teal-500 to-emerald-600 rounded-xl">
               <Zap className="h-6 w-6 text-white" />
             </div>
             <div>
@@ -92,10 +92,10 @@ export default function Sidebar() {
 
           {/* Bottom Section */}
           <div className="mt-auto pt-6 border-t border-white/10">
-            <div className="p-4 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-2xl border border-white/10">
+            <div className="p-4 bg-gradient-to-r from-teal-500/10 to-emerald-500/10 rounded-2xl border border-white/10">
               <div className="flex items-center space-x-3">
-                <div className="p-2 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-xl">
-                  <Sparkles className="h-4 w-4 text-blue-400" />
+                <div className="p-2 bg-gradient-to-r from-teal-500/20 to-emerald-500/20 rounded-xl">
+                  <Sparkles className="h-4 w-4 text-teal-400" />
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-medium text-white">Pro Dashboard</p>

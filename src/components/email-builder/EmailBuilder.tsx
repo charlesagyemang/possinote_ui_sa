@@ -162,7 +162,7 @@ export default function EmailBuilder({ initialTemplate, onSave, onSend }: EmailB
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-teal-900 to-emerald-900 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -182,7 +182,7 @@ export default function EmailBuilder({ initialTemplate, onSave, onSend }: EmailB
             <Button
               onClick={handleSave}
               disabled={isLoading}
-              className="bg-purple-600 hover:bg-purple-700"
+              className="bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700"
             >
               <Save className="h-4 w-4 mr-2" />
               Save Template

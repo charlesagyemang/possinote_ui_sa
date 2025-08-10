@@ -414,7 +414,7 @@ export default function EmailTemplatesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-teal-900 to-emerald-900 p-6">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -423,7 +423,7 @@ export default function EmailTemplatesPage() {
             <p className="text-gray-400">Create and manage beautiful email templates</p>
           </div>
           <Link href="/email-templates/builder">
-            <Button className="bg-purple-600 hover:bg-purple-700">
+            <Button className="bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700">
               <Plus className="h-4 w-4 mr-2" />
               Create Template
             </Button>
@@ -448,11 +448,11 @@ export default function EmailTemplatesPage() {
         {/* Main Content with Tabs */}
         <Tabs defaultValue="my-templates" className="space-y-6">
           <TabsList className="grid w-full grid-cols-2 bg-slate-800/50">
-            <TabsTrigger value="my-templates" className="data-[state=active]:bg-purple-600">
+            <TabsTrigger value="my-templates" className="data-[state=active]:bg-gradient-to-r from-teal-600 to-emerald-600">
               <Folder className="h-4 w-4 mr-2" />
               My Templates
             </TabsTrigger>
-            <TabsTrigger value="template-store" className="data-[state=active]:bg-purple-600">
+            <TabsTrigger value="template-store" className="data-[state=active]:bg-gradient-to-r from-teal-600 to-emerald-600">
               <Store className="h-4 w-4 mr-2" />
               Template Store
             </TabsTrigger>
@@ -478,7 +478,7 @@ export default function EmailTemplatesPage() {
             {/* Templates Grid */}
             {isLoading ? (
               <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
               </div>
             ) : filteredTemplates.length === 0 ? (
               <Card className="bg-slate-800/50 border-slate-700">
@@ -489,7 +489,7 @@ export default function EmailTemplatesPage() {
                     {searchTerm ? 'No templates match your search.' : 'Get started by creating your first email template.'}
                   </p>
                   <Link href="/email-templates/builder">
-                    <Button className="bg-purple-600 hover:bg-purple-700">
+                    <Button className="bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700">
                       <Plus className="h-4 w-4 mr-2" />
                       Create Template
                     </Button>
