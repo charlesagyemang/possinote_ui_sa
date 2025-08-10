@@ -23,6 +23,7 @@ export function IntegrationTest() {
         subject: 'Hello {{name}} from {{company}}!',
         components: [
           {
+            id: 'comp_1',
             type: 'header',
             content: '<h1>Welcome {{name}}!</h1>',
             styles: {
@@ -35,6 +36,7 @@ export function IntegrationTest() {
             position: 0
           },
           {
+            id: 'comp_2',
             type: 'text',
             content: '<p>We\'re excited to have you at {{company}}.</p>',
             styles: {
@@ -48,12 +50,14 @@ export function IntegrationTest() {
         ],
         variables: [
           {
+            id: 'var_1',
             name: 'name',
             description: 'Recipient name',
             defaultValue: 'John Doe',
             required: true
           },
           {
+            id: 'var_2',
             name: 'company',
             description: 'Company name',
             defaultValue: 'Our Company',

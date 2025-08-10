@@ -131,11 +131,12 @@ export default function EmailBuilder({ initialTemplate, onSave, onSend }: EmailB
       const html = generateHTML();
       const updatedTemplate = { ...template, html };
       
+      let saved: EmailTemplate;
       if (template.id) {
-        const saved = await EmailTemplateService.updateTemplate(template.id, updatedTemplate);
+        saved = await EmailTemplateService.updateTemplate(template.id, updatedTemplate);
         setTemplate(saved);
       } else {
-        const saved = await EmailTemplateService.createTemplate(updatedTemplate);
+        saved = await EmailTemplateService.createTemplate(updatedTemplate);
         setTemplate(saved);
       }
       
@@ -321,6 +322,7 @@ export default function EmailBuilder({ initialTemplate, onSave, onSend }: EmailB
                     <ComponentEditor
                       component={selectedComponent}
                       isSelected={true}
+                      onSelect={() => {}} // No-op since it's already selected
                       onUpdate={(updates) => updateComponent(selectedComponent.id, updates)}
                       onRemove={() => removeComponent(selectedComponent.id)}
                       onMove={(direction) => moveComponent(selectedComponent.id, direction)}

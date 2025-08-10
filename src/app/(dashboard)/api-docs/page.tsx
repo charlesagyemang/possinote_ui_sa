@@ -574,7 +574,7 @@ export default function ApiDocsPage() {
         <CardContent>
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-3">
-              <h4 className="font-semibold text-green-400">Do's</h4>
+              <h4 className="font-semibold text-green-400">Do&apos;s</h4>
               <ul className="space-y-2 text-sm text-gray-300">
                 <li className="flex items-start gap-2">
                   <Check className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
@@ -599,27 +599,27 @@ export default function ApiDocsPage() {
               </ul>
             </div>
             <div className="space-y-3">
-              <h4 className="font-semibold text-red-400">Don'ts</h4>
+              <h4 className="font-semibold text-red-400">Don&apos;ts</h4>
               <ul className="space-y-2 text-sm text-gray-300">
                 <li className="flex items-start gap-2">
                   <XCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
-                  <span>Don't send without checking credit balance</span>
+                  <span>Don&apos;t send without checking credit balance</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <XCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
-                  <span>Don't ignore rate limits</span>
+                  <span>Don&apos;t ignore rate limits</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <XCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
-                  <span>Don't send to invalid phone numbers or emails</span>
+                  <span>Don&apos;t send to invalid phone numbers or emails</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <XCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
-                  <span>Don't send large batches without testing</span>
+                  <span>Don&apos;t send large batches without testing</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <XCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
-                  <span>Don't forget to handle error responses</span>
+                  <span>Don&apos;t forget to handle error responses</span>
                 </li>
               </ul>
             </div>

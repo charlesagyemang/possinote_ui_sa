@@ -15,7 +15,6 @@ import {
   Search,
   FileText,
   Calendar,
-  User,
   Store,
   Folder,
   Users,
@@ -27,7 +26,6 @@ import { EmailTemplate, TemplatePreviewData } from '@/types/emailTemplates';
 import { EmailTemplateService } from '@/lib/services/emailTemplates';
 import { EmailService } from '@/lib/services/email';
 import { usePaymentRequired } from '@/components/PaymentRequiredProvider';
-import { ExampleTemplate } from '@/components/email-builder/ExampleTemplate';
 import Link from 'next/link';
 
 export default function EmailTemplatesPage() {
@@ -49,14 +47,22 @@ export default function EmailTemplatesPage() {
   const [bulkEmail, setBulkEmail] = useState({
     template: null as EmailTemplate | null,
     requiredColumns: [] as string[],
-    csvData: [] as any[],
+    csvData: [] as Record<string, string>[],
     subject: ''
   });
   const [csvError, setCsvError] = useState('');
   const [csvSuccess, setCsvSuccess] = useState('');
 
   // Template Store - Pre-made templates
-  const templateStore = [
+  const templateStore: Array<{
+    id: string;
+    name: string;
+    description: string;
+    subject: string;
+    html: string;
+    variables: string[];
+    category: string;
+  }> = [
     {
       id: 'welcome-email',
       name: 'Welcome Email',
@@ -301,7 +307,7 @@ export default function EmailTemplatesPage() {
         // Parse CSV data
         const data = lines.slice(1).filter(line => line.trim()).map(line => {
           const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
-          const row: any = {};
+          const row: Record<string, string> = {};
           headers.forEach((header, index) => {
             row[header] = values[index] || '';
           });
@@ -311,7 +317,7 @@ export default function EmailTemplatesPage() {
         setBulkEmail(prev => ({ ...prev, csvData: data }));
         setCsvSuccess(`Successfully loaded ${data.length} recipients`);
         setCsvError('');
-      } catch (error) {
+      } catch {
         setCsvError('Failed to parse CSV file. Please check the format.');
         setCsvSuccess('');
       }
@@ -387,7 +393,7 @@ export default function EmailTemplatesPage() {
     return new Date(dateString).toLocaleDateString();
   };
 
-  const useTemplateFromStore = (template: any) => {
+  const navigateToTemplateBuilder = (template: { name: string; description?: string; subject: string; html: string }) => {
     // Navigate to builder with template data
     const templateData = encodeURIComponent(JSON.stringify({
       name: template.name,
@@ -626,7 +632,7 @@ export default function EmailTemplatesPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => useTemplateFromStore(template)}
+                          onClick={() => navigateToTemplateBuilder(template)}
                           className="border-slate-600 text-gray-300 hover:bg-slate-700"
                         >
                           <Copy className="h-3 w-3 mr-1" />
@@ -636,8 +642,27 @@ export default function EmailTemplatesPage() {
                           variant="outline"
                           size="sm"
                           onClick={() => {
+                            // Convert template store template to EmailTemplate format
+                            const emailTemplate: EmailTemplate = {
+                              id: template.id,
+                              name: template.name,
+                              description: template.description,
+                              subject: template.subject,
+                              html: template.html,
+                              variables: template.variables.map(name => ({
+                                id: `var_${name}`,
+                                name,
+                                description: `Variable: ${name}`,
+                                defaultValue: '',
+                                required: false
+                              })),
+                              components: [],
+                              created_at: new Date().toISOString(),
+                              updated_at: new Date().toISOString()
+                            };
+                            
                             setBulkEmail({
-                              template: template,
+                              template: emailTemplate,
                               requiredColumns: template.variables,
                               csvData: [],
                               subject: template.subject
