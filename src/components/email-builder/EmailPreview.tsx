@@ -46,7 +46,7 @@ export function EmailPreview({ template, variables, onVariablesChange }: EmailPr
     if (Object.keys(newVariables).length > 0) {
       onVariablesChange({ ...variables, ...newVariables });
     }
-  }, [templateVariables, onVariablesChange]);
+  }, [templateVariables, onVariablesChange, variables]);
 
   // Render template with variables
   useEffect(() => {
@@ -74,7 +74,7 @@ export function EmailPreview({ template, variables, onVariablesChange }: EmailPr
       setRenderedHTML(rendered);
       setIsLoading(false);
     }
-  }, [template, variables]);
+  }, [template, variables, onVariablesChange]);
 
   const handleVariableChange = (varName: string, value: string) => {
     onVariablesChange({

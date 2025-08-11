@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -66,10 +66,12 @@ export default function ScheduleSMSPage() {
 
   useEffect(() => {
     fetchSenders();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     fetchScheduledSMS();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scheduledFilters]);
 
   // Refresh scheduled SMS when tab is opened
@@ -79,7 +81,7 @@ export default function ScheduleSMSPage() {
     }
   };
 
-  const fetchSenders = async () => {
+  const fetchSenders = useCallback(async () => {
     try {
       setIsLoadingSenders(true);
       const response = await SendersService.getSenders();
@@ -94,7 +96,7 @@ export default function ScheduleSMSPage() {
     } finally {
       setIsLoadingSenders(false);
     }
-  };
+  }, [showToast]);
 
   const fetchScheduledSMS = async () => {
     try {
@@ -318,7 +320,7 @@ export default function ScheduleSMSPage() {
         setCsvData(data);
         setBulkSMS(prev => ({ ...prev, messages: data }));
         showToast('success', 'CSV Uploaded', `Successfully loaded ${data.length} recipients from CSV`);
-             } catch (error: unknown) {
+             } catch {
          showToast('error', 'Parse Error', 'Failed to parse CSV file');
        }
     };

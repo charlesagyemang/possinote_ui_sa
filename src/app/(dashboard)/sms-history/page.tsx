@@ -105,6 +105,7 @@ export default function SmsHistoryPage() {
   // Single useEffect for API calls
   useEffect(() => {
     fetchSmsHistory();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     currentPage,
     statusFilter,

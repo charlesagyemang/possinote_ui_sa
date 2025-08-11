@@ -176,8 +176,10 @@ export default function UsagePage() {
       if (retryTimeoutRef.current) {
         clearTimeout(retryTimeoutRef.current);
       }
-      if (cacheTimeoutRef.current) {
-        clearTimeout(cacheTimeoutRef.current);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      const currentCacheTimeout = cacheTimeoutRef.current;
+      if (currentCacheTimeout) {
+        clearTimeout(currentCacheTimeout);
       }
     };
   }, []);

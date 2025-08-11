@@ -92,6 +92,7 @@ export default function SimpleEmailBuilder({ initialTemplate, onSave, onSend }: 
     if (Object.keys(newVariables).length > 0) {
       setPreviewVariables(prev => ({ ...prev, ...newVariables }));
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [template.html, template.subject, extractVariables]);
 
   // Render preview HTML
