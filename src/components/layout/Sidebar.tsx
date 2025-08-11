@@ -8,7 +8,8 @@ import {
   Zap,
   Sparkles,
   Mail,
-  BookOpen
+  BookOpen,
+  Clock
 } from 'lucide-react';
 
 const navigation = [
@@ -16,9 +17,11 @@ const navigation = [
   { name: 'Usage', href: '/usage', icon: BarChart3, color: 'from-purple-500 to-pink-600' },
   { name: 'SMS', href: '/sms', icon: MessageSquare, color: 'from-cyan-500 to-blue-600' },
   { name: 'SMS History', href: '/sms-history', icon: MessageSquare, color: 'from-indigo-500 to-purple-600' },
+  { name: 'Schedule SMS', href: '/schedule-sms', icon: Clock, color: 'from-teal-500 to-emerald-600' },
   { name: 'Email', href: '/email', icon: Mail, color: 'from-orange-500 to-red-600' },
   { name: 'Email Templates', href: '/email-templates', icon: Mail, color: 'from-red-500 to-pink-600' },
   { name: 'Email History', href: '/email-history', icon: Mail, color: 'from-red-500 to-pink-600' },
+  { name: 'Schedule Email', href: '/schedule-email', icon: Clock, color: 'from-teal-500 to-emerald-600' },
   { name: 'API Docs', href: '/api-docs', icon: BookOpen, color: 'from-green-500 to-emerald-600' },
   { name: 'Settings', href: '/settings', icon: Settings, color: 'from-gray-500 to-slate-600' },
 ];
