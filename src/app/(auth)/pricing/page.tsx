@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Check, Star, Zap, Shield, Sparkles, ArrowRight, Users, MessageSquare, BarChart3, Clock, Globe, Award, CreditCard, DollarSign } from 'lucide-react';
+import { Check, Star, Zap, Shield, Sparkles, ArrowRight, Users, MessageSquare, BarChart3, Clock, Globe, Award, CreditCard, DollarSign, BookOpen } from 'lucide-react';
 import Link from 'next/link';
 
 const plans = [
@@ -87,15 +87,30 @@ export default function PricingPage() {
               <Zap className="h-8 w-8 text-white" />
             </div>
             <h1 className="text-5xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-              PossiNotify
+              PossiNote
             </h1>
           </div>
           <h2 className="text-4xl font-bold text-white mb-6">
             Choose Your Plan
           </h2>
-          <p className="text-xl text-gray-400 max-w-3xl mx-auto">
+          <p className="text-xl text-gray-400 max-w-3xl mx-auto mb-8">
             Start with our free tier and scale as you grow. All plans include initial credits to get you started.
           </p>
+          
+          {/* Navigation Links */}
+          <div className="flex flex-wrap justify-center gap-4">
+            <Link href="/api-docs">
+              <Button variant="outline" className="border-white/20 text-white hover:bg-white/10 rounded-xl px-6 py-2">
+                <BookOpen className="h-4 w-4 mr-2" />
+                API Documentation
+              </Button>
+            </Link>
+            <Link href="/login">
+              <Button variant="outline" className="border-white/20 text-white hover:bg-white/10 rounded-xl px-6 py-2">
+                Sign In
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Plan Cards */}
@@ -226,7 +241,7 @@ export default function PricingPage() {
         <div className="mb-16">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-white mb-4">
-              Why Choose PossiNotify?
+              Why Choose PossiNote?
             </h2>
             <p className="text-gray-400 text-lg">
               Built for developers, trusted by businesses worldwide
@@ -259,9 +274,15 @@ export default function PricingPage() {
                 <Sparkles className="h-8 w-8 text-purple-400" />
               </div>
               <h3 className="text-xl font-bold text-white mb-4">Developer First</h3>
-              <p className="text-gray-400">
+              <p className="text-gray-400 mb-4">
                 Simple APIs, comprehensive docs, and 24/7 developer support
               </p>
+              <Link href="/api-docs">
+                <Button variant="outline" className="border-purple-500/30 text-purple-300 hover:bg-purple-500/20 rounded-xl px-4 py-2">
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  View API Docs
+                </Button>
+              </Link>
             </div>
           </div>
         </div>

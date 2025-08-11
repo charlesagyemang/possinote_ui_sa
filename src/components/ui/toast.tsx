@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, createContext, useContext } from 'react';
 import { X, CheckCircle, AlertCircle, Info } from 'lucide-react';
 
 export interface ToastProps {
@@ -87,7 +87,9 @@ export interface ToastContextType {
   showToast: (type: 'success' | 'error' | 'info', title: string, message: string) => void;
 }
 
-export function useToast() {
+const ToastContext = createContext<ToastContextType | undefined>(undefined);
+
+export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<ToastProps[]>([]);
 
   const showToast = (type: 'success' | 'error' | 'info', title: string, message: string) => {
@@ -109,25 +111,28 @@ export function useToast() {
     setToasts(prev => prev.filter(toast => toast.id !== id));
   };
 
-  return {
-    toasts,
-    showToast,
-    removeToast
-  };
-}
-
-export function ToastContainer() {
-  const { toasts, removeToast } = useToast();
-
   return (
-    <div className="fixed top-4 right-4 z-50 space-y-2">
-      {toasts.map(toast => (
-        <Toast
-          key={toast.id}
-          {...toast}
-          onClose={removeToast}
-        />
-      ))}
-    </div>
+    <ToastContext.Provider value={{ showToast }}>
+      {children}
+      <div className="fixed top-4 right-4 z-50 space-y-2">
+        {toasts.map(toast => (
+          <Toast
+            key={toast.id}
+            {...toast}
+            onClose={removeToast}
+          />
+        ))}
+      </div>
+    </ToastContext.Provider>
   );
 }
+
+export function useToast() {
+  const context = useContext(ToastContext);
+  if (context === undefined) {
+    throw new Error('useToast must be used within a ToastProvider');
+  }
+  return context;
+}
+
+

@@ -16,7 +16,7 @@ import Link from 'next/link';
 import { UserPlus, Key, Copy, Check, ArrowLeft, Zap, Mail, Phone, Building, User, Sparkles, Shield, CheckCircle, CreditCard } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { PaystackService, PaystackResponse } from '@/lib/services/paystack';
-import { useToast, ToastContainer } from '@/components/ui/toast';
+import { useToast } from '@/components/ui/toast';
 
 const signupSchema = z.object({
   name: z.string()
@@ -268,7 +268,7 @@ export default function SignupPage() {
             </div>
             <div>
               <h2 className="text-2xl font-bold text-white">Account Created!</h2>
-              <p className="text-green-400 mt-2">Your PossiNotify account has been created successfully.</p>
+              <p className="text-green-400 mt-2">Your PossiNote account has been created successfully.</p>
             </div>
           </div>
           
@@ -364,13 +364,13 @@ export default function SignupPage() {
               <Zap className="h-8 w-8 text-white" />
             </div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-              PossiNotify
+              PossiNote
             </h1>
           </div>
           
           <div>
             <h2 className="text-2xl font-bold text-white">Create Account</h2>
-            <p className="text-gray-400 mt-2">Join PossiNotify and start sending notifications</p>
+            <p className="text-gray-400 mt-2">Join PossiNote and start sending notifications</p>
           </div>
           
           {/* Selected Plan Display */}
@@ -570,7 +570,7 @@ export default function SignupPage() {
       </div>
       
       {/* Toast Container */}
-      <ToastContainer />
+      
     </div>
   );
 } 

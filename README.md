@@ -1,6 +1,6 @@
-# PossiNotify Customer Dashboard
+# PossiNote Customer Dashboard
 
-A comprehensive Next.js dashboard for PossiNotify customers to manage API keys, monitor usage, send SMS, and manage their account.
+A comprehensive Next.js dashboard for PossiNote customers to manage API keys, monitor usage, send SMS, and manage their account.
 
 ## Features
 
@@ -27,7 +27,7 @@ A comprehensive Next.js dashboard for PossiNotify customers to manage API keys, 
 
 - Node.js 18+ 
 - npm or yarn
-- PossiNotify API backend running on `http://localhost:3000`
+- PossiNote API backend running on `http://localhost:3000`
 
 ### Installation
 
@@ -46,7 +46,7 @@ npm install
 ```bash
 # Create .env.local file
 NEXT_PUBLIC_API_URL=http://localhost:3000
-NEXT_PUBLIC_APP_NAME=PossiNotify Dashboard
+NEXT_PUBLIC_APP_NAME=PossiNote Dashboard
 
 # Paystack Configuration (for payment processing)
 NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY=pk_test_your_public_key_here
@@ -87,7 +87,7 @@ src/
 
 ## API Integration
 
-The dashboard integrates with the PossiNotify API with the following endpoints:
+The dashboard integrates with the PossiNote API with the following endpoints:
 
 ### Authentication
 - `POST /api/v1/auth/login` - Customer login
@@ -227,4 +227,4 @@ This project is licensed under the MIT License.
 
 ## Support
 
-For support and questions, please contact the PossiNotify team.
+For support and questions, please contact the PossiNote team.

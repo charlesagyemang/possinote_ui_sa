@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
-import { SmsService } from '@/lib/services/sms';
+import { SmsService, SmsMessage, Pagination } from '@/lib/services/sms';
 import { SendersService, Sender } from '@/lib/services/senders';
 
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MessageSquare, Send, Users, AlertCircle, Upload, FileText, Eye, Download, Sparkles, Zap, Target, CheckCircle, Plus, Settings, FileSpreadsheet, FileJson } from 'lucide-react';
+
+import { MessageSquare, Send, Users, AlertCircle, Upload, FileText, Eye, Download, Sparkles, Zap, Target, CheckCircle, FileSpreadsheet, FileJson, ChevronLeft, ChevronRight, Filter, Search, RefreshCw, XCircle, Clock } from 'lucide-react';
 import SenderNamesModal from '@/components/SenderNamesModal';
 import { usePaymentRequired } from '@/components/PaymentRequiredProvider';
 
@@ -48,7 +49,7 @@ interface FileInfo {
 export default function SmsPage() {
   const { showPaymentRequired } = usePaymentRequired();
   const [isLoading, setIsLoading] = useState(false);
-  const [bulkMode, setBulkMode] = useState(false);
+  const [mode, setMode] = useState<'single' | 'bulk' | 'history'>('single');
   const [bulkRecipients, setBulkRecipients] = useState('');
   const [bulkMessage, setBulkMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -84,6 +85,24 @@ export default function SmsPage() {
   const [senders, setSenders] = useState<Sender[]>([]);
   const [isAddingSenderName, setIsAddingSenderName] = useState(false);
   const [isLoadingSenders, setIsLoadingSenders] = useState(true);
+
+  // SMS History states
+  const [messages, setMessages] = useState<SmsMessage[]>([]);
+  const [pagination, setPagination] = useState<Pagination | null>(null);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState('all');
+  const [apiKeyFilter, setApiKeyFilter] = useState('all');
+  const [senderIdFilter, setSenderIdFilter] = useState('');
+  const [phoneFilter, setPhoneFilter] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [minCost, setMinCost] = useState('');
+  const [maxCost, setMaxCost] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [isExporting] = useState(false);
 
 
 
@@ -140,6 +159,10 @@ export default function SmsPage() {
   useEffect(() => {
     fetchSenders();
   }, []);
+
+  useEffect(() => {
+    fetchSmsHistory();
+  }, [currentPage, statusFilter, dateFilter, apiKeyFilter, senderIdFilter, phoneFilter, minCost, maxCost, startDate, endDate]);
 
   const form = useForm({
     resolver: zodResolver(smsSchema),
@@ -517,6 +540,122 @@ export default function SmsPage() {
     }
   };
 
+  // SMS History functions
+  const fetchSmsHistory = async () => {
+    try {
+      setIsLoadingHistory(true);
+      setHistoryError(null);
+
+      const params: Record<string, string | number> = {
+        page: currentPage,
+        per_page: 20
+      };
+
+      // Add filters
+      if (statusFilter !== 'all') {
+        params.status = statusFilter;
+      }
+
+      if (dateFilter !== 'custom') {
+        params.date_filter = dateFilter;
+      } else {
+        if (startDate) params.start_date = startDate;
+        if (endDate) params.end_date = endDate;
+      }
+
+      if (apiKeyFilter !== 'all') {
+        params.api_key_id = apiKeyFilter;
+      }
+
+      if (senderIdFilter) {
+        params.sender_id = senderIdFilter;
+      }
+
+      if (phoneFilter) {
+        params.phone = phoneFilter;
+      }
+
+      if (minCost) {
+        params.min_cost = parseFloat(minCost);
+      }
+
+      if (maxCost) {
+        params.max_cost = parseFloat(maxCost);
+      }
+
+      const data = await SmsService.getSmsHistory(params);
+
+      if (data.success) {
+        setMessages(data.data?.messages || []);
+        setPagination(data.data?.pagination || null);
+      } else {
+        setHistoryError(data.message || 'Failed to fetch SMS history');
+      }
+    } catch (error: unknown) {
+      console.error('Failed to fetch SMS history:', error);
+      setHistoryError('Failed to load SMS history. Please try again.');
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'delivered':
+        return 'bg-green-500/20 text-green-300 border-green-500/30';
+      case 'sent':
+        return 'bg-green-500/20 text-green-300 border-green-500/30';
+      case 'failed':
+        return 'bg-red-500/20 text-red-300 border-red-500/30';
+      case 'pending':
+        return 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30';
+      default:
+        return 'bg-gray-500/20 text-gray-300 border-gray-500/30';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'delivered':
+        return <CheckCircle className="h-4 w-4" />;
+      case 'sent':
+        return <MessageSquare className="h-4 w-4" />;
+      case 'failed':
+        return <XCircle className="h-4 w-4" />;
+      case 'pending':
+        return <Clock className="h-4 w-4" />;
+      default:
+        return <AlertCircle className="h-4 w-4" />;
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString();
+  };
+
+  const formatPhone = (phone: string) => {
+    return phone.replace(/(\d{3})(\d{3})(\d{3})/, '$1 $2 $3');
+  };
+
+  const exportToCSV = async () => {
+    // TODO: Implement export functionality when API is available
+    console.log('Export functionality not yet implemented');
+  };
+
+  const resetFilters = () => {
+    setStatusFilter('all');
+    setDateFilter('all');
+    setApiKeyFilter('all');
+    setSenderIdFilter('');
+    setPhoneFilter('');
+    setSearchTerm('');
+    setMinCost('');
+    setMaxCost('');
+    setStartDate('');
+    setEndDate('');
+    setCurrentPage(1);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-teal-900 to-emerald-900 p-6">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -538,10 +677,10 @@ export default function SmsPage() {
           <div className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-2xl p-2">
             <div className="flex space-x-2">
               <Button
-                variant={!bulkMode ? 'default' : 'ghost'}
-                onClick={() => setBulkMode(false)}
+                variant={mode === 'single' ? 'default' : 'ghost'}
+                onClick={() => setMode('single')}
                 className={`rounded-xl px-6 py-3 transition-all duration-300 ${
-                  !bulkMode 
+                  mode === 'single'
                     ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/25' 
                     : 'text-gray-400 hover:text-white hover:bg-white/10'
                 }`}
@@ -550,10 +689,10 @@ export default function SmsPage() {
                 Single SMS
               </Button>
               <Button
-                variant={bulkMode ? 'default' : 'ghost'}
-                onClick={() => setBulkMode(true)}
+                variant={mode === 'bulk' ? 'default' : 'ghost'}
+                onClick={() => setMode('bulk')}
                 className={`rounded-xl px-6 py-3 transition-all duration-300 ${
-                  bulkMode 
+                  mode === 'bulk'
                     ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/25' 
                     : 'text-gray-400 hover:text-white hover:bg-white/10'
                 }`}
@@ -561,97 +700,23 @@ export default function SmsPage() {
                 <Users className="h-4 w-4 mr-2" />
                 Bulk SMS
               </Button>
+              <Button
+                variant={mode === 'history' ? 'default' : 'ghost'}
+                onClick={() => setMode('history')}
+                className={`rounded-xl px-6 py-3 transition-all duration-300 ${
+                  mode === 'history'
+                    ? 'bg-gradient-to-r from-teal-500 to-emerald-600 text-white shadow-lg shadow-teal-500/25' 
+                    : 'text-gray-400 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                SMS History
+              </Button>
             </div>
           </div>
         </div>
 
-        {/* Sender Names Management */}
-        <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden">
-          <CardHeader className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border-b border-white/10">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-white text-xl flex items-center space-x-3">
-                <div className="p-2 bg-indigo-500/20 rounded-xl">
-                  <Settings className="h-5 w-5 text-indigo-400" />
-                </div>
-                <span>Sender Names</span>
-              </CardTitle>
-              <Button
-                onClick={() => setShowSenderNamesModal(true)}
-                className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-xl px-4 py-2 font-medium"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Sender Name
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="space-y-4">
-              <p className="text-gray-400 text-sm">
-                Manage your approved sender names for SMS messages. Sender names must be pre-approved by mobile network operators.
-              </p>
-              
-              {isLoadingSenders ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="text-center space-y-4">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500 mx-auto"></div>
-                    <p className="text-gray-400 text-sm">Loading sender names...</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="flex flex-wrap gap-3">
-                    {senders.map((sender) => (
-                      <div key={sender.id} className="relative">
-                        <Badge
-                          className={`px-4 py-2 text-sm font-medium ${
-                            sender.status === 'approved'
-                              ? 'bg-gradient-to-r from-green-500/20 to-emerald-500/20 border-green-500/30 text-green-300'
-                              : sender.status === 'pending'
-                              ? 'bg-gradient-to-r from-yellow-500/20 to-amber-500/20 border-yellow-500/30 text-yellow-300'
-                              : 'bg-gradient-to-r from-red-500/20 to-pink-500/20 border-red-500/30 text-red-300'
-                          }`}
-                        >
-                          {sender.name}
-                          {sender.status === 'approved' && (
-                            <CheckCircle className="h-3 w-3 ml-1" />
-                          )}
-                        </Badge>
-                        <div className="absolute -top-1 -right-1">
-                          <Badge
-                            className={`text-xs px-2 py-1 ${
-                              sender.status === 'approved'
-                                ? 'bg-green-500 text-white'
-                                : sender.status === 'pending'
-                                ? 'bg-yellow-500 text-black'
-                                : 'bg-red-500 text-white'
-                            }`}
-                          >
-                            {sender.status}
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
-                    {senders.length === 0 && (
-                      <p className="text-gray-500 text-sm italic">No sender names available. Add your first sender name.</p>
-                    )}
-                  </div>
-                  
-                  {senders.some(s => s.status === 'pending') && (
-                    <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3">
-                      <p className="text-yellow-400 text-sm">
-                        ⏳ Some sender names are pending approval from Mobile Network Operators.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-              
-              <div className="text-xs text-gray-500 mt-4">
-                <p>💡 Tip: Use approved sender names to improve message delivery rates and build trust with recipients.</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+
 
         {/* Status Messages */}
         {successMessage && (
@@ -676,7 +741,7 @@ export default function SmsPage() {
           </div>
         )}
 
-        {!bulkMode ? (
+        {mode === 'single' && (
           /* Single SMS Card */
           <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden">
             <CardHeader className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-b border-white/10">
@@ -767,7 +832,9 @@ export default function SmsPage() {
               </form>
             </CardContent>
           </Card>
-        ) : (
+        )}
+
+        {mode === 'bulk' && (
           <div className="space-y-8">
             {/* Simple Bulk SMS */}
             <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden">
@@ -1126,74 +1193,221 @@ export default function SmsPage() {
           </div>
         )}
 
-        {/* Info Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border-b border-white/10">
-              <CardTitle className="text-white text-xl flex items-center space-x-3">
-                <div className="p-2 bg-blue-500/20 rounded-xl">
-                  <Zap className="h-5 w-5 text-blue-400" />
+        {/* SMS History Section */}
+        {mode === 'history' && (
+          <div className="space-y-6">
+            <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-teal-500/10 to-emerald-500/10 border-b border-white/10">
+                <CardTitle className="text-white text-2xl flex items-center space-x-3">
+                  <div className="p-2 bg-teal-500/20 rounded-xl">
+                    <FileText className="h-6 w-6 text-teal-400" />
+                  </div>
+                  <span>SMS History</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-8">
+                {/* Filters */}
+                <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label className="text-gray-300">Status</Label>
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                      className="w-full bg-black/30 border border-white/20 text-white rounded-lg px-3 py-2 focus:border-teal-500 focus:ring-teal-500/20"
+                    >
+                      <option value="all">All Status</option>
+                      <option value="delivered">Delivered</option>
+                      <option value="sent">Sent</option>
+                      <option value="failed">Failed</option>
+                      <option value="pending">Pending</option>
+                    </select>
+                  </div>
+                  <div>
+                    <Label className="text-gray-300">Phone Number</Label>
+                    <Input
+                      type="text"
+                      placeholder="Filter by phone number"
+                      value={phoneFilter}
+                      onChange={(e) => setPhoneFilter(e.target.value)}
+                      className="bg-black/30 border-white/20 text-white placeholder-gray-400"
+                    />
+                  </div>
+                  <div className="flex items-end space-x-2">
+                    <Button
+                      onClick={fetchSmsHistory}
+                      disabled={isLoadingHistory}
+                      className="flex-1 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white"
+                    >
+                      {isLoadingHistory ? (
+                        <RefreshCw className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-4 w-4" />
+                      )}
+                    </Button>
+                    <Button
+                      onClick={resetFilters}
+                      variant="outline"
+                      className="border-white/20 text-white hover:bg-white/10"
+                    >
+                      <Filter className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-                <span>Quick Tips</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="space-y-4 text-sm text-gray-300">
-                <div className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-blue-400 rounded-full mt-2 flex-shrink-0"></div>
-                  <p>Use international format for phone numbers (e.g., +233244123456)</p>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-blue-400 rounded-full mt-2 flex-shrink-0"></div>
-                  <p>Messages are limited to 160 characters per SMS</p>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-blue-400 rounded-full mt-2 flex-shrink-0"></div>
-                  <p>Sender ID must be pre-approved by your SMS provider</p>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-blue-400 rounded-full mt-2 flex-shrink-0"></div>
-                  <p>Bulk SMS is charged per recipient per message</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
 
-          <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-b border-white/10">
-              <CardTitle className="text-white text-xl flex items-center space-x-3">
-                <div className="p-2 bg-green-500/20 rounded-xl">
-                  <Sparkles className="h-5 w-5 text-green-400" />
+                {/* SMS History List */}
+                <div className="space-y-4">
+                  {isLoadingHistory ? (
+                    <div className="text-center py-8">
+                      <RefreshCw className="h-8 w-8 mx-auto animate-spin text-teal-400" />
+                      <p className="text-gray-400 mt-2">Loading SMS history...</p>
+                    </div>
+                  ) : historyError ? (
+                    <div className="text-center py-8">
+                      <AlertCircle className="h-8 w-8 mx-auto text-red-400" />
+                      <p className="text-red-400 mt-2">{historyError}</p>
+                    </div>
+                  ) : messages.length > 0 ? (
+                    messages.map((sms) => (
+                      <div key={sms.message_id} className="bg-black/30 border border-white/10 rounded-2xl p-6">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 space-y-3">
+                            <div className="flex items-center space-x-3">
+                              <div className={`p-2 rounded-lg ${getStatusColor(sms.status)}`}>
+                                {getStatusIcon(sms.status)}
+                              </div>
+                              <div>
+                                <h3 className="text-white font-medium">{formatPhone(sms.to)}</h3>
+                                <p className="text-sm text-gray-400">Sent on {formatDate(sms.created_at)}</p>
+                              </div>
+                            </div>
+                            {sms.message && (
+                              <div className="bg-black/20 rounded-lg p-3">
+                                <p className="text-gray-300 text-sm">{sms.message}</p>
+                              </div>
+                            )}
+                            <div className="flex items-center space-x-4 text-xs text-gray-500">
+                              <span>Cost: {sms.cost} credits</span>
+                              <span>ID: {sms.message_id}</span>
+                            </div>
+                          </div>
+                          <Badge className={`${getStatusColor(sms.status)} border-0`}>
+                            {sms.status}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <FileText className="h-12 w-12 mx-auto text-gray-500 mb-4" />
+                      <h3 className="text-white text-lg font-medium mb-2">No SMS History</h3>
+                      <p className="text-gray-400">You haven&apos;t sent any SMS messages yet.</p>
+                    </div>
+                  )}
                 </div>
-                <span>Advanced Features</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="space-y-4 text-sm text-gray-300">
-                <div className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-green-400 rounded-full mt-2 flex-shrink-0"></div>
-                  <p>Support for CSV, Excel, JSON, and TSV file formats</p>
+
+                {/* Pagination */}
+                {pagination && pagination.total_pages > 1 && (
+                  <div className="flex items-center justify-between mt-6">
+                    <div className="text-sm text-gray-400">
+                      Page {pagination.current_page} of {pagination.total_pages} ({pagination.total_count} total)
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button
+                        onClick={() => setCurrentPage(pagination.current_page - 1)}
+                        disabled={pagination.current_page <= 1}
+                        variant="outline"
+                        size="sm"
+                        className="border-white/20 text-white hover:bg-white/10"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        onClick={() => setCurrentPage(pagination.current_page + 1)}
+                        disabled={pagination.current_page >= pagination.total_pages}
+                        variant="outline"
+                        size="sm"
+                        className="border-white/20 text-white hover:bg-white/10"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Info Cards - Only show on Single and Bulk SMS tabs */}
+        {(mode === 'single' || mode === 'bulk') && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border-b border-white/10">
+                <CardTitle className="text-white text-xl flex items-center space-x-3">
+                  <div className="p-2 bg-blue-500/20 rounded-xl">
+                    <Zap className="h-5 w-5 text-blue-400" />
+                  </div>
+                  <span>Quick Tips</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="space-y-4 text-sm text-gray-300">
+                  <div className="flex items-start space-x-3">
+                    <div className="w-2 h-2 bg-blue-400 rounded-full mt-2 flex-shrink-0"></div>
+                    <p>Use international format for phone numbers (e.g., +233244123456)</p>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <div className="w-2 h-2 bg-blue-400 rounded-full mt-2 flex-shrink-0"></div>
+                    <p>Messages are limited to 160 characters per SMS</p>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <div className="w-2 h-2 bg-blue-400 rounded-full mt-2 flex-shrink-0"></div>
+                    <p>Sender ID must be pre-approved by your SMS provider</p>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <div className="w-2 h-2 bg-blue-400 rounded-full mt-2 flex-shrink-0"></div>
+                    <p>Bulk SMS is charged per recipient per message</p>
+                  </div>
                 </div>
-                <div className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-green-400 rounded-full mt-2 flex-shrink-0"></div>
-                  <p>Auto-detect phone column or select manually</p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-b border-white/10">
+                <CardTitle className="text-white text-xl flex items-center space-x-3">
+                  <div className="p-2 bg-green-500/20 rounded-xl">
+                    <Sparkles className="h-5 w-5 text-green-400" />
+                  </div>
+                  <span>Advanced Features</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="space-y-4 text-sm text-gray-300">
+                  <div className="flex items-start space-x-3">
+                    <div className="w-2 h-2 bg-green-400 rounded-full mt-2 flex-shrink-0"></div>
+                    <p>Support for CSV, Excel, JSON, and TSV file formats</p>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <div className="w-2 h-2 bg-green-400 rounded-full mt-2 flex-shrink-0"></div>
+                    <p>Auto-detect phone column or select manually</p>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <div className="w-2 h-2 bg-green-400 rounded-full mt-2 flex-shrink-0"></div>
+                    <p>All columns automatically available as template variables</p>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <div className="w-2 h-2 bg-green-400 rounded-full mt-2 flex-shrink-0"></div>
+                    <p>Use {'{{column_name}}'} syntax for any column in your file</p>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <div className="w-2 h-2 bg-green-400 rounded-full mt-2 flex-shrink-0"></div>
+                    <p>Preview messages before sending to avoid errors</p>
+                  </div>
                 </div>
-                <div className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-green-400 rounded-full mt-2 flex-shrink-0"></div>
-                  <p>All columns automatically available as template variables</p>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-green-400 rounded-full mt-2 flex-shrink-0"></div>
-                  <p>Use {'{{column_name}}'} syntax for any column in your file</p>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-green-400 rounded-full mt-2 flex-shrink-0"></div>
-                  <p>Preview messages before sending to avoid errors</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
 
       {/* Sender Names Modal */}

@@ -16,11 +16,13 @@ import {
   FileText, 
   Calendar,
   Phone,
-  AlertCircle,
+  Loader2,
   CheckCircle,
-  Loader2
+  AlertCircle,
+  X
 } from 'lucide-react';
 import { SchedulingService, ScheduledSMS, BulkScheduledSMS } from '@/lib/services/scheduling';
+import { SendersService, Sender } from '@/lib/services/senders';
 import { usePaymentRequired } from '@/components/PaymentRequiredProvider';
 import { useToast } from '@/components/ui/toast';
 
@@ -47,29 +49,81 @@ export default function ScheduleSMSPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [csvData, setCsvData] = useState<Array<{ recipient: string; message: string }>>([]);
-  const [csvError, setCsvError] = useState<string>('');
-  const [csvSuccess, setCsvSuccess] = useState<string>('');
+
+  // Scheduled SMS state
+  const [scheduledSMS, setScheduledSMS] = useState<ScheduledSMS[]>([]);
+  const [isLoadingScheduled, setIsLoadingScheduled] = useState(false);
+  const [scheduledFilters, setScheduledFilters] = useState({
+    status: '',
+    recipient: '',
+    page: 1,
+    per_page: 20
+  });
 
   // Senders state
-  const [senders, setSenders] = useState<string[]>([]);
+  const [senders, setSenders] = useState<Sender[]>([]);
+  const [isLoadingSenders, setIsLoadingSenders] = useState(true);
 
   useEffect(() => {
     fetchSenders();
   }, []);
 
+  useEffect(() => {
+    fetchScheduledSMS();
+  }, [scheduledFilters]);
+
+  // Refresh scheduled SMS when tab is opened
+  const handleTabChange = (value: string) => {
+    if (value === 'scheduled') {
+      fetchScheduledSMS();
+    }
+  };
+
   const fetchSenders = async () => {
     try {
-      // This would need to be implemented based on your existing sender fetching logic
-      // For now, using a placeholder
-      setSenders(['Possitech', 'MyCompany', 'Notifications']);
+      setIsLoadingSenders(true);
+      const response = await SendersService.getSenders();
+      if (response.success) {
+        setSenders(response.data.senders);
+      } else {
+        showToast('error', 'Failed to Load Senders', 'Unable to load sender IDs. Please try again.');
+      }
     } catch (error) {
       console.error('Failed to fetch senders:', error);
+      showToast('error', 'Failed to Load Senders', 'Unable to load sender IDs. Please try again.');
+    } finally {
+      setIsLoadingSenders(false);
+    }
+  };
+
+  const fetchScheduledSMS = async () => {
+    try {
+      setIsLoadingScheduled(true);
+      const response = await SchedulingService.getScheduledSMS(scheduledFilters);
+      
+      if (response.success) {
+        setScheduledSMS(response.data.scheduled_messages);
+      } else {
+        showToast('error', 'Failed to Load Scheduled SMS', 'Unable to load scheduled SMS. Please try again.');
+      }
+    } catch (error) {
+      console.error('Failed to fetch scheduled SMS:', error);
+      showToast('error', 'Failed to Load Scheduled SMS', 'Unable to load scheduled SMS. Please try again.');
+    } finally {
+      setIsLoadingScheduled(false);
     }
   };
 
   const handleSingleSMSSchedule = async () => {
     if (!singleSMS.recipient || !singleSMS.message || !singleSMS.sender_id || !singleSMS.scheduled_at) {
       showToast('error', 'Validation Error', 'Please fill in all required fields');
+      return;
+    }
+
+    // Validate phone number format
+    const phoneRegex = /^\+?[1-9]\d{1,14}$/;
+    if (!phoneRegex.test(singleSMS.recipient)) {
+      showToast('error', 'Invalid Phone Number', 'Please enter a valid phone number in international format (e.g., +233244123456)');
       return;
     }
 
@@ -82,7 +136,16 @@ export default function ScheduleSMSPage() {
 
     try {
       setIsLoading(true);
-      const response = await SchedulingService.scheduleSMS(singleSMS as ScheduledSMS);
+      console.log('🚀 Sending single SMS schedule request:', singleSMS);
+      const response = await SchedulingService.scheduleSMS({
+        scheduled_sms: {
+          recipient: singleSMS.recipient,
+          message: singleSMS.message,
+          sender_id: singleSMS.sender_id,
+          scheduled_at: singleSMS.scheduled_at!
+        }
+      });
+      console.log('📡 Single SMS schedule API response:', response);
       
       if (response.success) {
         showToast('success', 'SMS Scheduled', `SMS scheduled successfully for ${new Date(singleSMS.scheduled_at!).toLocaleString()}`);
@@ -93,8 +156,19 @@ export default function ScheduleSMSPage() {
           sender_id: '',
           scheduled_at: ''
         });
+      } else {
+        console.log('❌ Single SMS schedule failed - response not successful:', response);
+        showToast('error', 'Scheduling Failed', response.error || 'Failed to schedule SMS');
       }
     } catch (error: unknown) {
+      console.log('💥 Single SMS schedule error caught:', error);
+      console.log('💥 Error type:', typeof error);
+      console.log('💥 Error instanceof Error:', error instanceof Error);
+      if (error instanceof Error) {
+        console.log('💥 Error message:', error.message);
+        console.log('💥 Error stack:', error.stack);
+      }
+      
       const errorMessage = error instanceof Error ? error.message : 'Failed to schedule SMS';
       console.error('Failed to schedule SMS:', error);
       
@@ -128,10 +202,18 @@ export default function ScheduleSMSPage() {
 
     try {
       setIsLoading(true);
-      const response = await SchedulingService.scheduleBulkSMS(bulkSMS as BulkScheduledSMS);
+      console.log('🚀 Sending bulk SMS schedule request:', bulkSMS);
+      const response = await SchedulingService.scheduleBulkSMS({
+        bulk_scheduled_sms: {
+          sender_id: bulkSMS.sender_id,
+          scheduled_at: bulkSMS.scheduled_at,
+          messages: bulkSMS.messages
+        }
+      });
+      console.log('📡 Bulk SMS schedule API response:', response);
       
       if (response.success) {
-        showToast('success', 'Bulk SMS Scheduled', `${response.data.scheduled_count} SMS messages scheduled successfully for ${new Date(bulkSMS.scheduled_at!).toLocaleString()}`);
+        showToast('success', 'Bulk SMS Scheduled', `${response.data.total_scheduled} SMS messages scheduled successfully for ${new Date(bulkSMS.scheduled_at!).toLocaleString()}`);
         // Reset form
         setBulkSMS({
           sender_id: '',
@@ -140,8 +222,19 @@ export default function ScheduleSMSPage() {
         });
         setCsvData([]);
         setCsvFile(null);
+      } else {
+        console.log('❌ Bulk SMS schedule failed - response not successful:', response);
+        showToast('error', 'Bulk Scheduling Failed', response.error || 'Failed to schedule bulk SMS');
       }
     } catch (error: unknown) {
+      console.log('💥 Bulk SMS schedule error caught:', error);
+      console.log('💥 Error type:', typeof error);
+      console.log('💥 Error instanceof Error:', error instanceof Error);
+      if (error instanceof Error) {
+        console.log('💥 Error message:', error.message);
+        console.log('💥 Error stack:', error.stack);
+      }
+      
       const errorMessage = error instanceof Error ? error.message : 'Failed to schedule bulk SMS';
       console.error('Failed to schedule bulk SMS:', error);
       
@@ -165,12 +258,11 @@ export default function ScheduleSMSPage() {
     if (!file) return;
 
     if (file.type !== 'text/csv' && !file.name.endsWith('.csv')) {
-      setCsvError('Please upload a valid CSV file');
+      showToast('error', 'Invalid File', 'Please upload a valid CSV file');
       return;
     }
 
     setCsvFile(file);
-    setCsvError('');
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -184,11 +276,14 @@ export default function ScheduleSMSPage() {
         const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
         
         if (missingHeaders.length > 0) {
-          setCsvError(`Missing required columns: ${missingHeaders.join(', ')}`);
+          showToast('error', 'Invalid CSV Format', `Missing required columns: ${missingHeaders.join(', ')}`);
           return;
         }
 
         const data: Array<{ recipient: string; message: string }> = [];
+        
+        const phoneRegex = /^\+?[1-9]\d{1,14}$/;
+        const invalidPhones: string[] = [];
         
         for (let i = 1; i < lines.length; i++) {
           const line = lines[i].trim();
@@ -196,32 +291,42 @@ export default function ScheduleSMSPage() {
           
           const values = line.split(',').map(v => v.trim());
           if (values.length >= 2) {
+            const recipient = values[headers.indexOf('recipient')];
+            const message = values[headers.indexOf('message')];
+            
+            if (!phoneRegex.test(recipient)) {
+              invalidPhones.push(recipient);
+            }
+            
             data.push({
-              recipient: values[headers.indexOf('recipient')],
-              message: values[headers.indexOf('message')]
+              recipient,
+              message
             });
           }
         }
+        
+        if (invalidPhones.length > 0) {
+          showToast('error', 'Invalid Phone Numbers', `Found ${invalidPhones.length} invalid phone numbers in CSV. Please check the format.`);
+          return;
+        }
 
         if (data.length === 0) {
-          setCsvError('No valid data found in CSV file');
+          showToast('error', 'No Data', 'No valid data found in CSV file');
           return;
         }
 
         setCsvData(data);
         setBulkSMS(prev => ({ ...prev, messages: data }));
-        setCsvSuccess(`Successfully loaded ${data.length} recipients from CSV`);
-        
-        setTimeout(() => setCsvSuccess(''), 3000);
+        showToast('success', 'CSV Uploaded', `Successfully loaded ${data.length} recipients from CSV`);
              } catch (error: unknown) {
-         setCsvError('Failed to parse CSV file');
+         showToast('error', 'Parse Error', 'Failed to parse CSV file');
        }
     };
     reader.readAsText(file);
   };
 
   const downloadSampleCSV = () => {
-    const csvContent = 'recipient,message\n+233244123456,Hello from PossiNotify!\n+233244789012,Your scheduled message here';
+    const csvContent = 'recipient,message\n+233244123456,Hello from PossiNote!\n+233244789012,Your scheduled message here';
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -235,6 +340,53 @@ export default function ScheduleSMSPage() {
     const now = new Date();
     now.setMinutes(now.getMinutes() + 1); // Minimum 1 minute from now
     return now.toISOString().slice(0, 16);
+  };
+
+  const handleCancelScheduledSMS = async (id: string) => {
+    try {
+      const response = await SchedulingService.cancelScheduledSMS(id);
+      
+      if (response.success) {
+        showToast('success', 'SMS Cancelled', 'Scheduled SMS has been cancelled successfully');
+        fetchScheduledSMS(); // Refresh the list
+      } else {
+        showToast('error', 'Cancellation Failed', response.error || 'Failed to cancel scheduled SMS');
+      }
+    } catch (error) {
+      console.error('Failed to cancel scheduled SMS:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to cancel scheduled SMS';
+      showToast('error', 'Cancellation Failed', errorMessage);
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30';
+      case 'sent':
+        return 'bg-green-500/20 text-green-300 border-green-500/30';
+      case 'failed':
+        return 'bg-red-500/20 text-red-300 border-red-500/30';
+      case 'cancelled':
+        return 'bg-gray-500/20 text-gray-300 border-gray-500/30';
+      default:
+        return 'bg-gray-500/20 text-gray-300 border-gray-500/30';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return <Clock className="h-4 w-4" />;
+      case 'sent':
+        return <CheckCircle className="h-4 w-4" />;
+      case 'failed':
+        return <AlertCircle className="h-4 w-4" />;
+      case 'cancelled':
+        return <X className="h-4 w-4" />;
+      default:
+        return <Clock className="h-4 w-4" />;
+    }
   };
 
   return (
@@ -254,8 +406,8 @@ export default function ScheduleSMSPage() {
         </div>
 
         {/* Main Content */}
-        <Tabs defaultValue="single" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 bg-slate-800/50">
+        <Tabs defaultValue="single" className="space-y-6" onValueChange={handleTabChange}>
+          <TabsList className="grid w-full grid-cols-3 bg-slate-800/50">
             <TabsTrigger value="single" className="data-[state=active]:bg-gradient-to-r from-teal-600 to-emerald-600">
               <Send className="h-4 w-4 mr-2" />
               Single SMS
@@ -263,6 +415,10 @@ export default function ScheduleSMSPage() {
             <TabsTrigger value="bulk" className="data-[state=active]:bg-gradient-to-r from-teal-600 to-emerald-600">
               <Upload className="h-4 w-4 mr-2" />
               Bulk SMS
+            </TabsTrigger>
+            <TabsTrigger value="scheduled" className="data-[state=active]:bg-gradient-to-r from-teal-600 to-emerald-600">
+              <Clock className="h-4 w-4 mr-2" />
+              Scheduled SMS
             </TabsTrigger>
           </TabsList>
 
@@ -302,10 +458,13 @@ export default function ScheduleSMSPage() {
                         value={singleSMS.sender_id}
                         onChange={(e) => setSingleSMS(prev => ({ ...prev, sender_id: e.target.value }))}
                         className="w-full bg-black/30 border border-white/20 text-white rounded-lg px-3 py-2 focus:border-teal-500 focus:ring-teal-500/20"
+                        disabled={isLoadingSenders}
                       >
-                        <option value="">Select Sender ID</option>
+                        <option value="">{isLoadingSenders ? 'Loading senders...' : 'Select Sender ID'}</option>
                         {senders.map((sender) => (
-                          <option key={sender} value={sender}>{sender}</option>
+                          <option key={sender.id} value={sender.name} disabled={sender.status !== 'approved'}>
+                            {sender.name} {sender.status !== 'approved' ? `(${sender.status})` : ''}
+                          </option>
                         ))}
                       </select>
                     </div>
@@ -393,10 +552,13 @@ export default function ScheduleSMSPage() {
                         value={bulkSMS.sender_id}
                         onChange={(e) => setBulkSMS(prev => ({ ...prev, sender_id: e.target.value }))}
                         className="w-full bg-black/30 border border-white/20 text-white rounded-lg px-3 py-2 focus:border-teal-500 focus:ring-teal-500/20"
+                        disabled={isLoadingSenders}
                       >
-                        <option value="">Select Sender ID</option>
+                        <option value="">{isLoadingSenders ? 'Loading senders...' : 'Select Sender ID'}</option>
                         {senders.map((sender) => (
-                          <option key={sender} value={sender}>{sender}</option>
+                          <option key={sender.id} value={sender.name} disabled={sender.status !== 'approved'}>
+                            {sender.name} {sender.status !== 'approved' ? `(${sender.status})` : ''}
+                          </option>
                         ))}
                       </select>
                     </div>
@@ -440,19 +602,7 @@ export default function ScheduleSMSPage() {
                         </div>
                       )}
 
-                      {csvError && (
-                        <div className="flex items-center space-x-2 mt-2 text-red-400">
-                          <AlertCircle className="h-4 w-4" />
-                          <span className="text-sm">{csvError}</span>
-                        </div>
-                      )}
 
-                      {csvSuccess && (
-                        <div className="flex items-center space-x-2 mt-2 text-green-400">
-                          <CheckCircle className="h-4 w-4" />
-                          <span className="text-sm">{csvSuccess}</span>
-                        </div>
-                      )}
 
                       <Button
                         variant="outline"
@@ -527,6 +677,119 @@ export default function ScheduleSMSPage() {
                       </>
                     )}
                   </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Scheduled SMS Tab */}
+          <TabsContent value="scheduled">
+            <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-teal-500/10 to-emerald-500/10 border-b border-white/10">
+                <CardTitle className="text-white text-2xl flex items-center space-x-3">
+                  <div className="p-2 bg-teal-500/20 rounded-xl">
+                    <Clock className="h-6 w-6 text-teal-400" />
+                  </div>
+                  <span>Scheduled SMS Messages</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-8">
+                {/* Filters */}
+                <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label className="text-gray-300">Status</Label>
+                    <select
+                      value={scheduledFilters.status}
+                      onChange={(e) => setScheduledFilters(prev => ({ ...prev, status: e.target.value }))}
+                      className="w-full bg-black/30 border border-white/20 text-white rounded-lg px-3 py-2 focus:border-teal-500 focus:ring-teal-500/20"
+                    >
+                      <option value="">All Status</option>
+                      <option value="pending">Pending</option>
+                      <option value="sent">Sent</option>
+                      <option value="failed">Failed</option>
+                      <option value="cancelled">Cancelled</option>
+                    </select>
+                  </div>
+                  <div>
+                    <Label className="text-gray-300">Recipient</Label>
+                    <Input
+                      type="text"
+                      placeholder="Filter by recipient"
+                      value={scheduledFilters.recipient}
+                      onChange={(e) => setScheduledFilters(prev => ({ ...prev, recipient: e.target.value }))}
+                      className="bg-black/30 border-white/20 text-white placeholder-gray-400"
+                    />
+                  </div>
+                  <div className="flex items-end">
+                    <Button
+                      onClick={fetchScheduledSMS}
+                      disabled={isLoadingScheduled}
+                      className="w-full bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white"
+                    >
+                      {isLoadingScheduled ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        'Refresh'
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Scheduled SMS List */}
+                <div className="space-y-4">
+                  {isLoadingScheduled ? (
+                    <div className="text-center py-8">
+                      <Loader2 className="h-8 w-8 mx-auto animate-spin text-teal-400" />
+                      <p className="text-gray-400 mt-2">Loading scheduled SMS...</p>
+                    </div>
+                  ) : scheduledSMS.length > 0 ? (
+                    scheduledSMS.map((sms) => (
+                      <div key={sms.id} className="bg-black/30 border border-white/10 rounded-2xl p-6">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 space-y-3">
+                            <div className="flex items-center space-x-3">
+                              <div className={`p-2 rounded-lg ${getStatusColor(sms.status || 'pending')}`}>
+                                {getStatusIcon(sms.status || 'pending')}
+                              </div>
+                              <div>
+                                <h3 className="text-white font-medium">{sms.recipient}</h3>
+                                <p className="text-sm text-gray-400">Scheduled for {new Date(sms.scheduled_at).toLocaleString()}</p>
+                              </div>
+                            </div>
+                            <div className="bg-black/20 rounded-lg p-3">
+                              <p className="text-gray-300 text-sm">{sms.message}</p>
+                            </div>
+                            <div className="flex items-center space-x-4 text-xs text-gray-500">
+                              <span>Sender: {sms.sender_id}</span>
+                              <span>Cost: {sms.cost} credits</span>
+                              {sms.batch_id && <span>Batch: {sms.batch_id}</span>}
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            {sms.status === 'pending' && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleCancelScheduledSMS(sms.id!)}
+                                className="border-red-500/30 text-red-300 hover:bg-red-500/20"
+                              >
+                                Cancel
+                              </Button>
+                            )}
+                            <Badge className={`${getStatusColor(sms.status || 'pending')} border-0`}>
+                              {sms.status || 'pending'}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <Clock className="h-12 w-12 mx-auto text-gray-500 mb-4" />
+                      <h3 className="text-white text-lg font-medium mb-2">No Scheduled SMS</h3>
+                      <p className="text-gray-400">You haven&apos;t scheduled any SMS messages yet.</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

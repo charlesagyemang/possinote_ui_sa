@@ -75,11 +75,12 @@ interface EmailHistoryResponse {
 }
 
 export class EmailService {
-  static async sendEmail(recipient: string, subject: string, content: string): Promise<EmailResponse> {
+  static async sendEmail(recipient: string, subject: string, content: string, sender_name?: string): Promise<EmailResponse> {
     const payload = {
       recipient,
       subject,
-      content
+      content,
+      ...(sender_name && { sender_name })
     };
 
     // Log the full request details
@@ -115,11 +116,12 @@ export class EmailService {
     }
   }
 
-  static async sendBulkEmail(recipients: string[], subject: string, content: string): Promise<BulkEmailResponse> {
+  static async sendBulkEmail(recipients: string[], subject: string, content: string, sender_name?: string): Promise<BulkEmailResponse> {
     const payload = {
       recipients,
       subject,
-      content
+      content,
+      ...(sender_name && { sender_name })
     };
 
     // Log the full request details
@@ -155,7 +157,7 @@ export class EmailService {
     }
   }
 
-  static async sendBulkEmails(emails: Array<{ to: string; subject: string; html: string }>): Promise<BulkEmailResponse> {
+  static async sendBulkEmails(emails: Array<{ to: string; subject: string; html: string; sender_name?: string }>): Promise<BulkEmailResponse> {
     // For now, we'll send emails individually since the backend might not support personalized bulk emails
     // This can be optimized later with a proper bulk endpoint
     const results = [];
@@ -167,7 +169,7 @@ export class EmailService {
 
     for (const email of emails) {
       try {
-        const response = await this.sendEmail(email.to, email.subject, email.html);
+        const response = await this.sendEmail(email.to, email.subject, email.html, email.sender_name);
         if (response.success) {
           successCount++;
           results.push({

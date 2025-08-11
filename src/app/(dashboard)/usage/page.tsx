@@ -8,12 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { UsageData, CreditTransaction } from '@/types';
 import { 
   TrendingUp, 
   Activity, 
-  Calendar, 
   BarChart3, 
   Target, 
   ArrowUpRight, 
@@ -269,14 +268,7 @@ export default function UsagePage() {
     );
   }
 
-  // Create sample chart data for demonstration
-  const chartData = [
-    { date: '2024-01-01', cost: 2.50, requests: 1 },
-    { date: '2024-01-02', cost: 1.75, requests: 1 },
-    { date: '2024-01-03', cost: 3.20, requests: 1 },
-    { date: '2024-01-04', cost: 2.10, requests: 1 },
-    { date: '2024-01-05', cost: 4.50, requests: 1 },
-  ];
+
 
   // Debug the current usage data
   console.log('🔍 Current Usage Data:', currentUsage);
@@ -458,68 +450,7 @@ export default function UsagePage() {
         </div>
 
         {/* Charts Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border-b border-white/10">
-              <CardTitle className="text-white text-xl flex items-center space-x-3">
-                <div className="p-2 bg-blue-500/20 rounded-xl">
-                  <TrendingUp className="h-5 w-5 text-blue-400" />
-                </div>
-                <span>Usage Over Time</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              {chartData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
-                    <XAxis 
-                      dataKey="date" 
-                      stroke="#9CA3AF"
-                      fontSize={12}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <YAxis 
-                      stroke="#9CA3AF"
-                      fontSize={12}
-                      tickFormatter={(value) => `${typeof value === 'number' ? value.toFixed(2) : parseFloat(value || 0).toFixed(2)} credits`}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <Tooltip 
-                      contentStyle={{
-                        backgroundColor: '#1F2937',
-                        border: '1px solid #374151',
-                        borderRadius: '12px',
-                        color: '#F9FAFB',
-                        boxShadow: '0 10px 25px rgba(0, 0, 0, 0.3)'
-                      }}
-                      formatter={(value: unknown) => [`${typeof value === 'number' ? value.toFixed(2) : parseFloat(String(value) || '0').toFixed(2)} credits`, 'Cost']}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="cost" 
-                      stroke="#3B82F6" 
-                      strokeWidth={3}
-                      dot={{ fill: '#3B82F6', strokeWidth: 2, r: 5 }}
-                      activeDot={{ r: 8, stroke: '#3B82F6', strokeWidth: 2 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex items-center justify-center h-64">
-                  <div className="text-center space-y-4">
-                    <div className="p-4 bg-gray-500/20 rounded-2xl w-fit mx-auto">
-                      <Calendar className="h-12 w-12 text-gray-400" />
-                    </div>
-                    <p className="text-gray-400">No usage data available</p>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
+        <div className="grid grid-cols-1 gap-6">
           <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden">
             <CardHeader className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-b border-white/10">
               <CardTitle className="text-white text-xl flex items-center space-x-3">

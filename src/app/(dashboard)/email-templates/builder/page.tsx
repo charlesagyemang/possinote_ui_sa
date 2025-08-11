@@ -40,7 +40,32 @@ export default function EmailTemplateBuilderPage() {
     } else if (templateData) {
       // Load template from store
       try {
-        const parsedTemplate = JSON.parse(decodeURIComponent(templateData));
+              // First try to decode the URI component safely
+      let decodedData;
+      try {
+        decodedData = decodeURIComponent(templateData);
+      } catch (decodeError) {
+        console.error('Failed to decode URI component:', decodeError);
+        // If decodeURIComponent fails, try using the raw data
+        decodedData = templateData;
+      }
+      
+      // Try to parse the JSON data
+      let parsedTemplate;
+      try {
+        parsedTemplate = JSON.parse(decodedData);
+      } catch (parseError) {
+        console.error('Failed to parse JSON:', parseError);
+        // If JSON parsing fails, try to fix common encoding issues
+        try {
+          // Sometimes the data might be double-encoded
+          const doubleDecoded = decodeURIComponent(decodedData);
+          parsedTemplate = JSON.parse(doubleDecoded);
+        } catch (doubleDecodeError) {
+          console.error('Failed to double-decode:', doubleDecodeError);
+          throw new Error('Unable to parse template data');
+        }
+      }
         setTemplate({
           id: '',
           name: parsedTemplate.name,
@@ -54,9 +79,11 @@ export default function EmailTemplateBuilderPage() {
         });
       } catch (error) {
         console.error('Failed to parse template data:', error);
+        // Redirect back to templates page if parsing fails
+        router.push('/email-templates');
       }
     }
-  }, [templateId, templateData, loadTemplate]);
+  }, [templateId, templateData, loadTemplate, router]);
 
   const handleSave = async (savedTemplate: EmailTemplate) => {
     setTemplate(savedTemplate);
