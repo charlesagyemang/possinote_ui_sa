@@ -167,7 +167,16 @@ export default function ApiDocsPage() {
         { id: 'schedule-bulk-individual', label: 'Schedule Bulk Individual', icon: Clock }
       ]
     },
-    { id: 'sdks', label: 'SDKs', icon: Package },
+    { 
+      id: 'sdks', 
+      label: 'SDKs', 
+      icon: Package,
+      subItems: [
+        { id: 'sdk-ruby', label: 'Ruby SDK', icon: Code },
+        { id: 'sdk-python', label: 'Python SDK', icon: Code },
+        { id: 'sdk-nodejs', label: 'Node.js SDK', icon: Code }
+      ]
+    },
     { id: 'errors', label: 'Error Handling', icon: XCircle },
     { id: 'best-practices', label: 'Best Practices', icon: Info }
   ];
@@ -908,17 +917,19 @@ export default function ApiDocsPage() {
 
       case 'sdks':
         return (
-          <div className="space-y-6">
+          <div className="space-y-8">
             <div>
               <h2 className="text-2xl font-bold text-white mb-4">SDKs & Libraries</h2>
               <p className="text-gray-400 mb-6">
-                Official SDKs and libraries to help you integrate PossiNote API into your applications quickly and easily.
+                Official SDKs and libraries to help you integrate PossiNote API into your applications quickly and easily. 
+                Choose your preferred language and get started in minutes.
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6">
+            {/* SDK Overview Cards */}
+            <div className="grid md:grid-cols-3 gap-6 mb-8">
               {/* Ruby Gem */}
-              <Card className="bg-slate-800 border-slate-700">
+              <Card className="bg-slate-800 border-slate-700 hover:border-teal-500/50 transition-colors">
                 <CardHeader>
                   <CardTitle className="text-white flex items-center gap-2">
                     <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center">
@@ -929,36 +940,33 @@ export default function ApiDocsPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <p className="text-gray-300 text-sm">
-                    Official Ruby gem for PossiNote API integration.
+                    Official Ruby gem with comprehensive error handling and Rails integration.
                   </p>
-                                     <div className="bg-slate-900 rounded-lg p-4">
-                     <CodeBlock identifier="ruby-install">gem install possinote</CodeBlock>
-                   </div>
-                   <div className="bg-slate-900 rounded-lg p-4">
-                     <CodeBlock identifier="ruby-usage" language="ruby">{`require 'possinote'
-
-client = Possinote::Client.new(api_key: 'YOUR_API_KEY')
-
-# Send SMS
-client.sms.send(
-  to: '+233541348180',
-  message: 'Hello from Ruby!',
-  sender_id: 'MyBrand'
-)
-
-# Send Email
-client.email.send(
-  recipient: 'user@example.com',
-  subject: 'Welcome!',
-  content: '<h1>Hello!</h1>',
-  sender_name: 'Ruby App'
-)`}</CodeBlock>
+                  <div className="flex items-center gap-2 text-sm text-gray-400">
+                    <span>• SMS & Email</span>
+                    <span>• Scheduling</span>
+                    <span>• Rails Ready</span>
+                  </div>
+                  <div className="bg-slate-900 rounded-lg p-3">
+                    <CodeBlock identifier="ruby-install">gem install possinote</CodeBlock>
+                  </div>
+                  <div className="flex gap-2">
+                    <a href="https://github.com/charlesagyemang/POSSINOTE-RUBY-GEM" target="_blank" rel="noopener noreferrer">
+                      <Button size="sm" variant="outline" className="text-xs">
+                        <Code className="h-3 w-3 mr-1" />
+                        GitHub
+                      </Button>
+                    </a>
+                    <Button size="sm" variant="outline" className="text-xs">
+                      <BookOpen className="h-3 w-3 mr-1" />
+                      Docs
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
 
               {/* Python Package */}
-              <Card className="bg-slate-800 border-slate-700">
+              <Card className="bg-slate-800 border-slate-700 hover:border-teal-500/50 transition-colors">
                 <CardHeader>
                   <CardTitle className="text-white flex items-center gap-2">
                     <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
@@ -969,36 +977,33 @@ client.email.send(
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <p className="text-gray-300 text-sm">
-                    Official Python package for PossiNote API integration.
+                    Official Python package with async support and Django/Flask integration.
                   </p>
-                                     <div className="bg-slate-900 rounded-lg p-4">
-                     <CodeBlock identifier="python-install">pip install possinote</CodeBlock>
-                   </div>
-                   <div className="bg-slate-900 rounded-lg p-4">
-                     <CodeBlock identifier="python-usage" language="python">{`from possinote import Possinote
-
-client = Possinote(api_key='YOUR_API_KEY')
-
-# Send SMS
-client.sms.send(
-    to='+233541348180',
-    message='Hello from Python!',
-    sender_id='MyBrand'
-)
-
-# Send Email
-client.email.send(
-    recipient='user@example.com',
-    subject='Welcome!',
-    content='<h1>Hello!</h1>',
-    sender_name='Python App'
-)`}</CodeBlock>
+                  <div className="flex items-center gap-2 text-sm text-gray-400">
+                    <span>• SMS & Email</span>
+                    <span>• Async Support</span>
+                    <span>• Django/Flask</span>
+                  </div>
+                  <div className="bg-slate-900 rounded-lg p-3">
+                    <CodeBlock identifier="python-install">pip install possinote</CodeBlock>
+                  </div>
+                  <div className="flex gap-2">
+                    <a href="https://github.com/charlesagyemang/POSSINOTE-PYTHON-PIP" target="_blank" rel="noopener noreferrer">
+                      <Button size="sm" variant="outline" className="text-xs">
+                        <Code className="h-3 w-3 mr-1" />
+                        GitHub
+                      </Button>
+                    </a>
+                    <Button size="sm" variant="outline" className="text-xs">
+                      <BookOpen className="h-3 w-3 mr-1" />
+                      Docs
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
 
               {/* Node.js Package */}
-              <Card className="bg-slate-800 border-slate-700">
+              <Card className="bg-slate-800 border-slate-700 hover:border-teal-500/50 transition-colors">
                 <CardHeader>
                   <CardTitle className="text-white flex items-center gap-2">
                     <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
@@ -1009,87 +1014,88 @@ client.email.send(
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <p className="text-gray-300 text-sm">
-                    Official Node.js package for PossiNote API integration.
+                    Official Node.js package with TypeScript support and Express integration.
                   </p>
-                                     <div className="bg-slate-900 rounded-lg p-4">
-                     <CodeBlock identifier="node-install">npm install possinote</CodeBlock>
-                   </div>
-                   <div className="bg-slate-900 rounded-lg p-4">
-                     <CodeBlock identifier="node-usage" language="javascript">{`const { Possinote } = require('possinote');
-
-const client = new Possinote('YOUR_API_KEY');
-
-// Send SMS
-await client.sms.send({
-  to: '+233541348180',
-  message: 'Hello from Node.js!',
-  sender_id: 'MyBrand'
-});
-
-// Send Email
-await client.email.send({
-  recipient: 'user@example.com',
-  subject: 'Welcome!',
-  content: '<h1>Hello!</h1>',
-  sender_name: 'Node.js App'
-});`}</CodeBlock>
+                  <div className="flex items-center gap-2 text-sm text-gray-400">
+                    <span>• SMS & Email</span>
+                    <span>• TypeScript</span>
+                    <span>• Express Ready</span>
                   </div>
-                </CardContent>
-              </Card>
-
-              {/* TypeScript Package */}
-              <Card className="bg-slate-800 border-slate-700">
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center gap-2">
-                    <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-                    <span className="text-white font-bold text-sm">TS</span>
-                    </div>
-                    TypeScript Package
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-gray-300 text-sm">
-                    Official TypeScript package with full type definitions.
-                  </p>
-                                     <div className="bg-slate-900 rounded-lg p-4">
-                     <CodeBlock identifier="ts-install">npm install possinote</CodeBlock>
-                   </div>
-                   <div className="bg-slate-900 rounded-lg p-4">
-                     <CodeBlock identifier="ts-usage" language="typescript">{`import { Possinote } from 'possinote';
-
-const client = new Possinote('YOUR_API_KEY');
-
-// Send SMS
-await client.sms.send({
-  to: '+233541348180',
-  message: 'Hello from TypeScript!',
-  sender_id: 'MyBrand'
-});
-
-// Send Email
-await client.email.send({
-  recipient: 'user@example.com',
-  subject: 'Welcome!',
-  content: '<h1>Hello!</h1>',
-  sender_name: 'TypeScript App'
-});`}</CodeBlock>
+                  <div className="bg-slate-900 rounded-lg p-3">
+                    <CodeBlock identifier="node-install">npm install possinote</CodeBlock>
+                  </div>
+                  <div className="flex gap-2">
+                    <a href="https://github.com/charlesagyemang/POSSINOTE-NPM-PACKAGE" target="_blank" rel="noopener noreferrer">
+                      <Button size="sm" variant="outline" className="text-xs">
+                        <Code className="h-3 w-3 mr-1" />
+                        GitHub
+                      </Button>
+                    </a>
+                    <Button size="sm" variant="outline" className="text-xs">
+                      <BookOpen className="h-3 w-3 mr-1" />
+                      Docs
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Coming Soon Section */}
-            <div className="bg-gradient-to-r from-purple-900/30 to-blue-900/30 border border-purple-500/50 rounded-lg p-6">
+            {/* Quick Start Guide */}
+            <div className="bg-gradient-to-r from-teal-900/30 to-emerald-900/30 border border-teal-500/50 rounded-lg p-6">
               <div className="flex items-start space-x-3">
-                <div className="p-2 bg-purple-500/20 rounded-lg">
-                  <Package className="h-5 w-5 text-purple-400" />
+                <div className="p-2 bg-teal-500/20 rounded-lg">
+                  <Zap className="h-5 w-5 text-teal-400" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-purple-300 mb-2">
+                  <h3 className="text-lg font-semibold text-teal-300 mb-2">
+                    🚀 Quick Start Guide
+                  </h3>
+                  <p className="text-teal-200 mb-4">
+                    Select your preferred SDK from the sidebar to get detailed installation instructions, 
+                    framework integration examples, and advanced usage patterns.
+                  </p>
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-600">
+                      <h4 className="font-semibold text-white mb-2">Ruby SDK</h4>
+                      <p className="text-sm text-gray-300 mb-3">Complete Rails integration with background jobs</p>
+                      <Button size="sm" variant="outline" className="text-xs">
+                        <ChevronRight className="h-3 w-3 mr-1" />
+                        View Details
+                      </Button>
+                    </div>
+                    <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-600">
+                      <h4 className="font-semibold text-white mb-2">Python SDK</h4>
+                      <p className="text-sm text-gray-300 mb-3">Django/Flask integration with async support</p>
+                      <Button size="sm" variant="outline" className="text-xs">
+                        <ChevronRight className="h-3 w-3 mr-1" />
+                        View Details
+                      </Button>
+                    </div>
+                    <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-600">
+                      <h4 className="font-semibold text-white mb-2">Node.js SDK</h4>
+                      <p className="text-sm text-gray-300 mb-3">Express integration with TypeScript support</p>
+                      <Button size="sm" variant="outline" className="text-xs">
+                        <ChevronRight className="h-3 w-3 mr-1" />
+                        View Details
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Coming Soon Section */}
+            <div className="bg-gradient-to-r from-amber-900/30 to-orange-900/30 border border-amber-500/50 rounded-lg p-6">
+              <div className="flex items-start space-x-3">
+                <div className="p-2 bg-amber-500/20 rounded-lg">
+                  <Package className="h-5 w-5 text-amber-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-amber-300 mb-2">
                     🚀 More SDKs Coming Soon!
                   </h3>
-                  <p className="text-purple-200 mb-3">
-                    We&apos;re working on additional SDKs to make integration even easier.
+                  <p className="text-amber-200 mb-3">
+                    We&apos;re working on additional SDKs to make integration even easier across more platforms.
                   </p>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-600">
@@ -1124,6 +1130,566 @@ await client.email.send({
                         <span className="text-xs text-gray-300">Java SDK</span>
                       </div>
                     </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'sdk-ruby':
+        return (
+          <div className="space-y-8">
+            <div>
+              <h2 className="text-2xl font-bold text-white mb-4">Ruby SDK</h2>
+              <p className="text-gray-400 mb-6">
+                Complete Ruby integration with Rails support, comprehensive error handling, and background job integration.
+              </p>
+            </div>
+
+            <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold">R</span>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white">Ruby Gem</h3>
+                  <p className="text-gray-400 text-sm">Complete Ruby integration with Rails support</p>
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="text-lg font-semibold text-white mb-3">Installation</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm text-gray-300 mb-2">Add to Gemfile:</p>
+                      <CodeBlock identifier="ruby-gemfile">gem &apos;possinote&apos;</CodeBlock>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-300 mb-2">Or install directly:</p>
+                      <CodeBlock identifier="ruby-install-direct">gem install possinote</CodeBlock>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-lg font-semibold text-white mb-3">Quick Start</h4>
+                  <CodeBlock identifier="ruby-quickstart" language="ruby">{`require &apos;possinote&apos;
+
+# Initialize client
+client = Possinote::Client.new(api_key: &apos;your_api_key_here&apos;)
+
+# Send SMS
+response = client.sms.send(
+  to: &apos;+233244123456&apos;,
+  message: &apos;Hello from Possinote!&apos;,
+  sender_id: &apos;YourSenderID&apos;
+)
+
+# Send Email
+response = client.email.send(
+  recipient: &apos;user@example.com&apos;,
+  subject: &apos;Welcome to Possinote&apos;,
+  content: &apos;<h1>Hello!</h1><p>Welcome to our platform.</p>&apos;,
+  sender_name: &apos;Your Company&apos;
+)`}</CodeBlock>
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <h4 className="text-lg font-semibold text-white mb-3">Rails Integration</h4>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <p className="text-sm text-gray-300 mb-2">Initializer (config/initializers/possinote.rb):</p>
+                    <CodeBlock identifier="ruby-rails-init" language="ruby">{`# config/initializers/possinote.rb
+POSSINOTE_CLIENT = Possinote::Client.new(
+  api_key: Rails.application.credentials.possinote[:api_key]
+)`}</CodeBlock>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-300 mb-2">Controller Usage:</p>
+                    <CodeBlock identifier="ruby-controller" language="ruby">{`class NotificationsController < ApplicationController
+  def send_sms
+    begin
+      response = POSSINOTE_CLIENT.sms.send(
+        to: params[:phone_number],
+        message: params[:message],
+        sender_id: &apos;YourBrand&apos;
+      )
+      
+      if response[&apos;success&apos;]
+        render json: { message: &apos;SMS sent successfully&apos; }
+      else
+        render json: { error: &apos;Failed to send SMS&apos; }, status: :unprocessable_entity
+      end
+    rescue Possinote::AuthenticationError => e
+      render json: { error: &apos;Authentication failed&apos; }, status: :unauthorized
+    rescue Possinote::PaymentRequiredError => e
+      render json: { error: &apos;Insufficient credits&apos; }, status: :payment_required
+    end
+  end
+end`}</CodeBlock>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <h4 className="text-lg font-semibold text-white mb-3">Advanced Features</h4>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <p className="text-sm text-gray-300 mb-2">Bulk SMS:</p>
+                    <CodeBlock identifier="ruby-bulk" language="ruby">{`# Send bulk SMS
+response = client.sms.send_bulk(
+  sender_id: &apos;YourBrand&apos;,
+  messages: [
+    { to: &apos;+233244123456&apos;, message: &apos;Hello John!&apos; },
+    { to: &apos;+233277119919&apos;, message: &apos;Hello Jane!&apos; }
+  ]
+)
+
+# Schedule SMS
+response = client.scheduling.schedule_sms(
+  to: &apos;+233244123456&apos;,
+  message: &apos;Scheduled reminder!&apos;,
+  sender_id: &apos;YourBrand&apos;,
+  scheduled_at: &apos;2025-08-10T10:00:00Z&apos;
+)`}</CodeBlock>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-300 mb-2">Error Handling:</p>
+                    <CodeBlock identifier="ruby-errors" language="ruby">{`begin
+  response = client.sms.send(to: &apos;+233244123456&apos;, message: &apos;Hello&apos;, sender_id: &apos;SenderID&apos;)
+rescue Possinote::AuthenticationError => e
+  puts &quot;Authentication failed: #{e.message}&quot;
+rescue Possinote::PaymentRequiredError => e
+  puts &quot;Payment required: #{e.message}&quot;
+rescue Possinote::RateLimitError => e
+  puts &quot;Rate limit exceeded: #{e.message}&quot;
+rescue Possinote::ValidationError => e
+  puts &quot;Validation error: #{e.message}&quot;
+rescue Possinote::APIError => e
+  puts &quot;API error: #{e.message}&quot;
+end`}</CodeBlock>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <h4 className="text-lg font-semibold text-white mb-3">Background Jobs</h4>
+                <CodeBlock identifier="ruby-jobs" language="ruby">{`# app/jobs/send_notification_job.rb
+class SendNotificationJob < ApplicationJob
+  queue_as :default
+
+  def perform(notification_type, user_id, options = {})
+    user = User.find(user_id)
+    service = NotificationService.new
+
+    case notification_type
+    when 'welcome_sms'
+      service.send_welcome_sms(user)
+    when 'password_reset_email'
+      service.send_password_reset_email(user, options[:reset_token])
+    when 'bulk_newsletter'
+      service.send_bulk_newsletter(options[:users], options[:content])
+    when 'scheduled_reminder'
+      service.schedule_reminder_email(user, options[:appointment])
+    end
+  end
+end
+
+# Usage in controller
+SendNotificationJob.perform_later('welcome_sms', user.id)
+SendNotificationJob.perform_later('password_reset_email', user.id, reset_token: token)`}</CodeBlock>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'sdk-python':
+        return (
+          <div className="space-y-8">
+            <div>
+              <h2 className="text-2xl font-bold text-white mb-4">Python SDK</h2>
+              <p className="text-gray-400 mb-6">
+                Python package with async support, Django/Flask integration, and comprehensive web framework support.
+              </p>
+            </div>
+
+            <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold">P</span>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white">Python Package</h3>
+                  <p className="text-gray-400 text-sm">Python package with async support and web framework integration</p>
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="text-lg font-semibold text-white mb-3">Installation</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm text-gray-300 mb-2">Using pip:</p>
+                      <CodeBlock identifier="python-pip">pip install possinote</CodeBlock>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-300 mb-2">Using poetry:</p>
+                      <CodeBlock identifier="python-poetry">poetry add possinote</CodeBlock>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-lg font-semibold text-white mb-3">Quick Start</h4>
+                                      <CodeBlock identifier="python-quickstart" language="python">{`from possinote import Possinote
+
+# Initialize client
+client = Possinote(api_key=&apos;your_api_key_here&apos;)
+
+# Send SMS
+response = client.sms.send(
+    to=&apos;+233244123456&apos;,
+    message=&apos;Hello from Possinote!&apos;,
+    sender_id=&apos;YourSenderID&apos;
+)
+
+# Send Email
+response = client.email.send(
+    recipient=&apos;user@example.com&apos;,
+    subject=&apos;Welcome to Possinote&apos;,
+    content=&apos;<h1>Hello!</h1><p>Welcome to our platform.</p>&apos;,
+    sender_name=&apos;Your Company&apos;
+)`}</CodeBlock>
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <h4 className="text-lg font-semibold text-white mb-3">Django Integration</h4>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <p className="text-sm text-gray-300 mb-2">Settings (settings.py):</p>
+                    <CodeBlock identifier="python-django-settings" language="python">{`# settings.py
+POSSINOTE_API_KEY = 'your_api_key_here'
+
+# Or use environment variable
+import os
+POSSINOTE_API_KEY = os.environ.get('POSSINOTE_API_KEY')`}</CodeBlock>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-300 mb-2">View Usage:</p>
+                                          <CodeBlock identifier="python-django-view" language="python">{`from django.http import JsonResponse
+from possinote import Possinote
+from django.conf import settings
+
+def send_sms(request):
+    try:
+        client = Possinote(api_key=settings.POSSINOTE_API_KEY)
+        response = client.sms.send(
+            to=request.POST.get(&apos;phone_number&apos;),
+            message=request.POST.get(&apos;message&apos;),
+            sender_id=&apos;YourBrand&apos;
+        )
+        
+        if response.get(&apos;success&apos;):
+            return JsonResponse({&apos;message&apos;: &apos;SMS sent successfully&apos;})
+        else:
+            return JsonResponse({&apos;error&apos;: &apos;Failed to send SMS&apos;}, status=400)
+            
+    except Exception as e:
+        return JsonResponse({&apos;error&apos;: str(e)}, status=500)`}</CodeBlock>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <h4 className="text-lg font-semibold text-white mb-3">Flask Integration</h4>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <p className="text-sm text-gray-300 mb-2">App Configuration:</p>
+                    <CodeBlock identifier="python-flask-config" language="python">{`from flask import Flask
+from possinote import Possinote
+import os
+
+app = Flask(__name__)
+app.config['POSSINOTE_API_KEY'] = os.environ.get('POSSINOTE_API_KEY')
+
+# Initialize client
+possinote_client = Possinote(api_key=app.config['POSSINOTE_API_KEY'])`}</CodeBlock>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-300 mb-2">Route Handler:</p>
+                                          <CodeBlock identifier="python-flask-route" language="python">{`from flask import request, jsonify
+
+@app.route(&apos;/send-sms&apos;, methods=[&apos;POST&apos;])
+def send_sms():
+    try:
+        data = request.get_json()
+        response = possinote_client.sms.send(
+            to=data[&apos;phone_number&apos;],
+            message=data[&apos;message&apos;],
+            sender_id=&apos;YourBrand&apos;
+        )
+        
+        if response.get(&apos;success&apos;):
+            return jsonify({&apos;message&apos;: &apos;SMS sent successfully&apos;})
+        else:
+            return jsonify({&apos;error&apos;: &apos;Failed to send SMS&apos;}), 400
+            
+    except Exception as e:
+        return jsonify({&apos;error&apos;: str(e)}), 500`}</CodeBlock>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <h4 className="text-lg font-semibold text-white mb-3">Async Support</h4>
+                <CodeBlock identifier="python-async" language="python">{`import asyncio
+from possinote import Possinote
+
+async def send_bulk_sms():
+    client = Possinote(api_key=&apos;your_api_key_here&apos;)
+    
+    # Send multiple SMS concurrently
+    tasks = []
+    for phone in [&apos;+233244123456&apos;, &apos;+233277119919&apos;]:
+        task = client.sms.send(
+            to=phone,
+            message=&apos;Bulk message!&apos;,
+            sender_id=&apos;YourBrand&apos;
+        )
+        tasks.append(task)
+    
+    # Wait for all to complete
+    responses = await asyncio.gather(*tasks)
+    return responses
+
+# Run async function
+asyncio.run(send_bulk_sms())`}</CodeBlock>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'sdk-nodejs':
+        return (
+          <div className="space-y-8">
+            <div>
+              <h2 className="text-2xl font-bold text-white mb-4">Node.js SDK</h2>
+              <p className="text-gray-400 mb-6">
+                Node.js package with TypeScript support, Express integration, and comprehensive async/await patterns.
+              </p>
+            </div>
+
+            <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold">N</span>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white">Node.js Package</h3>
+                  <p className="text-gray-400 text-sm">Node.js package with TypeScript support and Express integration</p>
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="text-lg font-semibold text-white mb-3">Installation</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm text-gray-300 mb-2">Using npm:</p>
+                      <CodeBlock identifier="node-npm">npm install possinote</CodeBlock>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-300 mb-2">Using yarn:</p>
+                      <CodeBlock identifier="node-yarn">yarn add possinote</CodeBlock>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-lg font-semibold text-white mb-3">Quick Start</h4>
+                                      <CodeBlock identifier="node-quickstart" language="javascript">{`const { Possinote } = require(&apos;possinote&apos;);
+
+// Initialize client
+const client = new Possinote(&apos;your_api_key_here&apos;);
+
+// Send SMS
+const sendSMS = async () => {
+  try {
+    const response = await client.sms.send({
+      to: &apos;+233244123456&apos;,
+      message: &apos;Hello from Possinote!&apos;,
+      sender_id: &apos;YourSenderID&apos;
+    });
+    console.log(&apos;SMS sent:&apos;, response);
+  } catch (error) {
+    console.error(&apos;Error sending SMS:&apos;, error);
+  }
+};
+
+// Send Email
+const sendEmail = async () => {
+  try {
+    const response = await client.email.send({
+      recipient: &apos;user@example.com&apos;,
+      subject: &apos;Welcome to Possinote&apos;,
+      content: &apos;<h1>Hello!</h1><p>Welcome to our platform.</p>&apos;,
+      sender_name: &apos;Your Company&apos;
+    });
+    console.log(&apos;Email sent:&apos;, response);
+  } catch (error) {
+    console.error(&apos;Error sending email:&apos;, error);
+  }
+};`}</CodeBlock>
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <h4 className="text-lg font-semibold text-white mb-3">Express.js Integration</h4>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <p className="text-sm text-gray-300 mb-2">App Setup:</p>
+                                          <CodeBlock identifier="node-express-setup" language="javascript">{`const express = require(&apos;express&apos;);
+const { Possinote } = require(&apos;possinote&apos;);
+
+const app = express();
+app.use(express.json());
+
+// Initialize client
+const possinoteClient = new Possinote(process.env.POSSINOTE_API_KEY);
+
+// Middleware for error handling
+const handlePosinoteError = (error, res) => {
+  if (error.name === &apos;AuthenticationError&apos;) {
+    return res.status(401).json({ error: &apos;Authentication failed&apos; });
+  }
+  if (error.name === &apos;PaymentRequiredError&apos;) {
+    return res.status(402).json({ error: &apos;Insufficient credits&apos; });
+  }
+  if (error.name === &apos;RateLimitError&apos;) {
+    return res.status(429).json({ error: &apos;Rate limit exceeded&apos; });
+  }
+  return res.status(500).json({ error: &apos;Internal server error&apos; });
+};`}</CodeBlock>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-300 mb-2">Route Handlers:</p>
+                                          <CodeBlock identifier="node-express-routes" language="javascript">{`// Send SMS endpoint
+app.post(&apos;/send-sms&apos;, async (req, res) => {
+  try {
+    const { phone_number, message } = req.body;
+    
+    const response = await possinoteClient.sms.send({
+      to: phone_number,
+      message: message,
+      sender_id: &apos;YourBrand&apos;
+    });
+    
+    res.json({ 
+      success: true, 
+      message: &apos;SMS sent successfully&apos;,
+      data: response 
+    });
+  } catch (error) {
+    handlePosinoteError(error, res);
+  }
+});
+
+// Send Email endpoint
+app.post(&apos;/send-email&apos;, async (req, res) => {
+  try {
+    const { recipient, subject, content } = req.body;
+    
+    const response = await possinoteClient.email.send({
+      recipient: recipient,
+      subject: subject,
+      content: content,
+      sender_name: &apos;Your Company&apos;
+    });
+    
+    res.json({ 
+      success: true, 
+      message: &apos;Email sent successfully&apos;,
+      data: response 
+    });
+  } catch (error) {
+    handlePosinoteError(error, res);
+  }
+});`}</CodeBlock>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <h4 className="text-lg font-semibold text-white mb-3">TypeScript Support</h4>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <p className="text-sm text-gray-300 mb-2">TypeScript Usage:</p>
+                                          <CodeBlock identifier="node-typescript" language="typescript">{`import { Possinote, SMSResponse, EmailResponse } from &apos;possinote&apos;;
+
+const client = new Possinote(&apos;your_api_key_here&apos;);
+
+interface SMSRequest {
+  to: string;
+  message: string;
+  sender_id: string;
+}
+
+interface EmailRequest {
+  recipient: string;
+  subject: string;
+  content: string;
+  sender_name?: string;
+}
+
+const sendSMS = async (request: SMSRequest): Promise<SMSResponse> => {
+  return await client.sms.send(request);
+};
+
+const sendEmail = async (request: EmailRequest): Promise<EmailResponse> => {
+  return await client.email.send(request);
+};`}</CodeBlock>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-300 mb-2">Advanced Features:</p>
+                                          <CodeBlock identifier="node-advanced" language="javascript">{`// Bulk SMS
+const sendBulkSMS = async () => {
+  const response = await client.sms.sendBulk({
+    sender_id: &apos;YourBrand&apos;,
+    messages: [
+      { to: &apos;+233244123456&apos;, message: &apos;Hello John!&apos; },
+      { to: &apos;+233277119919&apos;, message: &apos;Hello Jane!&apos; }
+    ]
+  });
+  return response;
+};
+
+// Schedule SMS
+const scheduleSMS = async () => {
+  const response = await client.scheduling.scheduleSMS({
+    to: &apos;+233244123456&apos;,
+    message: &apos;Scheduled reminder!&apos;,
+    sender_id: &apos;YourBrand&apos;,
+    scheduled_at: &apos;2025-08-10T10:00:00Z&apos;
+  });
+  return response;
+};
+
+// Error handling with specific types
+try {
+  await sendSMS({ to: &apos;+233244123456&apos;, message: &apos;Hello&apos;, sender_id: &apos;Brand&apos; });
+} catch (error) {
+  if (error.name === &apos;AuthenticationError&apos;) {
+    console.error(&apos;Invalid API key&apos;);
+  } else if (error.name === &apos;PaymentRequiredError&apos;) {
+    console.error(&apos;Insufficient credits&apos;);
+  } else if (error.name === &apos;ValidationError&apos;) {
+    console.error(&apos;Invalid request data&apos;);
+  }
+}`}</CodeBlock>
                   </div>
                 </div>
               </div>
