@@ -17,14 +17,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-import { MessageSquare, Send, Users, AlertCircle, Upload, FileText, Eye, Download, Sparkles, Zap, Target, CheckCircle, FileSpreadsheet, FileJson, ChevronLeft, ChevronRight, Filter, RefreshCw, XCircle, Clock } from 'lucide-react';
+import { MessageSquare, Send, Users, AlertCircle, Upload, FileText, Eye, Download, Sparkles, Zap, Target, CheckCircle, FileSpreadsheet, FileJson, ChevronLeft, ChevronRight, Filter, RefreshCw, XCircle, Clock, Info } from 'lucide-react';
 import SenderNamesModal from '@/components/SenderNamesModal';
 import { usePaymentRequired } from '@/components/PaymentRequiredProvider';
 
 const smsSchema = z.object({
   to: z.string().min(1, 'Phone number is required'),
   message: z.string().min(1, 'Message is required').max(160, 'Message too long (max 160 characters)'),
-  sender_id: z.string().min(1, 'Sender ID is required'),
+  sender_id: z.string().optional().default('Possitech'),
 });
 
 interface DataRow {
@@ -49,13 +49,13 @@ interface FileInfo {
 export default function SmsPage() {
   const { showPaymentRequired } = usePaymentRequired();
   const [isLoading, setIsLoading] = useState(false);
-  const [mode, setMode] = useState<'single' | 'bulk' | 'history'>('single');
+  const [mode, setMode] = useState<'single' | 'bulk' | 'history' | 'senders'>('senders');
   const [bulkRecipients, setBulkRecipients] = useState('');
   const [bulkMessage, setBulkMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   // Sender ID for bulk actions
-  const [selectedBulkSenderId, setSelectedBulkSenderId] = useState<string>('');
+  const [selectedBulkSenderId, setSelectedBulkSenderId] = useState<string>('Possitech');
 
   // Advanced bulk SMS states
   const [fileData, setFileData] = useState<DataRow[]>([]);
@@ -681,6 +681,18 @@ export default function SmsPage() {
           <div className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-2xl p-2">
             <div className="flex space-x-2">
               <Button
+                variant={mode === 'senders' ? 'default' : 'ghost'}
+                onClick={() => setMode('senders')}
+                className={`rounded-xl px-6 py-3 transition-all duration-300 ${
+                  mode === 'senders'
+                    ? 'bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-lg shadow-orange-500/25' 
+                    : 'text-gray-400 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Sender Management
+              </Button>
+              <Button
                 variant={mode === 'single' ? 'default' : 'ghost'}
                 onClick={() => setMode('single')}
                 className={`rounded-xl px-6 py-3 transition-all duration-300 ${
@@ -781,6 +793,9 @@ export default function SmsPage() {
                         <SelectValue placeholder="Select sender name" />
                       </SelectTrigger>
                       <SelectContent className="bg-gray-800 border-gray-700">
+                        <SelectItem value="Possitech" className="font-medium">
+                          Possitech (Default)
+                        </SelectItem>
                         {senders
                           .filter(sender => sender.status === 'approved')
                           .map((sender) => (
@@ -863,6 +878,9 @@ export default function SmsPage() {
                         <SelectValue placeholder="Select sender name" />
                       </SelectTrigger>
                       <SelectContent className="bg-gray-800 border-gray-700">
+                        <SelectItem value="Possitech" className="font-medium">
+                          Possitech (Default)
+                        </SelectItem>
                         {senders
                           .filter(sender => sender.status === 'approved')
                           .map((sender) => (
@@ -1056,6 +1074,9 @@ export default function SmsPage() {
                         <SelectValue placeholder="Select sender name" />
                       </SelectTrigger>
                       <SelectContent className="bg-gray-800 border-gray-700">
+                        <SelectItem value="Possitech" className="font-medium">
+                          Possitech (Default)
+                        </SelectItem>
                         {senders
                           .filter(sender => sender.status === 'approved')
                           .map((sender) => (
@@ -1337,6 +1358,147 @@ export default function SmsPage() {
                     </div>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Sender Management Section */}
+        {mode === 'senders' && (
+          <div className="space-y-8">
+            {/* Sender Management Header */}
+            <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-orange-500/10 to-red-500/10 border-b border-white/10">
+                <CardTitle className="text-white text-2xl flex items-center space-x-3">
+                  <div className="p-2 bg-orange-500/20 rounded-xl">
+                    <CheckCircle className="h-6 w-6 text-orange-400" />
+                  </div>
+                  <span>Sender Management</span>
+                </CardTitle>
+                <p className="text-gray-400">Create and manage your SMS sender names</p>
+              </CardHeader>
+              <CardContent className="p-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Create Sender Card */}
+                  <Card className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-2xl overflow-hidden">
+                    <CardHeader className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-b border-blue-500/20">
+                      <CardTitle className="text-white text-xl flex items-center space-x-3">
+                        <div className="p-2 bg-blue-500/20 rounded-xl">
+                          <CheckCircle className="h-5 w-5 text-blue-400" />
+                        </div>
+                        <span>Create New Sender</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                      <div className="space-y-4">
+                        <p className="text-gray-300 text-sm">
+                          Create a new sender name for your SMS messages. Sender names must be approved by mobile network operators.
+                        </p>
+                        <Button 
+                          onClick={() => setShowSenderNamesModal(true)}
+                          className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl h-12 font-medium shadow-lg shadow-blue-500/25 transition-all duration-300"
+                        >
+                          <CheckCircle className="h-5 w-5 mr-2" />
+                          Create Sender Name
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Manage Senders Card */}
+                  <Card className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-2xl overflow-hidden">
+                    <CardHeader className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-b border-green-500/20">
+                      <CardTitle className="text-white text-xl flex items-center space-x-3">
+                        <div className="p-2 bg-green-500/20 rounded-xl">
+                          <Users className="h-5 w-5 text-green-400" />
+                        </div>
+                        <span>Your Senders</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                      <div className="space-y-4">
+                        <p className="text-gray-300 text-sm">
+                          View and manage your existing sender names. Only approved senders can be used for SMS.
+                        </p>
+                        <div className="space-y-3">
+                          {senders.length === 0 ? (
+                            <div className="text-center py-4">
+                              <CheckCircle className="h-8 w-8 mx-auto text-gray-500 mb-2" />
+                              <p className="text-gray-400 text-sm">No sender names found</p>
+                            </div>
+                          ) : (
+                            senders.map((sender) => (
+                              <div key={sender.id} className="bg-black/20 border border-white/10 rounded-xl p-4">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <h4 className="text-white font-medium">{sender.name}</h4>
+                                    <p className="text-gray-400 text-sm">{sender.description}</p>
+                                  </div>
+                                  <Badge 
+                                    variant="outline" 
+                                    className={`${
+                                      sender.status === 'approved' 
+                                        ? 'bg-green-500/20 border-green-500/30 text-green-300'
+                                        : sender.status === 'pending'
+                                        ? 'bg-yellow-500/20 border-yellow-500/30 text-yellow-300'
+                                        : 'bg-red-500/20 border-red-500/30 text-red-300'
+                                    }`}
+                                  >
+                                    {sender.status}
+                                  </Badge>
+                                </div>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Sender Guidelines */}
+                <Card className="bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-2xl overflow-hidden mt-8">
+                  <CardHeader className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-b border-amber-500/20">
+                    <CardTitle className="text-white text-xl flex items-center space-x-3">
+                      <div className="p-2 bg-amber-500/20 rounded-xl">
+                        <Info className="h-5 w-5 text-amber-400" />
+                      </div>
+                      <span>Sender Name Guidelines</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-gray-300">
+                      <div className="space-y-3">
+                        <div className="flex items-start space-x-3">
+                          <span className="text-amber-400 font-semibold flex-shrink-0">1.</span>
+                          <p>Maximum 11 alphanumeric characters or 14 numbers</p>
+                        </div>
+                        <div className="flex items-start space-x-3">
+                          <span className="text-amber-400 font-semibold flex-shrink-0">2.</span>
+                          <p>Can contain underscores (_)</p>
+                        </div>
+                        <div className="flex items-start space-x-3">
+                          <span className="text-amber-400 font-semibold flex-shrink-0">3.</span>
+                          <p>Mobile numbers must be in international format (233244111222)</p>
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        <div className="flex items-start space-x-3">
+                          <span className="text-red-400 font-bold flex-shrink-0">4.</span>
+                          <p className="font-bold text-red-400">Description is required</p>
+                        </div>
+                        <div className="flex items-start space-x-3">
+                          <span className="text-red-400 font-bold flex-shrink-0">5.</span>
+                          <p className="font-bold text-red-400">Do not use brand names you don&apos;t own</p>
+                        </div>
+                        <div className="flex items-start space-x-3">
+                          <span className="text-amber-400 font-semibold flex-shrink-0">6.</span>
+                          <p>Subject to approval by mobile network operators</p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </CardContent>
             </Card>
           </div>
