@@ -17,6 +17,7 @@ import { UserPlus, Key, Copy, Check, ArrowLeft, Zap, Mail, Phone, Building, User
 import { useSearchParams } from 'next/navigation';
 import { PaystackService, PaystackResponse } from '@/lib/services/paystack';
 import { useToast } from '@/components/ui/toast';
+import { NotificationService } from '@/lib/services/notifications';
 
 const signupSchema = z.object({
   name: z.string()
@@ -85,14 +86,14 @@ export default function SignupPage() {
     
     // For free plan, proceed directly with registration
     if (planType === 'free') {
-              try {
-          const response = await AuthService.register({
-            customer: {
-              ...data,
-              plan_type: planType,
-              monthly_limit: getPlanInitialCredits(planType)
-            }
-          });
+      try {
+        const response = await AuthService.register({
+          customer: {
+            ...data,
+            plan_type: planType,
+            monthly_limit: getPlanInitialCredits(planType)
+          }
+        });
           
           console.log('🔍 AuthService response:', response);
           
@@ -108,6 +109,37 @@ export default function SignupPage() {
             const login = useAuthStore.getState().login;
             if (response.customer && response.api_key) {
               login(response.api_key, response.customer as Customer);
+            }
+            
+            // Send signup notification to sales team
+            try {
+              await NotificationService.sendSignupNotification({
+                customerName: data.name,
+                customerEmail: data.email,
+                customerPhone: data.phone,
+                companyName: data.company_name,
+                planType: planType,
+                initialCredits: response.initial_credits || 0
+              });
+              console.log('✅ Signup notification sent successfully');
+            } catch (error) {
+              console.error('❌ Failed to send signup notification:', error);
+            }
+
+            // Send welcome notification to new customer
+            try {
+              await NotificationService.sendWelcomeNotification({
+                customerName: data.name,
+                customerEmail: data.email,
+                customerPhone: data.phone,
+                companyName: data.company_name,
+                planType: planType,
+                initialCredits: response.initial_credits || 0,
+                apiKey: response.api_key || ''
+              });
+              console.log('✅ Welcome notification sent successfully');
+            } catch (error) {
+              console.error('❌ Failed to send welcome notification:', error);
             }
             
             // Redirect to dashboard after 5 seconds
@@ -190,6 +222,35 @@ export default function SignupPage() {
               if (regResponse.customer && regResponse.api_key) {
                 login(regResponse.api_key, regResponse.customer as Customer);
               }
+              
+              // Send signup notification to sales team
+              NotificationService.sendSignupNotification({
+                customerName: data.name,
+                customerEmail: data.email,
+                customerPhone: data.phone,
+                companyName: data.company_name,
+                planType: planType,
+                initialCredits: regResponse.initial_credits || 0
+              }).then(() => {
+                console.log('✅ Signup notification sent successfully');
+              }).catch((error) => {
+                console.error('❌ Failed to send signup notification:', error);
+              });
+
+              // Send welcome notification to new customer
+              NotificationService.sendWelcomeNotification({
+                customerName: data.name,
+                customerEmail: data.email,
+                customerPhone: data.phone,
+                companyName: data.company_name,
+                planType: planType,
+                initialCredits: regResponse.initial_credits || 0,
+                apiKey: regResponse.api_key || ''
+              }).then(() => {
+                console.log('✅ Welcome notification sent successfully');
+              }).catch((error) => {
+                console.error('❌ Failed to send welcome notification:', error);
+              });
               
               // Redirect to dashboard after 5 seconds
               setTimeout(() => {
