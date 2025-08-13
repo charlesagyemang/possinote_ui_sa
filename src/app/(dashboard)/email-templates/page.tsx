@@ -33,7 +33,8 @@ import {
   MessageSquare, 
   Eye, 
   FileDown,
-  Mail
+  Mail,
+  Variable
 } from 'lucide-react';
 import { EmailTemplate, TemplatePreviewData } from '@/types/emailTemplates';
 import { EmailTemplateService } from '@/lib/services/emailTemplates';
@@ -42,6 +43,7 @@ import { SchedulingService, ScheduleEmailRequest, ScheduleMultipleEmailsRequest,
 import { usePaymentRequired } from '@/components/PaymentRequiredProvider';
 import { useToast } from '@/components/ui/toast';
 import Link from 'next/link';
+import emailTemplatesData from '@/data/emailTemplates.json';
 
 export default function EmailTemplatesPage() {
   const { showPaymentRequired } = usePaymentRequired();
@@ -139,115 +141,26 @@ export default function EmailTemplatesPage() {
   // Export states
   const [isExporting, setIsExporting] = useState(false);
 
-  // Template Store - Pre-made templates
-  const templateStore: Array<{
-    id: string;
-    name: string;
-    description: string;
-    subject: string;
-    html: string;
-    variables: string[];
-    category: string;
-  }> = [
-    {
-      id: 'welcome-email',
-      name: 'Welcome Email',
-      description: 'Beautiful welcome email for new users',
-      subject: 'Welcome {{name}} to {{company}}!',
-      html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-    <h1 style="color: white; margin: 0; font-size: 28px;">Welcome {{name}}!</h1>
-  </div>
-  
-  <div style="background: white; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-    <p style="color: #333; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
-      We're thrilled to have you join us at <strong>{{company}}</strong>!
-    </p>
+  // Template store search and filter states
+  const [storeSearchTerm, setStoreSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
+
+  // Use the imported template store from JSON
+  const templateStore = emailTemplatesData;
+
+  // Get unique categories from templates
+  const categories = ['All', ...new Set(templateStore.map(template => template.category))];
+
+  // Filter templates based on search and category
+  const filteredStoreTemplates = templateStore.filter(template => {
+    const matchesSearch = template.name.toLowerCase().includes(storeSearchTerm.toLowerCase()) ||
+                         template.description.toLowerCase().includes(storeSearchTerm.toLowerCase()) ||
+                         template.subject.toLowerCase().includes(storeSearchTerm.toLowerCase());
     
-    <p style="color: #666; font-size: 14px; line-height: 1.5; margin-bottom: 25px;">
-      Your account has been successfully created with the email: <strong>{{email}}</strong>
-    </p>
+    const matchesCategory = selectedCategory === 'All' || template.category === selectedCategory;
     
-    <div style="text-align: center; margin: 30px 0;">
-      <a href="{{login_url}}" style="background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
-        Get Started
-      </a>
-    </div>
-    
-    <div style="border-top: 1px solid #eee; padding-top: 20px; margin-top: 30px;">
-      <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">
-        If you have any questions, please contact us at {{support_email}}
-      </p>
-    </div>
-  </div>
-</div>`,
-      variables: ['name', 'company', 'email', 'login_url', 'support_email'],
-      category: 'Onboarding'
-    },
-    {
-      id: 'newsletter',
-      name: 'Newsletter Template',
-      description: 'Professional newsletter with featured content',
-      subject: '{{company}} Newsletter - {{month}} {{year}}',
-      html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f8f9fa;">
-  <div style="background: #2c3e50; padding: 30px; text-align: center;">
-    <h1 style="color: white; margin: 0; font-size: 24px;">{{company}} Newsletter</h1>
-    <p style="color: #bdc3c7; margin: 10px 0 0 0;">{{month}} {{year}}</p>
-  </div>
-  
-  <div style="padding: 30px; background: white;">
-    <h2 style="color: #2c3e50; margin-top: 0;">Hello {{name}}!</h2>
-    
-    <div style="background: #ecf0f1; padding: 20px; border-radius: 8px; margin: 20px 0;">
-      <h3 style="color: #2c3e50; margin-top: 0;">Featured Article</h3>
-      <p style="color: #34495e; line-height: 1.6;">{{featured_article}}</p>
-      <a href="{{article_url}}" style="color: #3498db; text-decoration: none;">Read More →</a>
-    </div>
-    
-    <div style="border-top: 1px solid #ecf0f1; padding-top: 20px; margin-top: 30px;">
-      <p style="color: #7f8c8d; font-size: 14px;">
-        Thanks for reading!<br>
-        The {{company}} Team
-      </p>
-    </div>
-  </div>
-</div>`,
-      variables: ['name', 'company', 'month', 'year', 'featured_article', 'article_url'],
-      category: 'Newsletter'
-    },
-    {
-      id: 'promotional',
-      name: 'Promotional Email',
-      description: 'Eye-catching promotional email with CTA',
-      subject: '{{offer_title}} - Limited Time Only!',
-      html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-  <div style="background: linear-gradient(45deg, #ff6b6b, #ee5a24); padding: 40px; text-align: center; color: white;">
-    <h1 style="margin: 0; font-size: 32px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">{{offer_title}}</h1>
-    <p style="font-size: 18px; margin: 10px 0 30px 0; opacity: 0.9;">{{offer_description}}</p>
-    <div style="background: white; color: #ff6b6b; padding: 15px; border-radius: 10px; display: inline-block; font-size: 24px; font-weight: bold;">
-      {{discount_amount}} OFF!
-    </div>
-  </div>
-  
-  <div style="padding: 30px; background: white;">
-    <p style="color: #333; font-size: 16px; line-height: 1.6;">Hi {{name}},</p>
-    <p style="color: #666; font-size: 14px; line-height: 1.5;">{{promotional_text}}</p>
-    
-    <div style="text-align: center; margin: 40px 0;">
-      <a href="{{cta_url}}" style="background: #ff6b6b; color: white; padding: 15px 40px; text-decoration: none; border-radius: 25px; display: inline-block; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);">
-        {{cta_text}}
-      </a>
-    </div>
-    
-    <p style="color: #999; font-size: 12px; text-align: center; margin-top: 30px;">
-      Offer expires {{expiry_date}}
-    </p>
-  </div>
-</div>`,
-      variables: ['name', 'offer_title', 'offer_description', 'discount_amount', 'promotional_text', 'cta_url', 'cta_text', 'expiry_date'],
-      category: 'Promotional'
-    }
-  ];
+    return matchesSearch && matchesCategory;
+  });
 
   // Extract variables from template
   const extractTemplateVariables = (template: EmailTemplate): string[] => {
@@ -734,7 +647,7 @@ export default function EmailTemplatesPage() {
   };
 
   const navigateToTemplateBuilder = (template: { name: string; description?: string; subject: string; html: string }) => {
-    // Navigate to builder with template data
+    // Navigate to builder with template data using Base64 encoding for safer transport
     try {
       const templateObject = {
         name: template.name,
@@ -743,14 +656,12 @@ export default function EmailTemplatesPage() {
         html: template.html
       };
       
-      // First stringify the object
+      // Use Base64 encoding to avoid URI encoding issues
       const jsonString = JSON.stringify(templateObject);
+      const base64Data = btoa(encodeURIComponent(jsonString));
       
-      // Then encode it safely
-      const templateData = encodeURIComponent(jsonString);
-      
-      // Navigate to the builder
-      window.location.href = `/email-templates/builder?template=${templateData}`;
+      // Navigate to the builder with base64 encoded data
+      window.location.href = `/email-templates/builder?templateBase64=${base64Data}`;
     } catch (error) {
       console.error('Failed to encode template data:', error);
       // Fallback: navigate without template data
@@ -1296,23 +1207,131 @@ export default function EmailTemplatesPage() {
 
           {/* Template Store Tab */}
           <TabsContent value="template-store" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {templateStore.map((template) => (
+            {/* Search and Filter Controls */}
+            <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6">
+              <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+                <div className="flex-1 max-w-md">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Input
+                      placeholder="Search templates by name, description, or subject..."
+                      value={storeSearchTerm}
+                      onChange={(e) => setStoreSearchTerm(e.target.value)}
+                      className="pl-10 bg-slate-700/50 border-slate-600 text-white placeholder-gray-400"
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <Filter className="h-4 w-4 text-gray-400" />
+                    <span className="text-sm text-gray-400">Category:</span>
+                  </div>
+                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                    <SelectTrigger className="w-40 bg-slate-700/50 border-slate-600 text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-slate-700">
+                      {categories.map((category) => (
+                        <SelectItem 
+                          key={category} 
+                          value={category}
+                          className="text-white hover:bg-slate-700"
+                        >
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              {/* Results counter */}
+              <div className="mt-4 flex items-center justify-between">
+                <span className="text-sm text-gray-400">
+                  Showing {filteredStoreTemplates.length} of {templateStore.length} templates
+                </span>
+                
+                {/* Category badges */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  {categories.slice(1).map((category) => {
+                    const count = templateStore.filter(t => t.category === category).length;
+                    return (
+                      <Badge 
+                        key={category}
+                        variant={selectedCategory === category ? "default" : "secondary"}
+                        className={`text-xs cursor-pointer transition-colors ${
+                          selectedCategory === category 
+                            ? 'bg-blue-500 text-white' 
+                            : 'bg-slate-700 text-gray-300 hover:bg-slate-600'
+                        }`}
+                        onClick={() => setSelectedCategory(category)}
+                      >
+                        {category} ({count})
+                      </Badge>
+                    );
+                  })}
+                </div>
+              </div>
+              
+              {/* Clear filters */}
+              {(storeSearchTerm || selectedCategory !== 'All') && (
+                <div className="mt-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setStoreSearchTerm('');
+                      setSelectedCategory('All');
+                    }}
+                    className="text-gray-400 border-slate-600 hover:bg-slate-700"
+                  >
+                    <XCircle className="h-4 w-4 mr-2" />
+                    Clear Filters
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Templates Grid */}
+            {filteredStoreTemplates.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="text-6xl mb-4">📧</div>
+                <h3 className="text-xl text-white mb-2">No templates found</h3>
+                <p className="text-gray-400 mb-4">
+                  Try adjusting your search terms or category filter
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setStoreSearchTerm('');
+                    setSelectedCategory('All');
+                  }}
+                  className="text-gray-400 border-slate-600 hover:bg-slate-700"
+                >
+                  Clear All Filters
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-8">
+                {filteredStoreTemplates.map((template) => (
                 <Card key={template.id} className="bg-slate-800/50 border-slate-700 hover:border-slate-600 transition-colors">
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <CardTitle className="text-white text-lg mb-2">{template.name}</CardTitle>
-                        <p className="text-gray-400 text-sm mb-3">{template.description}</p>
-                        <Badge variant="secondary" className="bg-blue-500/20 text-blue-300">
-                          {template.category}
-                        </Badge>
+                        <CardTitle className="text-white text-xl mb-2">{template.name}</CardTitle>
+                        <p className="text-gray-400 text-base mb-3">{template.description}</p>
+                        <div className="flex items-center gap-3 mb-4">
+                          <Badge variant="secondary" className="bg-blue-500/20 text-blue-300">
+                            {template.category}
+                          </Badge>
+                          <span className="text-gray-500 text-sm">
+                            {template.variables.length} variables
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {/* Actions - Moved to top */}
+                      
+                      {/* Actions - Moved to header */}
                       <div className="flex items-center space-x-2">
                         <Button
                           variant="outline"
@@ -1320,7 +1339,7 @@ export default function EmailTemplatesPage() {
                           onClick={() => navigateToTemplateBuilder(template)}
                           className="border-slate-600 text-gray-300 hover:bg-slate-700"
                         >
-                          <Copy className="h-3 w-3 mr-1" />
+                          <Copy className="h-4 w-4 mr-2" />
                           Use Template
                         </Button>
                         <Button
@@ -1356,32 +1375,91 @@ export default function EmailTemplatesPage() {
                           }}
                           className="border-green-600 text-green-300 hover:bg-green-500/10"
                         >
-                          <Users className="h-3 w-3 mr-1" />
+                          <Users className="h-4 w-4 mr-2" />
                           Send Bulk
                         </Button>
                       </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                      {/* Left Column - Variables & Info */}
+                      <div className="lg:col-span-1 space-y-4">
+                        <div>
+                          <h4 className="text-white font-semibold mb-3 flex items-center">
+                            <Variable className="h-4 w-4 mr-2 text-purple-400" />
+                            Template Variables
+                          </h4>
+                          <div className="flex flex-wrap gap-1.5">
+                            {template.variables.map((varName) => (
+                              <Badge key={varName} variant="outline" className="bg-purple-500/20 border-purple-500/30 text-purple-300 text-xs">
+                                {`{{${varName}}}`}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <h4 className="text-white font-semibold mb-2 flex items-center">
+                            <Mail className="h-4 w-4 mr-2 text-blue-400" />
+                            Subject Line
+                          </h4>
+                          <p className="text-gray-300 text-sm bg-slate-700/50 p-3 rounded-lg font-mono">
+                            {template.subject}
+                          </p>
+                        </div>
 
-                      {/* Variables */}
-                      <div className="flex flex-wrap gap-1">
-                        {template.variables.map((varName) => (
-                          <Badge key={varName} variant="outline" className="bg-purple-500/20 border-purple-500/30 text-purple-300 text-xs">
-                            {`{{${varName}}}`}
-                          </Badge>
-                        ))}
+                        <div>
+                          <h4 className="text-white font-semibold mb-2 flex items-center">
+                            <FileText className="h-4 w-4 mr-2 text-green-400" />
+                            Template Details
+                          </h4>
+                          <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Category:</span>
+                              <span className="text-gray-300">{template.category}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Variables:</span>
+                              <span className="text-gray-300">{template.variables.length}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Template ID:</span>
+                              <span className="text-gray-300 font-mono text-xs">{template.id}</span>
+                            </div>
+                          </div>
+                        </div>
                       </div>
 
-                      {/* HTML Preview */}
-                      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-                        <div 
-                          className="p-4 text-black"
-                          dangerouslySetInnerHTML={{ __html: renderTemplatePreview(template.html, template.variables) }}
-                        />
+                      {/* Right Column - Large Preview */}
+                      <div className="lg:col-span-2">
+                        <h4 className="text-white font-semibold mb-3 flex items-center">
+                          <Eye className="h-4 w-4 mr-2 text-yellow-400" />
+                          Live Preview
+                        </h4>
+                        <div className="bg-white rounded-lg shadow-xl overflow-hidden border-2 border-slate-600">
+                          <div 
+                            className="p-6 text-black w-full"
+                            style={{ 
+                              fontSize: '12px',
+                              lineHeight: '1.3',
+                              transform: 'scale(0.8)',
+                              transformOrigin: 'top left',
+                              width: '125%'
+                            }}
+                            dangerouslySetInnerHTML={{ __html: renderTemplatePreview(template.html, template.variables) }}
+                          />
+                        </div>
+                        <p className="text-gray-400 text-xs mt-2 text-center">
+                          Preview shows sample data. Customize variables when using the template.
+                        </p>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
               ))}
-            </div>
+              </div>
+            )}
           </TabsContent>
 
           {/* Email History Tab */}

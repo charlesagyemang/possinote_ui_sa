@@ -17,6 +17,7 @@ export default function EmailTemplateBuilderPage() {
 
   const templateId = searchParams.get('id');
   const templateData = searchParams.get('template');
+  const templateBase64 = searchParams.get('templateBase64');
 
   const loadTemplate = useCallback(async () => {
     if (!templateId) return;
@@ -37,41 +38,216 @@ export default function EmailTemplateBuilderPage() {
   useEffect(() => {
     if (templateId) {
       loadTemplate();
-    } else if (templateData) {
-      // Load template from store
+    } else if (templateBase64) {
+      // Load template from Base64 encoded data (new safer method)
       try {
-              // First try to decode the URI component safely
-      let decodedData;
-      try {
-        decodedData = decodeURIComponent(templateData);
-      } catch (decodeError) {
-        console.error('Failed to decode URI component:', decodeError);
-        // If decodeURIComponent fails, try using the raw data
-        decodedData = templateData;
-      }
-      
-      // Try to parse the JSON data
-      let parsedTemplate;
-      try {
-        parsedTemplate = JSON.parse(decodedData);
-      } catch (parseError) {
-        console.error('Failed to parse JSON:', parseError);
-        // If JSON parsing fails, try to fix common encoding issues
-        try {
-          // Sometimes the data might be double-encoded
-          const doubleDecoded = decodeURIComponent(decodedData);
-          parsedTemplate = JSON.parse(doubleDecoded);
-        } catch (doubleDecodeError) {
-          console.error('Failed to double-decode:', doubleDecodeError);
-          throw new Error('Unable to parse template data');
-        }
-      }
+        const decodedJson = decodeURIComponent(atob(templateBase64));
+        const parsedTemplate = JSON.parse(decodedJson);
+        
+        // Format the HTML for better readability
+        const formatHTML = (html: string): string => {
+          if (!html) return '';
+          
+          // Remove extra whitespace and line breaks
+          const formatted = html.replace(/>\s+</g, '><').trim();
+          
+          // Add proper indentation
+          let indentLevel = 0;
+          const indent = '  '; // 2 spaces
+          const lines: string[] = [];
+          
+          // Split by tags while preserving them
+          const tokens = formatted.split(/(<[^>]*>)/);
+          let currentLine = '';
+          
+          for (const token of tokens) {
+            if (!token) continue;
+            
+            if (token.startsWith('<')) {
+              // Handle tags
+              if (token.startsWith('</')) {
+                // Closing tag - decrease indent
+                indentLevel = Math.max(0, indentLevel - 1);
+                if (currentLine.trim()) {
+                  lines.push(indent.repeat(indentLevel + 1) + currentLine.trim());
+                  currentLine = '';
+                }
+                lines.push(indent.repeat(indentLevel) + token);
+              } else if (token.endsWith('/>')) {
+                // Self-closing tag
+                if (currentLine.trim()) {
+                  lines.push(indent.repeat(indentLevel) + currentLine.trim());
+                  currentLine = '';
+                }
+                lines.push(indent.repeat(indentLevel) + token);
+              } else {
+                // Opening tag
+                if (currentLine.trim()) {
+                  lines.push(indent.repeat(indentLevel) + currentLine.trim());
+                  currentLine = '';
+                }
+                lines.push(indent.repeat(indentLevel) + token);
+                indentLevel++;
+              }
+            } else {
+              // Text content
+              const text = token.trim();
+              if (text) {
+                currentLine += text;
+              }
+            }
+          }
+          
+          // Add any remaining content
+          if (currentLine.trim()) {
+            lines.push(indent.repeat(indentLevel) + currentLine.trim());
+          }
+          
+          return lines.join('\n');
+        };
+
         setTemplate({
           id: '',
           name: parsedTemplate.name,
           description: parsedTemplate.description,
           subject: parsedTemplate.subject,
-          html: parsedTemplate.html,
+          html: formatHTML(parsedTemplate.html),
+          components: [],
+          variables: [],
+          created_at: '',
+          updated_at: '',
+        });
+      } catch (error) {
+        console.error('Failed to parse Base64 template data:', error);
+        router.push('/email-templates');
+      }
+    } else if (templateData) {
+      // Load template from legacy URI encoded data (fallback method)
+      try {
+        // Robust template data parsing with multiple fallback strategies
+        let parsedTemplate;
+        
+        // Strategy 1: Try parsing raw data first (simplest case)
+        try {
+          parsedTemplate = JSON.parse(templateData);
+        } catch (directParseError) {
+          console.log('Direct parse failed, trying URI decoding...');
+          
+          // Strategy 2: Try URI decoding then parse
+          try {
+            const decodedData = decodeURIComponent(templateData);
+            parsedTemplate = JSON.parse(decodedData);
+          } catch (decodeError) {
+            console.log('URI decode failed, trying manual cleanup...');
+            
+            // Strategy 3: Manual cleanup for escaped content
+            try {
+              let cleanedData = templateData;
+              
+              // Handle common encoding issues
+              cleanedData = cleanedData
+                .replace(/\\"/g, '"')           // Fix escaped quotes
+                .replace(/\\\\/g, '\\')         // Fix double escaped backslashes
+                .replace(/\\n/g, '\n')          // Fix escaped newlines
+                .replace(/\\t/g, '\t');         // Fix escaped tabs
+              
+              // Try parsing the cleaned data
+              parsedTemplate = JSON.parse(cleanedData);
+            } catch (cleanupError) {
+              console.log('Manual cleanup failed, trying partial decode...');
+              
+              // Strategy 4: Partial decode (only decode specific characters)
+              try {
+                const partialDecoded = templateData
+                  .replace(/%22/g, '"')         // Decode quotes
+                  .replace(/%7B/g, '{')         // Decode opening braces
+                  .replace(/%7D/g, '}')         // Decode closing braces
+                  .replace(/%3A/g, ':')         // Decode colons
+                  .replace(/%2C/g, ',')         // Decode commas
+                  .replace(/%20/g, ' ')         // Decode spaces
+                  .replace(/%5C/g, '\\');       // Decode backslashes
+                
+                parsedTemplate = JSON.parse(partialDecoded);
+              } catch (partialError) {
+                console.error('All parsing strategies failed:', {
+                  directParseError,
+                  decodeError,
+                  cleanupError,
+                  partialError
+                });
+                throw new Error('Unable to parse template data - all strategies failed');
+              }
+            }
+          }
+        }
+        // Format the HTML for better readability
+        const formatHTML = (html: string): string => {
+          if (!html) return '';
+          
+          // Remove extra whitespace and line breaks
+          const formatted = html.replace(/>\s+</g, '><').trim();
+          
+          // Add proper indentation
+          let indentLevel = 0;
+          const indent = '  '; // 2 spaces
+          const lines: string[] = [];
+          
+          // Split by tags while preserving them
+          const tokens = formatted.split(/(<[^>]*>)/);
+          let currentLine = '';
+          
+          for (const token of tokens) {
+            if (!token) continue;
+            
+            if (token.startsWith('<')) {
+              // Handle tags
+              if (token.startsWith('</')) {
+                // Closing tag - decrease indent
+                indentLevel = Math.max(0, indentLevel - 1);
+                if (currentLine.trim()) {
+                  lines.push(indent.repeat(indentLevel + 1) + currentLine.trim());
+                  currentLine = '';
+                }
+                lines.push(indent.repeat(indentLevel) + token);
+              } else if (token.endsWith('/>')) {
+                // Self-closing tag
+                if (currentLine.trim()) {
+                  lines.push(indent.repeat(indentLevel) + currentLine.trim());
+                  currentLine = '';
+                }
+                lines.push(indent.repeat(indentLevel) + token);
+              } else {
+                // Opening tag
+                if (currentLine.trim()) {
+                  lines.push(indent.repeat(indentLevel) + currentLine.trim());
+                  currentLine = '';
+                }
+                lines.push(indent.repeat(indentLevel) + token);
+                indentLevel++;
+              }
+            } else {
+              // Text content
+              const text = token.trim();
+              if (text) {
+                currentLine += text;
+              }
+            }
+          }
+          
+          // Add any remaining content
+          if (currentLine.trim()) {
+            lines.push(indent.repeat(indentLevel) + currentLine.trim());
+          }
+          
+          return lines.join('\n');
+        };
+
+        setTemplate({
+          id: '',
+          name: parsedTemplate.name,
+          description: parsedTemplate.description,
+          subject: parsedTemplate.subject,
+          html: formatHTML(parsedTemplate.html),
           components: [],
           variables: [],
           created_at: '',
@@ -83,7 +259,7 @@ export default function EmailTemplateBuilderPage() {
         router.push('/email-templates');
       }
     }
-  }, [templateId, templateData, loadTemplate, router]);
+  }, [templateId, templateBase64, templateData, loadTemplate, router]);
 
   const handleSave = async (savedTemplate: EmailTemplate) => {
     setTemplate(savedTemplate);

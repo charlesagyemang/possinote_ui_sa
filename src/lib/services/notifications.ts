@@ -1,6 +1,5 @@
 import { SmsService } from './sms';
 import { EmailService } from './email';
-import { api } from '../api';
 
 interface SignupNotificationData {
   customerName: string;
@@ -50,7 +49,7 @@ export class NotificationService {
         await SmsService.sendSms(this.salesPhone, smsMessage);
         results.smsSuccess = true;
         console.log('✅ SMS notification sent successfully (without sender ID)');
-      } catch (senderError) {
+      } catch (_senderError) {
         console.log('⚠️ SMS without sender ID failed, trying with sender ID...');
         await SmsService.sendSms(this.salesPhone, smsMessage, this.smsSenderId);
         results.smsSuccess = true;
@@ -251,7 +250,7 @@ export class NotificationService {
         await SmsService.sendSms(data.customerPhone, smsMessage);
         results.smsSuccess = true;
         console.log('✅ Welcome SMS sent successfully (without sender ID)');
-      } catch (senderError) {
+      } catch (_senderError) {
         console.log('⚠️ Welcome SMS without sender ID failed, trying with sender ID...');
         await SmsService.sendSms(data.customerPhone, smsMessage, this.smsSenderId);
         results.smsSuccess = true;

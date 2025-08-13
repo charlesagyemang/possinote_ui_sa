@@ -17,10 +17,73 @@ import {
   Variable,
   Copy,
   Check,
-  ArrowLeft
+  ArrowLeft,
+  AlignLeft
 } from 'lucide-react';
 import { EmailTemplate, TemplatePreviewData } from '@/types/emailTemplates';
 import { EmailTemplateService } from '@/lib/services/emailTemplates';
+
+// HTML formatting utility
+const formatHTML = (html: string): string => {
+  if (!html) return '';
+  
+  // Remove extra whitespace and line breaks
+  const formatted = html.replace(/>\s+</g, '><').trim();
+  
+  // Add proper indentation
+  let indentLevel = 0;
+  const indent = '  '; // 2 spaces
+  const lines: string[] = [];
+  
+  // Split by tags while preserving them
+  const tokens = formatted.split(/(<[^>]*>)/);
+  let currentLine = '';
+  
+  for (const token of tokens) {
+    if (!token) continue;
+    
+    if (token.startsWith('<')) {
+      // Handle tags
+      if (token.startsWith('</')) {
+        // Closing tag - decrease indent
+        indentLevel = Math.max(0, indentLevel - 1);
+        if (currentLine.trim()) {
+          lines.push(indent.repeat(indentLevel + 1) + currentLine.trim());
+          currentLine = '';
+        }
+        lines.push(indent.repeat(indentLevel) + token);
+      } else if (token.endsWith('/>')) {
+        // Self-closing tag
+        if (currentLine.trim()) {
+          lines.push(indent.repeat(indentLevel) + currentLine.trim());
+          currentLine = '';
+        }
+        lines.push(indent.repeat(indentLevel) + token);
+      } else {
+        // Opening tag
+        if (currentLine.trim()) {
+          lines.push(indent.repeat(indentLevel) + currentLine.trim());
+          currentLine = '';
+        }
+        lines.push(indent.repeat(indentLevel) + token);
+        indentLevel++;
+      }
+    } else {
+      // Text content
+      const text = token.trim();
+      if (text) {
+        currentLine += text;
+      }
+    }
+  }
+  
+  // Add any remaining content
+  if (currentLine.trim()) {
+    lines.push(indent.repeat(indentLevel) + currentLine.trim());
+  }
+  
+  return lines.join('\n');
+};
 
 interface SimpleEmailBuilderProps {
   initialTemplate?: EmailTemplate;
@@ -49,7 +112,12 @@ export default function SimpleEmailBuilder({ initialTemplate, onSave, onSend }: 
   // Update template when initialTemplate prop changes
   useEffect(() => {
     if (initialTemplate) {
-      setTemplate(initialTemplate);
+      // Format the HTML content for better readability
+      const formattedTemplate = {
+        ...initialTemplate,
+        html: formatHTML(initialTemplate.html)
+      };
+      setTemplate(formattedTemplate);
     }
   }, [initialTemplate]);
 
@@ -142,6 +210,13 @@ export default function SimpleEmailBuilder({ initialTemplate, onSave, onSend }: 
     } catch (error) {
       console.error('Failed to copy HTML:', error);
     }
+  };
+
+  const formatCurrentHTML = () => {
+    setTemplate(prev => ({
+      ...prev,
+      html: formatHTML(prev.html)
+    }));
   };
 
   const saveTemplate = async () => {
@@ -298,14 +373,26 @@ export default function SimpleEmailBuilder({ initialTemplate, onSave, onSend }: 
                   <CardHeader>
                     <CardTitle className="text-white flex items-center justify-between">
                       <span>HTML Content</span>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={copyHTML}
-                        className="border-slate-600 text-gray-300 hover:bg-slate-700"
-                      >
-                        {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={formatCurrentHTML}
+                          className="border-slate-600 text-gray-300 hover:bg-slate-700"
+                          title="Format HTML"
+                        >
+                          <AlignLeft className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={copyHTML}
+                          className="border-slate-600 text-gray-300 hover:bg-slate-700"
+                          title="Copy HTML"
+                        >
+                          {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                        </Button>
+                      </div>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
