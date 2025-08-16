@@ -12,8 +12,12 @@ const plans = [
     name: 'Free',
     price: '₵0',
     initial_credits: 10,
+    email_limit: 100,
+    sms_limit: 100,
     description: 'Perfect for testing and small projects',
     features: [
+      '100 emails included',
+      '100 SMS included',
       '10 initial credits',
       'Advanced analytics',
       'API access',
@@ -31,17 +35,21 @@ const plans = [
     name: 'Starter',
     price: '₵80',
     initial_credits: 1000,
+    email_limit: 1000,
+    sms_limit: 1000,
     description: 'Great for growing businesses',
     features: [
+      '1,000 emails included',
+      '1,000 SMS included',
       '1,000 initial credits',
       'Advanced analytics',
       'API access',
-      'Email support',
+      'Priority email support',
       'Credits never expire'
     ],
     popular: true,
-    color: 'from-teal-500 to-emerald-600',
-    bgColor: 'from-teal-500/10 to-emerald-600/10',
+    color: 'from-blue-500 to-purple-600',
+    bgColor: 'from-blue-500/10 to-purple-600/10',
     icon: MessageSquare,
     savings: null
   },
@@ -50,18 +58,49 @@ const plans = [
     name: 'Business',
     price: '₵800',
     initial_credits: 10000,
+    email_limit: 5000,
+    sms_limit: 5000,
     description: 'For established businesses',
     features: [
+      '5,000 emails included',
+      '5,000 SMS included',
       '10,000 initial credits',
       'Advanced analytics',
       'API access',
-      'Email support',
+      'Priority email support',
+      'Dedicated account manager',
       'Credits never expire'
     ],
     popular: false,
-    color: 'from-teal-500 to-emerald-600',
-    bgColor: 'from-teal-500/10 to-emerald-600/10',
+    color: 'from-purple-500 to-pink-600',
+    bgColor: 'from-purple-500/10 to-pink-600/10',
     icon: BarChart3,
+    savings: null
+  },
+  {
+    id: 'enterprise',
+    name: 'Enterprise',
+    price: '₵1500',
+    initial_credits: 20000,
+    email_limit: 10000,
+    sms_limit: 10000,
+    description: 'For large-scale operations',
+    features: [
+      '10,000 emails included',
+      '10,000 SMS included',
+      '20,000 initial credits',
+      'Advanced analytics',
+      'API access',
+      'Priority email support',
+      'Dedicated account manager',
+      'Custom integrations',
+      'SLA guarantee',
+      'Credits never expire'
+    ],
+    popular: false,
+    color: 'from-amber-500 to-orange-600',
+    bgColor: 'from-amber-500/10 to-orange-600/10',
+    icon: Award,
     savings: null
   }
 ];
@@ -114,7 +153,7 @@ export default function PricingPage() {
         </div>
 
         {/* Plan Cards */}
-        <div id="plans" className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+        <div id="plans" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
           {plans.map((plan) => (
             <Card 
               key={plan.id} 

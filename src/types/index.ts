@@ -31,13 +31,39 @@ export interface ApiKey {
 }
 
 export interface UsageData {
-  credit_balance: number;
+  // Legacy field for backward compatibility
+  credit_balance?: number;
+  // New separate balance fields
+  sms_credit_balance: number;
+  email_credit_balance: number;
+  general_credit_balance: number;
+  
+  // Usage fields
+  sms_usage_this_month: number;
+  email_usage_this_month: number;
   credit_usage_this_month: number;
+  
+  // Added credits fields
+  sms_added_this_month: number;
+  email_added_this_month: number;
   credit_added_this_month: number;
+  
+  // Net credits
   net_credits_this_month: number;
+  
+  // Quota and limits
+  current_month_usage: number;
+  monthly_limit: number;
+  usage_percentage: number;
+  remaining_quota: number;
+  
+  // Permissions
+  can_send_notifications: boolean;
   can_send_sms: boolean;
   can_send_email: boolean;
+  
   month: string;
+  
   credit_breakdown: {
     sms_usage: number;
     email_usage: number;

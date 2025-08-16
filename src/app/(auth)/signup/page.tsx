@@ -35,9 +35,10 @@ const signupSchema = z.object({
 });
 
 const plans = {
-  free: { name: 'Free', initial_credits: 10, price: '₵0', description: 'Perfect for testing' },
-  starter: { name: 'Starter', initial_credits: 1000, price: '₵80', description: 'Great for growing businesses' },
-  business: { name: 'Business', initial_credits: 10000, price: '₵800', description: 'For established businesses' }
+  free: { name: 'Free', initial_credits: 10, price: '₵0', description: '100 emails, 100 SMS - Perfect for testing' },
+  starter: { name: 'Starter', initial_credits: 1000, price: '₵80', description: '1,000 emails, 1,000 SMS - Great for growing businesses' },
+  business: { name: 'Business', initial_credits: 10000, price: '₵800', description: '5,000 emails, 5,000 SMS - For established businesses' },
+  enterprise: { name: 'Enterprise', initial_credits: 20000, price: '₵1500', description: '10,000 emails, 10,000 SMS - For large-scale operations' }
 };
 
 export default function SignupPage() {
@@ -46,7 +47,7 @@ export default function SignupPage() {
   const { showToast } = useToast();
   
   // No mapping needed since we're using plan IDs directly
-  const planType = selectedPlan as 'free' | 'starter' | 'business';
+  const planType = selectedPlan as 'free' | 'starter' | 'business' | 'enterprise';
   
   // Get the actual initial credits for each plan type (what the API gives)
   const getPlanInitialCredits = (planType: string): number => {
@@ -57,6 +58,8 @@ export default function SignupPage() {
         return 1000;
       case 'business':
         return 10000;
+      case 'enterprise':
+        return 20000;
       default:
         return 1000;
     }

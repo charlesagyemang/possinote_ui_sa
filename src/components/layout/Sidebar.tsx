@@ -14,7 +14,6 @@ import {
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home, color: 'from-blue-500 to-purple-600' },
-  { name: 'Usage', href: '/usage', icon: BarChart3, color: 'from-purple-500 to-pink-600' },
   { name: 'SMS', href: '/sms', icon: MessageSquare, color: 'from-cyan-500 to-blue-600' },
   { name: 'Schedule SMS', href: '/schedule-sms', icon: Clock, color: 'from-teal-500 to-emerald-600' },
   { name: 'Email', href: '/email', icon: Mail, color: 'from-orange-500 to-red-600' },
