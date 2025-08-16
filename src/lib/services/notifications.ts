@@ -17,6 +17,15 @@ export class NotificationService {
   private static smsSenderId = 'Possitech';
   private static apiKey = process.env.NEXT_PUBLIC_POSSINOTE_API_KEY;
 
+  // Debug environment variables
+  static debugEnvironment() {
+    console.log('🔍 NotificationService Environment Variables:');
+    console.log('📞 Sales Phone:', this.salesPhone);
+    console.log('📧 Sales Email:', this.salesEmail);
+    console.log('🔑 API Key:', this.apiKey ? 'Set' : 'NOT SET');
+    console.log('📱 SMS Sender ID:', this.smsSenderId);
+  }
+
   static setSalesContact(phone: string, email: string) {
     this.salesPhone = phone;
     this.salesEmail = email;
@@ -207,9 +216,13 @@ export class NotificationService {
       const originalToken = localStorage.getItem('api_token');
       localStorage.setItem('api_token', this.apiKey || '');
       
+      console.log('📧 Sending signup notification email to sales:', this.salesEmail);
+      console.log('📧 Email subject:', subject);
+      console.log('📧 Using API key:', this.apiKey ? 'Set' : 'NOT SET');
+      
       await EmailService.sendEmail(this.salesEmail, subject, content, 'PossiNote System');
       results.emailSuccess = true;
-      console.log('✅ Email notification sent successfully');
+      console.log('✅ Email notification sent successfully to sales team');
       
       // Restore original token
       if (originalToken) {
@@ -220,6 +233,7 @@ export class NotificationService {
       console.error('❌ Email notification failed:', results.emailError);
     }
 
+    console.log('📊 Final notification results:', results);
     return results;
   }
 
@@ -411,9 +425,13 @@ export class NotificationService {
       const originalToken = localStorage.getItem('api_token');
       localStorage.setItem('api_token', this.apiKey || '');
       
+      console.log('📧 Sending welcome email to customer:', data.customerEmail);
+      console.log('📧 Email subject:', subject);
+      console.log('📧 Using API key:', this.apiKey ? 'Set' : 'NOT SET');
+      
       await EmailService.sendEmail(data.customerEmail, subject, content, 'PossiNote Team');
       results.emailSuccess = true;
-      console.log('✅ Welcome email sent successfully');
+      console.log('✅ Welcome email sent successfully to customer');
       
       // Restore original token
       if (originalToken) {
@@ -424,6 +442,7 @@ export class NotificationService {
       console.error('❌ Welcome email failed:', results.emailError);
     }
 
+    console.log('📊 Final welcome notification results:', results);
     return results;
   }
 }

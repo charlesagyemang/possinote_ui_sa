@@ -160,7 +160,84 @@ export interface CreditTransaction {
 
 export interface TopUpData {
   amount: number;
+  credit_type: 'sms' | 'email' | 'general';
   reference?: string;
+}
+
+export interface BulkTopUpItem {
+  amount: number;
+  credit_type: 'sms' | 'email' | 'general';
+  description?: string;
+}
+
+export interface BulkTopUpData {
+  top_ups: BulkTopUpItem[];
+  reference?: string;
+}
+
+export interface BulkTopUpResult {
+  credit_type: 'sms' | 'email' | 'general';
+  amount: number;
+  new_balance: string;
+  description?: string;
+}
+
+export interface BulkTopUpResponse {
+  success: boolean;
+  data: {
+    message: string;
+    results: BulkTopUpResult[];
+    transaction_ids: string[];
+    reference: string;
+    final_balances: {
+      sms_credit_balance: string;
+      email_credit_balance: string;
+      general_credit_balance: string;
+    };
+  };
+}
+
+export interface ConvertCreditsData {
+  from_type: 'sms' | 'email';
+  to_type: 'sms' | 'email';
+  credits: number;
+  description?: string;
+}
+
+export interface ConversionPreview {
+  email_amount: number;
+  sms_amount: number;
+  rate: number;
+  rate_description: string;
+}
+
+export interface ConversionPreviewResponse {
+  success: boolean;
+  data: {
+    conversion_preview: ConversionPreview;
+    current_balances: {
+      sms_credit_balance: string;
+      email_credit_balance: string;
+    };
+    can_convert: boolean;
+  };
+}
+
+export interface ConvertCreditsResponse {
+  success: boolean;
+  data: {
+    message: string;
+    conversion_details: {
+      sms_deducted: number;
+      email_added: number;
+      conversion_rate: number;
+    };
+    new_balances: {
+      sms_credit_balance: string;
+      email_credit_balance: string;
+    };
+    transaction_id: string;
+  };
 }
 
 export interface CreditHistoryResponse {

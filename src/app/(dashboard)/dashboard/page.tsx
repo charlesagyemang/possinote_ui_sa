@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { UsageData, CreditTransaction } from '@/types';
 import { 
@@ -32,10 +33,176 @@ export default function UsagePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [showTopUpModal, setShowTopUpModal] = useState(false);
   const [topUpAmount, setTopUpAmount] = useState('');
+  const [topUpCreditType, setTopUpCreditType] = useState<'sms' | 'email' | 'general' | 'bulk'>('general');
+  
+  // Bundle top-up state
+  const [bulkSmsAmount, setBulkSmsAmount] = useState('');
+  const [bulkEmailAmount, setBulkEmailAmount] = useState('');
+  const [showBundleModal, setShowBundleModal] = useState(false);
+  const [showSmsBundleModal, setShowSmsBundleModal] = useState(false);
+  const [showEmailBundleModal, setShowEmailBundleModal] = useState(false);
   const [isToppingUp, setIsToppingUp] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [userEmail, setUserEmail] = useState('');
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  
+  // Predefined bundles configuration from environment variables
+  const predefinedBundles = (() => {
+    const bundles = [];
+    
+    // Parse bundle configurations from environment variables
+    const bundleConfigs = [
+      process.env.NEXT_PUBLIC_BUNDLE_STARTER,
+      process.env.NEXT_PUBLIC_BUNDLE_BUSINESS,
+      process.env.NEXT_PUBLIC_BUNDLE_ENTERPRISE
+    ].filter(Boolean);
+    
+    bundleConfigs.forEach((config, index) => {
+      if (config) {
+        const [name, sms, email, description, color, popular] = config.split('|');
+        bundles.push({
+          id: `bundle-${index}`,
+          name: name || `Bundle ${index + 1}`,
+          sms: parseInt(sms) || 0,
+          email: parseInt(email) || 0,
+          description: description || 'Credit bundle',
+          color: color || 'from-blue-500 to-purple-600',
+          popular: popular === 'true'
+        });
+      }
+    });
+    
+    // Fallback bundles if no environment variables are set
+    if (bundles.length === 0) {
+      return [
+        {
+          id: 'starter',
+          name: 'Starter Bundle',
+          sms: 1000,
+          email: 1000,
+          description: 'Perfect for small businesses',
+          color: 'from-blue-500 to-purple-600',
+          popular: false
+        },
+        {
+          id: 'business',
+          name: 'Business Bundle',
+          sms: 5000,
+          email: 5000,
+          description: 'Great for growing businesses',
+          color: 'from-purple-500 to-pink-600',
+          popular: true
+        },
+        {
+          id: 'enterprise',
+          name: 'Enterprise Bundle',
+          sms: 10000,
+          email: 10000,
+          description: 'For large-scale operations',
+          color: 'from-green-500 to-emerald-600',
+          popular: false
+        }
+      ];
+    }
+    
+    return bundles;
+  })();
+  
+  // SMS bundles configuration
+  const smsBundles = [
+    {
+      id: 'sms-100',
+      name: '100 SMS Credits',
+      credits: 100,
+      description: 'Perfect for testing',
+      color: 'from-blue-500 to-cyan-600',
+      popular: false
+    },
+    {
+      id: 'sms-1000',
+      name: '1,000 SMS Credits',
+      credits: 1000,
+      description: 'Great for small campaigns',
+      color: 'from-blue-500 to-indigo-600',
+      popular: false
+    },
+    {
+      id: 'sms-2000',
+      name: '2,000 SMS Credits',
+      credits: 2000,
+      description: 'Popular choice',
+      color: 'from-indigo-500 to-purple-600',
+      popular: true
+    },
+    {
+      id: 'sms-5000',
+      name: '5,000 SMS Credits',
+      credits: 5000,
+      description: 'For growing businesses',
+      color: 'from-purple-500 to-pink-600',
+      popular: false
+    },
+    {
+      id: 'sms-10000',
+      name: '10,000 SMS Credits',
+      credits: 10000,
+      description: 'For large-scale operations',
+      color: 'from-pink-500 to-red-600',
+      popular: false
+    }
+  ];
+  
+  // Email bundles configuration
+  const emailBundles = [
+    {
+      id: 'email-1000',
+      name: '1,000 Email Credits',
+      credits: 1000,
+      description: 'Perfect for small campaigns',
+      color: 'from-orange-500 to-red-600',
+      popular: false
+    },
+    {
+      id: 'email-2000',
+      name: '2,000 Email Credits',
+      credits: 2000,
+      description: 'Popular choice',
+      color: 'from-red-500 to-pink-600',
+      popular: true
+    },
+    {
+      id: 'email-5000',
+      name: '5,000 Email Credits',
+      credits: 5000,
+      description: 'For growing businesses',
+      color: 'from-pink-500 to-purple-600',
+      popular: false
+    },
+    {
+      id: 'email-10000',
+      name: '10,000 Email Credits',
+      credits: 10000,
+      description: 'For established businesses',
+      color: 'from-purple-500 to-indigo-600',
+      popular: false
+    },
+    {
+      id: 'email-50000',
+      name: '50,000 Email Credits',
+      credits: 50000,
+      description: 'For large-scale operations',
+      color: 'from-indigo-500 to-blue-600',
+      popular: false
+    }
+  ];
+  
+  // Conversion state
+  const [showConvertModal, setShowConvertModal] = useState(false);
+  const [convertFromType, setConvertFromType] = useState<'sms' | 'email'>('sms');
+  const [convertToType, setConvertToType] = useState<'sms' | 'email'>('email');
+  const [convertAmount, setConvertAmount] = useState('');
+  const [conversionPreview, setConversionPreview] = useState<any>(null);
+  const [isConverting, setIsConverting] = useState(false);
   
   // Add refs to prevent multiple simultaneous requests
   const isFetching = useRef(false);
@@ -56,23 +223,10 @@ export default function UsagePage() {
       return;
     }
 
-    // Check if we have cached data and it's still fresh (less than 2 minutes old)
-    const cachedData = sessionStorage.getItem('usage_data_cache');
-    const cacheTime = sessionStorage.getItem('usage_data_cache_time');
-    if (cachedData && cacheTime && !forceRefresh && !isRetry) {
-      const cacheAge = now - parseInt(cacheTime);
-      if (cacheAge < 120000) { // 2 minutes
-        try {
-          const parsed = JSON.parse(cachedData);
-          setCurrentUsage(parsed.currentUsage);
-          setCreditTransactions(parsed.creditTransactions);
-          setIsLoading(false);
-          return;
-              } catch {
-        // If cache is corrupted, continue with fresh fetch
-      }
-      }
-    }
+    // Force fresh data fetch - disable caching for now
+    console.log('🔄 Always fetching fresh data (cache disabled)');
+    sessionStorage.removeItem('usage_data_cache');
+    sessionStorage.removeItem('usage_data_cache_time');
 
     isFetching.current = true;
     lastFetchTime.current = now;
@@ -81,6 +235,13 @@ export default function UsagePage() {
       setIsLoading(true);
       setHasError(false);
 
+      // Check network connectivity
+      console.log('🔍 Checking network connectivity...');
+      console.log('🌐 API Base URL:', process.env.NEXT_PUBLIC_API_URL || 'https://notifyapi.possitech.net/api/v1');
+      console.log('🔑 API Token:', localStorage.getItem('api_token') || localStorage.getItem('api_key') ? 'Present' : 'Missing');
+
+      console.log('🚀 Starting API calls...');
+      
       const [currentResponse, , creditHistoryResponse] = await Promise.all([
         UsageService.getCurrentUsage(),
         UsageService.getUsageHistory({
@@ -89,22 +250,15 @@ export default function UsagePage() {
         }),
         CreditService.getCreditHistory({ per_page: 10 })
       ]);
+      
+      console.log('✅ All API calls completed successfully');
 
       setCurrentUsage(currentResponse.data);
 
       setCreditTransactions(creditHistoryResponse.data.transactions || []);
       
-      // Cache the data for 2 minutes
-      try {
-        const cacheData = {
-          currentUsage: currentResponse.data,
-          creditTransactions: creditHistoryResponse.data.transactions || []
-        };
-        sessionStorage.setItem('usage_data_cache', JSON.stringify(cacheData));
-        sessionStorage.setItem('usage_data_cache_time', now.toString());
-      } catch {
-        // Ignore cache errors
-      }
+      // Never cache credit/usage data - always fetch fresh for money-related data
+      console.log('💰 Credit data updated - no caching for financial data');
       
     } catch (error: unknown) {
       console.error('Failed to fetch usage data:', error);
@@ -123,14 +277,10 @@ export default function UsagePage() {
         return;
       }
       
-      // Clear cache on error to force fresh fetch next time
-      try {
-        sessionStorage.removeItem('usage_data_cache');
-        sessionStorage.removeItem('usage_data_cache_time');
-      } catch {
-        // Ignore cache errors
-      }
+      // No cache to clear - always fetch fresh data
+      console.log('❌ API error - will retry with fresh data');
       
+      console.log('⚠️ API calls failed, using fallback data');
       // Set fallback data when API fails
       setCurrentUsage({
         sms_credit_balance: 4979.0,
@@ -199,7 +349,7 @@ export default function UsagePage() {
   // Only fetch data once on mount
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+  }, []); // Remove fetchData from dependencies to prevent infinite loops
 
   // Get user email from localStorage or prompt for it
   useEffect(() => {
@@ -209,9 +359,197 @@ export default function UsagePage() {
     }
   }, []);
 
+  // Get conversion rate from localStorage or use default
+  const getConversionRate = useCallback((fromType: 'sms' | 'email', toType: 'sms' | 'email') => {
+    const storedRates = localStorage.getItem('conversion_rates');
+    if (storedRates) {
+      const rates = JSON.parse(storedRates);
+      const key = `${fromType}_to_${toType}`;
+      if (rates[key]) {
+        return rates[key];
+      }
+    }
+    
+    // Default rates if not stored
+    if (fromType === 'sms' && toType === 'email') {
+      return { rate: 2, description: '1 SMS credit = 2 Email credits' };
+    } else if (fromType === 'email' && toType === 'sms') {
+      return { rate: 0.5, description: '2 Email credits = 1 SMS credit' };
+    }
+    
+    return { rate: 1, description: '1:1 conversion' };
+  }, []);
+
+  // Calculate conversion preview locally using stored rates
+  const calculateConversionPreview = useCallback(() => {
+    if (!convertAmount || parseFloat(convertAmount) <= 0) {
+      setConversionPreview(null);
+      return;
+    }
+
+    const amount = parseFloat(convertAmount);
+    const currentBalance = parseFloat(String(currentUsage?.[`${convertFromType}_credit_balance`] || 0));
+    const conversionRate = getConversionRate(convertFromType, convertToType);
+    
+    const convertedAmount = amount * conversionRate.rate;
+    const canConvert = amount <= currentBalance;
+    
+    setConversionPreview({
+      conversion_preview: {
+        [convertFromType === 'sms' ? 'sms_amount' : 'email_amount']: amount,
+        [convertToType === 'sms' ? 'sms_amount' : 'email_amount']: convertedAmount,
+        rate: conversionRate.rate,
+        rate_description: conversionRate.description
+      },
+      current_balances: {
+        sms_credit_balance: String(currentUsage?.sms_credit_balance || 0),
+        email_credit_balance: String(currentUsage?.email_credit_balance || 0)
+      },
+      can_convert: canConvert
+    });
+  }, [convertAmount, convertFromType, convertToType, currentUsage, getConversionRate]);
+
+  // Fetch and store conversion rates
+  const fetchConversionRates = useCallback(async () => {
+    try {
+      // Fetch rates for both directions
+      const [smsToEmail, emailToSms] = await Promise.all([
+        CreditService.calculateConversion('sms', 'email', 1),
+        CreditService.calculateConversion('email', 'sms', 2)
+      ]);
+
+      // Store rates in localStorage
+      const rates = {
+        sms_to_email: {
+          rate: smsToEmail.data.conversion_preview.rate,
+          description: smsToEmail.data.conversion_preview.rate_description
+        },
+        email_to_sms: {
+          rate: emailToSms.data.conversion_preview.rate,
+          description: emailToSms.data.conversion_preview.rate_description
+        }
+      };
+
+      localStorage.setItem('conversion_rates', JSON.stringify(rates));
+      console.log('✅ Conversion rates saved to localStorage:', rates);
+    } catch (error) {
+      console.error('Failed to fetch conversion rates:', error);
+    }
+  }, []);
+
+  // Handle conversion with local transaction
+  const handleConvert = useCallback(async () => {
+    if (!convertAmount || parseFloat(convertAmount) <= 0) return;
+
+    setIsConverting(true);
+    try {
+      // First, fetch current rates if not stored
+      const storedRates = localStorage.getItem('conversion_rates');
+      if (!storedRates) {
+        await fetchConversionRates();
+      }
+
+      // Perform local transaction
+      const amount = parseFloat(convertAmount);
+      
+      // Calculate converted amount based on direction
+      let convertedAmount = 0;
+      if (convertFromType === 'sms' && convertToType === 'email') {
+        convertedAmount = amount * 2; // 1 SMS = 2 Email
+      } else if (convertFromType === 'email' && convertToType === 'sms') {
+        convertedAmount = amount / 2; // 2 Email = 1 SMS
+      }
+
+      // Update local balances immediately
+      const newSmsBalance = convertFromType === 'sms' 
+        ? parseFloat(String(currentUsage?.sms_credit_balance || 0)) - amount
+        : parseFloat(String(currentUsage?.sms_credit_balance || 0)) + convertedAmount;
+
+      const newEmailBalance = convertFromType === 'email'
+        ? parseFloat(String(currentUsage?.email_credit_balance || 0)) - amount
+        : parseFloat(String(currentUsage?.email_credit_balance || 0)) + convertedAmount;
+
+      // Update current usage state locally
+      setCurrentUsage(prev => prev ? {
+        ...prev,
+        sms_credit_balance: newSmsBalance,
+        email_credit_balance: newEmailBalance
+      } : null);
+
+      // Store transaction in localStorage
+      const transactions = JSON.parse(localStorage.getItem('local_conversions') || '[]');
+      transactions.push({
+        id: Date.now().toString(),
+        from_type: convertFromType,
+        to_type: convertToType,
+        amount: amount,
+        converted_amount: convertedAmount,
+        timestamp: new Date().toISOString(),
+        description: `Converting ${convertFromType.toUpperCase()} to ${convertToType.toUpperCase()} credits`
+      });
+      localStorage.setItem('local_conversions', JSON.stringify(transactions));
+
+      console.log('✅ Local conversion completed:', {
+        from: convertFromType,
+        to: convertToType,
+        amount: amount,
+        converted: convertedAmount,
+        newSmsBalance,
+        newEmailBalance
+      });
+
+      setConvertAmount('');
+      setShowConvertModal(false);
+      setConversionPreview(null);
+
+      // Sync with server in background (optional)
+      setTimeout(async () => {
+        try {
+          console.log('🔄 Sending conversion request to server...');
+          const requestPayload = {
+            from_type: convertFromType,
+            to_type: convertToType,
+            credits: amount,
+            description: `Converting ${convertFromType.toUpperCase()} to ${convertToType.toUpperCase()} credits`
+          };
+          console.log('📤 Request payload:', JSON.stringify(requestPayload, null, 2));
+          console.log('🌐 API URL:', `${process.env.NEXT_PUBLIC_API_URL || 'https://notifyapi.possitech.net/api/v1'}/credits/convert`);
+          
+          const response = await CreditService.convertCredits(requestPayload);
+          
+          console.log('✅ Server sync completed');
+          console.log('📊 Full API Response:', JSON.stringify(response, null, 2));
+          console.log('📈 New Balances from Server:', response.data?.new_balances);
+          console.log('💱 Conversion Details:', response.data?.conversion_details);
+          console.log('🆔 Transaction ID:', response.data?.transaction_id);
+          
+        } catch (error) {
+          console.error('❌ Server sync failed, but local transaction completed:', error);
+          console.error('🔍 Error details:', {
+            message: error.message,
+            status: error.response?.status,
+            data: error.response?.data
+          });
+        }
+      }, 1000);
+
+    } catch (error) {
+      console.error('Failed to convert credits:', error);
+    } finally {
+      setIsConverting(false);
+    }
+  }, [convertAmount, convertFromType, convertToType, currentUsage, getConversionRate, fetchConversionRates]);
+
   // Memoize the top-up handler with Paystack integration
   const handleTopUp = useCallback(async () => {
-    if (!topUpAmount || parseFloat(topUpAmount) <= 0) return;
+    // Validate input based on top-up type
+    if (topUpCreditType === 'bulk') {
+      const smsAmount = parseFloat(bulkSmsAmount || '0');
+      const emailAmount = parseFloat(bulkEmailAmount || '0');
+      if (smsAmount <= 0 && emailAmount <= 0) return;
+    } else {
+      if (!topUpAmount || parseFloat(topUpAmount) <= 0) return;
+    }
     
     // If no email is stored, prompt user for it
     if (!userEmail) {
@@ -224,8 +562,25 @@ export default function UsagePage() {
     try {
       setIsProcessingPayment(true);
       
-      // Calculate amount in Ghanaian Cedi (1 credit = ₵0.10)
-      const amountInCedi = parseFloat(topUpAmount) / 10; // 100 credits = ₵10
+      // Get pricing from environment variables
+      const SMS_CREDIT_RATE = parseFloat(process.env.NEXT_PUBLIC_SMS_CREDIT_RATE || '0.07'); // ₵7 = 100 SMS credits
+      const EMAIL_CREDIT_RATE = parseFloat(process.env.NEXT_PUBLIC_EMAIL_CREDIT_RATE || '0.02'); // ₵2 = 100 Email credits
+      const GENERAL_CREDIT_RATE = parseFloat(process.env.NEXT_PUBLIC_GENERAL_CREDIT_RATE || '0.10'); // ₵10 = 100 General credits
+      
+      // Calculate amount in Ghanaian Cedi based on credit type
+      const amountInCedi = (() => {
+        if (topUpCreditType === 'bulk') {
+          const smsCost = parseFloat(bulkSmsAmount || '0') * SMS_CREDIT_RATE;
+          const emailCost = parseFloat(bulkEmailAmount || '0') * EMAIL_CREDIT_RATE;
+          return smsCost + emailCost;
+        } else if (topUpCreditType === 'sms') {
+          return parseFloat(topUpAmount) * SMS_CREDIT_RATE;
+        } else if (topUpCreditType === 'email') {
+          return parseFloat(topUpAmount) * EMAIL_CREDIT_RATE;
+        } else {
+          return parseFloat(topUpAmount) * GENERAL_CREDIT_RATE;
+        }
+      })();
       const amountInPesewas = PaystackService.convertToKobo(amountInCedi);
       const reference = PaystackService.generateReference();
       
@@ -243,21 +598,60 @@ export default function UsagePage() {
           
           // Only call the top-up endpoint if payment is successful
           setIsToppingUp(true);
-          CreditService.topUpCredits({ 
-            amount: parseFloat(topUpAmount),
-            reference: reference // Add reference to track the payment
-          }).then((topUpResponse) => {
-            if (topUpResponse.success) {
-              setTopUpAmount('');
-              setShowTopUpModal(false);
-              // Refresh data after successful top-up
-              setTimeout(() => fetchData(false, true), 1000);
+          
+          if (topUpCreditType === 'bulk') {
+            // Handle bulk top-up
+            const topUps = [];
+            if (parseFloat(bulkSmsAmount || '0') > 0) {
+              topUps.push({
+                amount: parseFloat(bulkSmsAmount),
+                credit_type: 'sms',
+                description: 'Bulk SMS top-up'
+              });
             }
-          }).catch((error) => {
-            console.error('Failed to top up credits after payment:', error);
-          }).finally(() => {
-            setIsToppingUp(false);
-          });
+            if (parseFloat(bulkEmailAmount || '0') > 0) {
+              topUps.push({
+                amount: parseFloat(bulkEmailAmount),
+                credit_type: 'email',
+                description: 'Bulk Email top-up'
+              });
+            }
+            
+            CreditService.bulkTopUpCredits({
+              top_ups: topUps,
+              reference: reference
+            }).then((topUpResponse) => {
+              if (topUpResponse.success) {
+                setBulkSmsAmount('');
+                setBulkEmailAmount('');
+                setShowTopUpModal(false);
+                // Refresh data after successful top-up
+                setTimeout(() => fetchData(false, true), 1000);
+              }
+            }).catch((error) => {
+              console.error('Failed to bulk top up credits after payment:', error);
+            }).finally(() => {
+              setIsToppingUp(false);
+            });
+          } else {
+            // Handle single credit type top-up
+            CreditService.topUpCredits({ 
+              amount: parseFloat(topUpAmount),
+              credit_type: topUpCreditType,
+              reference: reference // Add reference to track the payment
+            }).then((topUpResponse) => {
+              if (topUpResponse.success) {
+                setTopUpAmount('');
+                setShowTopUpModal(false);
+                // Refresh data after successful top-up
+                setTimeout(() => fetchData(false, true), 1000);
+              }
+            }).catch((error) => {
+              console.error('Failed to top up credits after payment:', error);
+            }).finally(() => {
+              setIsToppingUp(false);
+            });
+          }
         },
         onClose: () => {
           console.log('Payment cancelled by user');
@@ -269,7 +663,7 @@ export default function UsagePage() {
     } finally {
       setIsProcessingPayment(false);
     }
-  }, [topUpAmount, userEmail, fetchData]);
+  }, [topUpAmount, topUpCreditType, userEmail, bulkSmsAmount, bulkEmailAmount]); // Remove fetchData from dependencies
 
   if (isLoading) {
     return (
@@ -369,7 +763,7 @@ export default function UsagePage() {
             )}
           </div>
         </div>
-
+        
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* SMS Credit Balance */}
@@ -391,13 +785,46 @@ export default function UsagePage() {
                 <div className="text-xs text-gray-500">
                   Used: {parseFloat(String(currentUsage?.sms_usage_this_month || 0)).toFixed(2)} this month
                 </div>
-                <Button
-                  onClick={() => setShowTopUpModal(true)}
-                  className="w-full mt-2 bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white rounded-xl"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Top Up SMS
-                </Button>
+                <div className="space-y-2 mt-2">
+                  <Button
+                    onClick={() => {
+                      setShowSmsBundleModal(true);
+                    }}
+                    className="w-full bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white rounded-xl"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    SMS Bundles
+                  </Button>
+                  {parseFloat(String(currentUsage?.sms_credit_balance || 0)) > 0 && (
+                    <>
+                      <Button
+                        onClick={() => {
+                          setConvertFromType('sms');
+                          setConvertToType('email');
+                          setShowConvertModal(true);
+                        }}
+                        variant="outline"
+                        className="w-full border-orange-500/30 text-orange-300 hover:bg-orange-500/20"
+                      >
+                        <ArrowUpRight className="h-4 w-4 mr-2" />
+                        Convert Some SMS Credits to Email Credits
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          setConvertFromType('sms');
+                          setConvertToType('email');
+                          setConvertAmount(String(currentUsage?.sms_credit_balance || 0));
+                          setShowConvertModal(true);
+                        }}
+                        variant="outline"
+                        className="w-full border-green-500/30 text-green-300 hover:bg-green-500/20"
+                      >
+                        <ArrowUpRight className="h-4 w-4 mr-2" />
+                        Convert ALL SMS Credits to Email Credits
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -421,44 +848,95 @@ export default function UsagePage() {
                 <div className="text-xs text-gray-500">
                   Used: {parseFloat(String(currentUsage?.email_usage_this_month || 0)).toFixed(2)} this month
                 </div>
-                <Button
-                  onClick={() => setShowTopUpModal(true)}
-                  className="w-full mt-2 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white rounded-xl"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Top Up Email
-                </Button>
+                <div className="space-y-2 mt-2">
+                  <Button
+                    onClick={() => {
+                      setShowEmailBundleModal(true);
+                    }}
+                    className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white rounded-xl"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Email Bundles
+                  </Button>
+                  {parseFloat(String(currentUsage?.email_credit_balance || 0)) > 0 && (
+                    <>
+                      <Button
+                        onClick={() => {
+                          setConvertFromType('email');
+                          setConvertToType('sms');
+                          setShowConvertModal(true);
+                        }}
+                        variant="outline"
+                        className="w-full border-blue-500/30 text-blue-300 hover:bg-blue-500/20"
+                      >
+                        <ArrowUpRight className="h-4 w-4 mr-2" />
+                        Convert Some Email Credits to SMS Credits
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          setConvertFromType('email');
+                          setConvertToType('sms');
+                          setConvertAmount(String(currentUsage?.email_credit_balance || 0));
+                          setShowConvertModal(true);
+                        }}
+                        variant="outline"
+                        className="w-full border-green-500/30 text-green-300 hover:bg-green-500/20"
+                      >
+                        <ArrowUpRight className="h-4 w-4 mr-2" />
+                        Convert ALL Email Credits to SMS Credits
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* General Credit Balance */}
+          {/* Credit Balances */}
           <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden hover:bg-black/30 transition-all duration-300">
             <CardHeader className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-b border-white/10">
               <CardTitle className="text-white text-lg flex items-center space-x-3">
                 <div className="p-2 bg-green-500/20 rounded-xl">
                   <CreditCard className="h-5 w-5 text-green-400" />
                 </div>
-                <span>General Credits</span>
+                <span>Credit Balances</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
-              <div className="text-center space-y-2">
-                <div className="text-3xl font-bold text-green-400">
-                  {parseFloat(String(currentUsage?.general_credit_balance || 0)).toFixed(2)}
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-3 h-3 bg-blue-400 rounded-full"></div>
+                    <span className="text-gray-300 text-sm">SMS Credits</span>
+                  </div>
+                  <span className="text-white font-semibold">
+                    {parseFloat(String(currentUsage?.sms_credit_balance || 0)).toFixed(2)}
+                  </span>
                 </div>
-                <p className="text-gray-400 text-sm">General Credits Available</p>
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-3 h-3 bg-orange-400 rounded-full"></div>
+                    <span className="text-gray-300 text-sm">Email Credits</span>
+                  </div>
+                  <span className="text-white font-semibold">
+                    {parseFloat(String(currentUsage?.email_credit_balance || 0)).toFixed(2)}
+                  </span>
+                </div>
                 <Button
-                  onClick={() => setShowTopUpModal(true)}
-                  className="w-full mt-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl"
+                  onClick={() => {
+                    setShowBundleModal(true);
+                  }}
+                  className="w-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white rounded-xl mt-4"
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  Top Up
+                  Bundle Top-up
                 </Button>
               </div>
             </CardContent>
           </Card>
         </div>
+
+
 
         {/* Additional Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -501,7 +979,7 @@ export default function UsagePage() {
               <div className="text-center space-y-2">
                 <div className="text-3xl font-bold text-red-400">
                   {parseFloat(String(currentUsage?.credit_usage_this_month || 0)).toFixed(2)} credits
-                </div>
+              </div>
                 <p className="text-gray-400 text-sm">Credits Used</p>
                 <div className="flex items-center justify-center space-x-1">
                   <ArrowUpRight className="h-4 w-4 text-red-400" />
@@ -525,7 +1003,7 @@ export default function UsagePage() {
               <div className="text-center space-y-2">
                 <div className="text-3xl font-bold text-blue-400">
                   {parseFloat(String(currentUsage?.credit_added_this_month || 0)).toFixed(2)} credits
-                </div>
+              </div>
                 <p className="text-gray-400 text-sm">This Month</p>
                 <div className="flex items-center justify-center space-x-1">
                   <ArrowUpRight className="h-4 w-4 text-blue-400" />
@@ -549,7 +1027,7 @@ export default function UsagePage() {
               <div className="text-center space-y-2">
                 <div className="text-3xl font-bold text-purple-400">
                   {parseFloat(String(currentUsage?.net_credits_this_month || 0)).toFixed(2)} credits
-                </div>
+              </div>
                 <p className="text-gray-400 text-sm">This Month</p>
                 <div className="flex items-center justify-center space-x-1">
                   <span className="text-sm text-purple-400">
@@ -619,7 +1097,7 @@ export default function UsagePage() {
                   <div className="text-center space-y-4">
                     <div className="p-4 bg-gray-500/20 rounded-2xl w-fit mx-auto">
                       <Activity className="h-12 w-12 text-gray-400" />
-                    </div>
+              </div>
                     <p className="text-gray-400">No usage data yet</p>
                     <p className="text-gray-500 text-sm">Start sending SMS and Email to see usage breakdown</p>
                   </div>
@@ -633,23 +1111,23 @@ export default function UsagePage() {
                     <p className="text-gray-400">No breakdown data available</p>
                     <p className="text-gray-500 text-sm">Start using SMS and Email to see usage breakdown</p>
                   </div>
-                </div>
+              </div>
               )}
             </CardContent>
           </Card>
         </div>
 
         {/* Credit Transaction History */}
-        <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden">
+          <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden">
           <CardHeader className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border-b border-white/10">
-            <CardTitle className="text-white text-xl flex items-center space-x-3">
+              <CardTitle className="text-white text-xl flex items-center space-x-3">
               <div className="p-2 bg-indigo-500/20 rounded-xl">
                 <History className="h-5 w-5 text-indigo-400" />
-              </div>
+                </div>
               <span>Recent Credit Transactions</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
             {creditTransactions.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-gray-400">No transactions found</p>
@@ -695,41 +1173,399 @@ export default function UsagePage() {
                 ))}
               </div>
             )}
+            </CardContent>
+          </Card>
+
+        {/* Convert Credits Modal */}
+        {showConvertModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-md">
+              <h3 className="text-xl font-bold text-white mb-4">
+                Convert {convertFromType.toUpperCase()} Credits to {convertToType.toUpperCase()} Credits
+                {convertAmount === String(currentUsage?.[`${convertFromType}_credit_balance`] || 0) && (
+                  <span className="block text-sm text-green-400 font-normal mt-1">
+                    Converting ALL {convertFromType.toUpperCase()} credits to {convertToType.toUpperCase()} credits
+                  </span>
+                )}
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="convertAmount" className="text-gray-300">
+                    Amount ({convertFromType} credits)
+                  </Label>
+                  <Input
+                    id="convertAmount"
+                    type="number"
+                    step="1"
+                    min="1"
+                    max={parseFloat(String(currentUsage?.[`${convertFromType}_credit_balance`] || 0))}
+                    value={convertAmount}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setConvertAmount(value);
+                      
+                      // Calculate preview immediately with the new value
+                      if (value && parseFloat(value) > 0) {
+                        const amount = parseFloat(value);
+                        const currentBalance = parseFloat(String(currentUsage?.[`${convertFromType}_credit_balance`] || 0));
+                        
+                        // Calculate converted amount based on direction
+                        let convertedAmount = 0;
+                        if (convertFromType === 'sms' && convertToType === 'email') {
+                          convertedAmount = amount * 2; // 1 SMS = 2 Email
+                        } else if (convertFromType === 'email' && convertToType === 'sms') {
+                          convertedAmount = amount / 2; // 2 Email = 1 SMS
+                        }
+                        
+                        const canConvert = amount <= currentBalance;
+                        
+                        setConversionPreview({
+                          conversion_preview: {
+                            [convertFromType === 'sms' ? 'sms_amount' : 'email_amount']: amount,
+                            [convertToType === 'sms' ? 'sms_amount' : 'email_amount']: convertedAmount,
+                            rate: convertFromType === 'sms' ? 2 : 0.5,
+                            rate_description: convertFromType === 'sms' ? '1 SMS credit = 2 Email credits' : '2 Email credits = 1 SMS credit'
+                          },
+                          current_balances: {
+                            sms_credit_balance: String(currentUsage?.sms_credit_balance || 0),
+                            email_credit_balance: String(currentUsage?.email_credit_balance || 0)
+                          },
+                          can_convert: canConvert
+                        });
+                      } else {
+                        setConversionPreview(null);
+                      }
+                    }}
+                    placeholder={`Enter ${convertFromType} credits`}
+                    className="mt-1"
+                    disabled={isConverting}
+                  />
+                  <p className="text-xs text-gray-400">
+                    Available: {parseFloat(String(currentUsage?.[`${convertFromType}_credit_balance`] || 0)).toFixed(2)} {convertFromType} credits
+                  </p>
+        </div>
+
+                {/* Conversion Preview */}
+                {conversionPreview && (
+                  <div className="p-4 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-xl border border-purple-500/20">
+                    <h4 className="text-purple-300 font-semibold mb-2">Conversion Preview</h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">You'll receive:</span>
+                        <span className="text-white font-semibold">
+                          {conversionPreview.conversion_preview[convertToType === 'sms' ? 'sms_amount' : 'email_amount']} {convertToType.toUpperCase()} credits
+                        </span>
+              </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Rate:</span>
+                        <span className="text-purple-300">
+                          {conversionPreview.conversion_preview.rate_description}
+                        </span>
+                      </div>
+                      {!conversionPreview.can_convert && (
+                        <div className="text-red-400 text-sm">
+                          ⚠️ Insufficient {convertFromType} credits for conversion
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+
+
+                <div className="flex space-x-3">
+                  <Button
+                    onClick={() => {
+                      setShowConvertModal(false);
+                      setConvertAmount('');
+                      setConversionPreview(null);
+                    }}
+                    variant="outline"
+                    className="flex-1"
+                    disabled={isConverting}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleConvert}
+                    disabled={isConverting || !convertAmount || parseFloat(convertAmount) <= 0 || !conversionPreview?.can_convert}
+                    className="flex-1 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700"
+                  >
+                    {isConverting ? 'Converting...' : 'Convert Credits'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* SMS Bundle Selection Modal */}
+        {showSmsBundleModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+              <h3 className="text-xl font-bold text-white mb-6 text-center">Choose Your SMS Bundle</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                {smsBundles.map((bundle) => {
+                  const cost = bundle.credits * parseFloat(process.env.NEXT_PUBLIC_SMS_CREDIT_RATE || '0.07');
+                  
+                  return (
+                    <Card key={bundle.id} className={`bg-black/20 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden hover:bg-black/30 transition-all duration-300 ${bundle.popular ? 'ring-2 ring-purple-500' : ''}`}>
+                      <CardHeader className={`bg-gradient-to-r ${bundle.color}/10 border-b border-white/10`}>
+                        <CardTitle className="text-white text-lg flex items-center justify-between">
+                          <span>{bundle.name}</span>
+                          {bundle.popular && (
+                            <Badge className="bg-purple-500 text-white text-xs">Popular</Badge>
+                          )}
+            </CardTitle>
+          </CardHeader>
+                      <CardContent className="p-4">
+                        <div className="text-center space-y-3">
+                          <div className="text-2xl font-bold text-blue-400">
+                            {bundle.credits.toLocaleString()} SMS
+                          </div>
+                          <div className="text-lg text-green-400 font-bold">
+                            ₵{cost.toFixed(2)}
+                          </div>
+                          <p className="text-xs text-gray-400">{bundle.description}</p>
+                          <Button
+                            onClick={() => {
+                              setTopUpAmount(bundle.credits.toString());
+                              setTopUpCreditType('sms');
+                              setShowSmsBundleModal(false);
+                              setShowTopUpModal(true);
+                            }}
+                            className={`w-full bg-gradient-to-r ${bundle.color} hover:from-opacity-80 hover:to-opacity-80 text-white rounded-xl`}
+                          >
+                            Select Bundle
+                          </Button>
+                  </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+                </div>
+              
+              <div className="flex justify-center">
+                <Button
+                  onClick={() => setShowSmsBundleModal(false)}
+                  variant="outline"
+                  className="bg-transparent border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white"
+                >
+                  Cancel
+                </Button>
+                  </div>
+                </div>
+          </div>
+        )}
+
+        {/* Email Bundle Selection Modal */}
+        {showEmailBundleModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+              <h3 className="text-xl font-bold text-white mb-6 text-center">Choose Your Email Bundle</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                {emailBundles.map((bundle) => {
+                  const cost = bundle.credits * parseFloat(process.env.NEXT_PUBLIC_EMAIL_CREDIT_RATE || '0.02');
+                  
+                  return (
+                    <Card key={bundle.id} className={`bg-black/20 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden hover:bg-black/30 transition-all duration-300 ${bundle.popular ? 'ring-2 ring-purple-500' : ''}`}>
+                      <CardHeader className={`bg-gradient-to-r ${bundle.color}/10 border-b border-white/10`}>
+                        <CardTitle className="text-white text-lg flex items-center justify-between">
+                          <span>{bundle.name}</span>
+                          {bundle.popular && (
+                            <Badge className="bg-purple-500 text-white text-xs">Popular</Badge>
+                          )}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-4">
+                        <div className="text-center space-y-3">
+                          <div className="text-2xl font-bold text-orange-400">
+                            {bundle.credits.toLocaleString()} Email
+                          </div>
+                          <div className="text-lg text-green-400 font-bold">
+                            ₵{cost.toFixed(2)}
+                          </div>
+                          <p className="text-xs text-gray-400">{bundle.description}</p>
+                          <Button
+                            onClick={() => {
+                              setTopUpAmount(bundle.credits.toString());
+                              setTopUpCreditType('email');
+                              setShowEmailBundleModal(false);
+                              setShowTopUpModal(true);
+                            }}
+                            className={`w-full bg-gradient-to-r ${bundle.color} hover:from-opacity-80 hover:to-opacity-80 text-white rounded-xl`}
+                          >
+                            Pay ₵{cost.toFixed(2)}
+                          </Button>
+                  </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+                </div>
+              
+              <div className="flex justify-center">
+                <Button
+                  onClick={() => setShowEmailBundleModal(false)}
+                  variant="outline"
+                  className="bg-transparent border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Bundle Selection Modal */}
+        {showBundleModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+              <h3 className="text-xl font-bold text-white mb-6 text-center">Choose Your Bundle</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                {predefinedBundles.map((bundle) => {
+                  const smsCost = bundle.sms * parseFloat(process.env.NEXT_PUBLIC_SMS_CREDIT_RATE || '0.07');
+                  const emailCost = bundle.email * parseFloat(process.env.NEXT_PUBLIC_EMAIL_CREDIT_RATE || '0.02');
+                  const totalCost = smsCost + emailCost;
+                  
+                  return (
+                    <Card key={bundle.id} className={`bg-black/20 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden hover:bg-black/30 transition-all duration-300 ${bundle.popular ? 'ring-2 ring-purple-500' : ''}`}>
+                      <CardHeader className={`bg-gradient-to-r ${bundle.color}/10 border-b border-white/10`}>
+                        <CardTitle className="text-white text-lg flex items-center justify-between">
+                          <span>{bundle.name}</span>
+                          {bundle.popular && (
+                            <Badge className="bg-purple-500 text-white text-xs">Popular</Badge>
+                          )}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-6">
+                        <div className="text-center space-y-4">
+                          <div className="text-3xl font-bold text-white">
+                            ₵{totalCost.toFixed(2)}
+                          </div>
+                          <div className="text-sm text-gray-300">
+                            {bundle.sms.toLocaleString()} SMS + {bundle.email.toLocaleString()} Email
+                          </div>
+                          <p className="text-xs text-gray-400">{bundle.description}</p>
+                          <Button
+                            onClick={() => {
+                              setBulkSmsAmount(bundle.sms.toString());
+                              setBulkEmailAmount(bundle.email.toString());
+                              setTopUpCreditType('bulk');
+                              setShowBundleModal(false);
+                              setShowTopUpModal(true);
+                            }}
+                            className={`w-full bg-gradient-to-r ${bundle.color} hover:from-opacity-80 hover:to-opacity-80 text-white rounded-xl text-lg font-semibold py-3`}
+                          >
+                            Select Bundle
+                          </Button>
+            </div>
           </CardContent>
         </Card>
+                  );
+                })}
+              </div>
+              
+              <div className="flex justify-center mt-6">
+                <Button
+                  onClick={() => setShowBundleModal(false)}
+                  variant="outline"
+                  className="bg-transparent border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Top Up Modal */}
         {showTopUpModal && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
             <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-md">
-              <h3 className="text-xl font-bold text-white mb-4">Top Up Credits</h3>
+              <h3 className="text-xl font-bold text-white mb-4">
+                {topUpCreditType === 'bulk' ? 'Bundle Top-up' : `Top Up ${topUpCreditType.charAt(0).toUpperCase() + topUpCreditType.slice(1)} Credits`}
+              </h3>
               <div className="space-y-4">
-                <div>
-                  <Label htmlFor="amount" className="text-gray-300">Amount (credits)</Label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    step="1"
-                    min="1"
-                    value={topUpAmount}
-                    onChange={(e) => setTopUpAmount(e.target.value)}
-                    placeholder="Enter credits"
-                    className="mt-1"
-                    disabled={isProcessingPayment}
-                  />
-                  <p className="text-xs text-gray-400 mt-1">
-                    ₵{topUpAmount ? (parseFloat(topUpAmount) / 10).toFixed(2) : '0.00'} will be charged
-                  </p>
-                  <p className="text-xs text-blue-400 mt-1">
-                    💡 1 credit = ₵0.10 (100 credits = ₵10.00)
-                  </p>
-                </div>
-                
-
+                {topUpCreditType === 'bulk' ? (
+                  // Bundle summary
+                  <div className="space-y-4">
+                    <div className="text-center space-y-4">
+                      <div className="text-4xl font-bold text-white">
+                        ₵{(() => {
+                          const smsCost = bulkSmsAmount ? parseFloat(bulkSmsAmount) * parseFloat(process.env.NEXT_PUBLIC_SMS_CREDIT_RATE || '0.07') : 0;
+                          const emailCost = bulkEmailAmount ? parseFloat(bulkEmailAmount) * parseFloat(process.env.NEXT_PUBLIC_EMAIL_CREDIT_RATE || '0.02') : 0;
+                          return (smsCost + emailCost).toFixed(2);
+                        })()}
+                      </div>
+                      <div className="text-lg text-gray-300">
+                        {parseInt(bulkSmsAmount || '0').toLocaleString()} SMS + {parseInt(bulkEmailAmount || '0').toLocaleString()} Email Credits
+                      </div>
+                      <div className="p-4 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                        <div className="text-sm text-blue-400 font-semibold mb-2">Bundle Summary:</div>
+                        <div className="text-sm text-gray-300 space-y-1">
+                          <div>• {parseInt(bulkSmsAmount || '0').toLocaleString()} SMS Credits</div>
+                          <div>• {parseInt(bulkEmailAmount || '0').toLocaleString()} Email Credits</div>
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-400">Click "Pay" below to complete your purchase</p>
+                    </div>
+                  </div>
+                ) : (
+                  // Single credit type form
+                  <div>
+                    {(topUpCreditType === 'sms' || topUpCreditType === 'email') ? (
+                      // Bundle summary for SMS/Email
+                      <div className="text-center space-y-4">
+                        <div className="text-4xl font-bold text-white">
+                          ₵{topUpAmount ? (() => {
+                            if (topUpCreditType === 'sms') return (parseFloat(topUpAmount) * parseFloat(process.env.NEXT_PUBLIC_SMS_CREDIT_RATE || '0.07')).toFixed(2);
+                            if (topUpCreditType === 'email') return (parseFloat(topUpAmount) * parseFloat(process.env.NEXT_PUBLIC_EMAIL_CREDIT_RATE || '0.02')).toFixed(2);
+                            return '0.00';
+                          })() : '0.00'}
+                        </div>
+                        <div className="text-lg text-gray-300">
+                          {topUpAmount} {topUpCreditType.toUpperCase()} Credits
+                        </div>
+                        <p className="text-sm text-gray-400">Click "Pay" below to complete your purchase</p>
+                      </div>
+                    ) : (
+                      // Custom input for General credits
+                      <div>
+                        <Label htmlFor="amount" className="text-gray-300">Amount (credits)</Label>
+                        <Input
+                          id="amount"
+                          type="number"
+                          step="1"
+                          min="1"
+                          value={topUpAmount}
+                          onChange={(e) => setTopUpAmount(e.target.value)}
+                          placeholder="Enter credits"
+                          className="mt-1"
+                          disabled={isProcessingPayment}
+                        />
+                        <div className="mt-3 p-4 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                          <p className="text-sm text-blue-400 font-semibold">Amount to Pay:</p>
+                          <p className="text-2xl text-white font-bold">
+                            ₵{topUpAmount ? (parseFloat(topUpAmount) * parseFloat(process.env.NEXT_PUBLIC_GENERAL_CREDIT_RATE || '0.10')).toFixed(2) : '0.00'}
+                          </p>
+                        </div>
+                        <p className="text-xs text-blue-400 mt-1">
+                          💡 ₵{(parseFloat(process.env.NEXT_PUBLIC_GENERAL_CREDIT_RATE || '0.10') * 100).toFixed(0)} = 100 General credits
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
                 
                 <div className="flex space-x-3">
                   <Button
-                    onClick={() => setShowTopUpModal(false)}
+                    onClick={() => {
+                      setShowTopUpModal(false);
+                      setTopUpAmount('');
+                      setBulkSmsAmount('');
+                      setBulkEmailAmount('');
+                    }}
                     variant="outline"
                     className="flex-1"
                     disabled={isProcessingPayment}
@@ -738,10 +1574,29 @@ export default function UsagePage() {
                   </Button>
                   <Button
                     onClick={handleTopUp}
-                    disabled={isProcessingPayment || isToppingUp || !topUpAmount || parseFloat(topUpAmount) <= 0}
-                    className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+                    disabled={isProcessingPayment || isToppingUp || 
+                      (topUpCreditType === 'bulk' ? 
+                        (!bulkSmsAmount && !bulkEmailAmount) || 
+                        (parseFloat(bulkSmsAmount || '0') <= 0 && parseFloat(bulkEmailAmount || '0') <= 0)
+                      : 
+                        !topUpAmount || parseFloat(topUpAmount) <= 0
+                      )}
+                    className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-lg font-semibold py-3"
                   >
-                    {isProcessingPayment ? 'Processing Payment...' : isToppingUp ? 'Topping Up...' : 'Pay'}
+                    {isProcessingPayment ? 'Processing Payment...' : isToppingUp ? 'Topping Up...' : 
+                      (topUpCreditType === 'bulk') ? 
+                        `Pay ₵${(() => {
+                          const smsCost = bulkSmsAmount ? parseFloat(bulkSmsAmount) * parseFloat(process.env.NEXT_PUBLIC_SMS_CREDIT_RATE || '0.07') : 0;
+                          const emailCost = bulkEmailAmount ? parseFloat(bulkEmailAmount) * parseFloat(process.env.NEXT_PUBLIC_EMAIL_CREDIT_RATE || '0.02') : 0;
+                          return (smsCost + emailCost).toFixed(2);
+                        })()}` :
+                      (topUpCreditType === 'sms' || topUpCreditType === 'email') ? 
+                        `Pay ₵${topUpAmount ? (() => {
+                          if (topUpCreditType === 'sms') return (parseFloat(topUpAmount) * parseFloat(process.env.NEXT_PUBLIC_SMS_CREDIT_RATE || '0.07')).toFixed(2);
+                          if (topUpCreditType === 'email') return (parseFloat(topUpAmount) * parseFloat(process.env.NEXT_PUBLIC_EMAIL_CREDIT_RATE || '0.02')).toFixed(2);
+                          return '0.00';
+                        })() : '0.00'}` : 'Pay'
+                    }
                   </Button>
                 </div>
               </div>
@@ -751,4 +1606,4 @@ export default function UsagePage() {
       </div>
     </div>
   );
-}
+} 

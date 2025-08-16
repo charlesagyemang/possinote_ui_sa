@@ -35,10 +35,10 @@ const signupSchema = z.object({
 });
 
 const plans = {
-  free: { name: 'Free', initial_credits: 10, price: '₵0', description: '100 emails, 100 SMS - Perfect for testing' },
-  starter: { name: 'Starter', initial_credits: 1000, price: '₵80', description: '1,000 emails, 1,000 SMS - Great for growing businesses' },
-  business: { name: 'Business', initial_credits: 10000, price: '₵800', description: '5,000 emails, 5,000 SMS - For established businesses' },
-  enterprise: { name: 'Enterprise', initial_credits: 20000, price: '₵1500', description: '10,000 emails, 10,000 SMS - For large-scale operations' }
+  free: { name: 'Free', initial_credits: 200, price: '₵0', description: '100 emails, 100 SMS - Perfect for testing' },
+  starter: { name: 'Starter', initial_credits: 2000, price: '₵99', description: '1,000 emails, 1,000 SMS - Great for growing businesses' },
+  business: { name: 'Business', initial_credits: 10000, price: '₵399', description: '5,000 emails, 5,000 SMS - For established businesses' },
+  enterprise: { name: 'Enterprise', initial_credits: 20000, price: '₵799', description: '10,000 emails, 10,000 SMS - For large-scale operations' }
 };
 
 export default function SignupPage() {
@@ -53,15 +53,15 @@ export default function SignupPage() {
   const getPlanInitialCredits = (planType: string): number => {
     switch (planType) {
       case 'free':
-        return 10;
+        return 200;
       case 'starter':
-        return 1000;
+        return 2000;
       case 'business':
         return 10000;
       case 'enterprise':
         return 20000;
       default:
-        return 1000;
+        return 2000;
     }
   };
   const [isLoading, setIsLoading] = useState(false);
@@ -114,36 +114,37 @@ export default function SignupPage() {
               login(response.api_key, response.customer as Customer);
             }
             
+            // Debug notification environment
+            NotificationService.debugEnvironment();
+            
             // Send signup notification to sales team
-            try {
-              await NotificationService.sendSignupNotification({
-                customerName: data.name,
-                customerEmail: data.email,
-                customerPhone: data.phone,
-                companyName: data.company_name,
-                planType: planType,
-                initialCredits: response.initial_credits || 0
-              });
-              console.log('✅ Signup notification sent successfully');
-            } catch (error) {
+            NotificationService.sendSignupNotification({
+              customerName: data.name,
+              customerEmail: data.email,
+              customerPhone: data.phone,
+              companyName: data.company_name,
+              planType: planType,
+              initialCredits: response.initial_credits || 0
+            }).then((signupResult) => {
+              console.log('✅ Signup notification result:', signupResult);
+            }).catch((error) => {
               console.error('❌ Failed to send signup notification:', error);
-            }
+            });
 
             // Send welcome notification to new customer
-            try {
-              await NotificationService.sendWelcomeNotification({
-                customerName: data.name,
-                customerEmail: data.email,
-                customerPhone: data.phone,
-                companyName: data.company_name,
-                planType: planType,
-                initialCredits: response.initial_credits || 0,
-                apiKey: response.api_key || ''
-              });
-              console.log('✅ Welcome notification sent successfully');
-            } catch (error) {
+            NotificationService.sendWelcomeNotification({
+              customerName: data.name,
+              customerEmail: data.email,
+              customerPhone: data.phone,
+              companyName: data.company_name,
+              planType: planType,
+              initialCredits: response.initial_credits || 0,
+              apiKey: response.api_key || ''
+            }).then((welcomeResult) => {
+              console.log('✅ Welcome notification result:', welcomeResult);
+            }).catch((error) => {
               console.error('❌ Failed to send welcome notification:', error);
-            }
+            });
             
             // Redirect to dashboard after 5 seconds
             setTimeout(() => {
