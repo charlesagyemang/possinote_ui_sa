@@ -12,12 +12,12 @@ export class UsageService {
     } catch (error) {
       console.error('❌ Failed to fetch usage data:', error);
       console.error('🔍 Error details:', {
-        message: error.message,
-        code: error.code,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        url: error.config?.url,
-        method: error.config?.method
+        message: error instanceof Error ? error.message : 'Unknown error',
+        code: (error as { code?: string })?.code,
+        status: (error as { response?: { status?: number } })?.response?.status,
+        statusText: (error as { response?: { statusText?: string } })?.response?.statusText,
+        url: (error as { config?: { url?: string } })?.config?.url,
+        method: (error as { config?: { method?: string } })?.config?.method
       });
       throw error;
     }

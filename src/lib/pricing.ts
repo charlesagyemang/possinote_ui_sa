@@ -3,6 +3,7 @@ export const PRICING_CONFIG = {
   // Credit rates per credit (in Ghanaian Cedi)
   SMS_CREDIT_RATE: parseFloat(process.env.NEXT_PUBLIC_SMS_CREDIT_RATE || '0.07'),
   EMAIL_CREDIT_RATE: parseFloat(process.env.NEXT_PUBLIC_EMAIL_CREDIT_RATE || '0.02'),
+  GENERAL_CREDIT_RATE: parseFloat(process.env.NEXT_PUBLIC_GENERAL_CREDIT_RATE || '0.10'),
   
   // Plan prices (in Ghanaian Cedi)
   STARTER_PLAN_PRICE: parseFloat(process.env.NEXT_PUBLIC_STARTER_PLAN_PRICE || '99'),

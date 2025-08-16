@@ -48,7 +48,15 @@ export default function UsagePage() {
   
   // Predefined bundles configuration from environment variables
   const predefinedBundles = (() => {
-    const bundles = [];
+    const bundles: Array<{
+      id: string;
+      name: string;
+      sms: number;
+      email: number;
+      description: string;
+      color: string;
+      popular: boolean;
+    }> = [];
     
     // Parse bundle configurations from environment variables
     const bundleConfigs = [
@@ -201,7 +209,19 @@ export default function UsagePage() {
   const [convertFromType, setConvertFromType] = useState<'sms' | 'email'>('sms');
   const [convertToType, setConvertToType] = useState<'sms' | 'email'>('email');
   const [convertAmount, setConvertAmount] = useState('');
-  const [conversionPreview, setConversionPreview] = useState<any>(null);
+  const [conversionPreview, setConversionPreview] = useState<{
+    conversion_preview: {
+      sms_amount?: number;
+      email_amount?: number;
+      rate: number;
+      rate_description: string;
+    };
+    can_convert: boolean;
+    current_balances?: {
+      sms_credit_balance: string;
+      email_credit_balance: string;
+    };
+  } | null>(null);
   const [isConverting, setIsConverting] = useState(false);
   
   // Add refs to prevent multiple simultaneous requests
@@ -526,9 +546,9 @@ export default function UsagePage() {
         } catch (error) {
           console.error('❌ Server sync failed, but local transaction completed:', error);
           console.error('🔍 Error details:', {
-            message: error.message,
-            status: error.response?.status,
-            data: error.response?.data
+            message: error instanceof Error ? error.message : 'Unknown error',
+            status: (error as { response?: { status?: number } })?.response?.status,
+            data: (error as { response?: { data?: unknown } })?.response?.data
           });
         }
       }, 1000);
@@ -601,18 +621,22 @@ export default function UsagePage() {
           
           if (topUpCreditType === 'bulk') {
             // Handle bulk top-up
-            const topUps = [];
+            const topUps: Array<{
+              amount: number;
+              credit_type: 'sms' | 'email' | 'general';
+              description: string;
+            }> = [];
             if (parseFloat(bulkSmsAmount || '0') > 0) {
               topUps.push({
                 amount: parseFloat(bulkSmsAmount),
-                credit_type: 'sms',
+                credit_type: 'sms' as const,
                 description: 'Bulk SMS top-up'
               });
             }
             if (parseFloat(bulkEmailAmount || '0') > 0) {
               topUps.push({
                 amount: parseFloat(bulkEmailAmount),
-                credit_type: 'email',
+                credit_type: 'email' as const,
                 description: 'Bulk Email top-up'
               });
             }
@@ -1251,7 +1275,7 @@ export default function UsagePage() {
                     <h4 className="text-purple-300 font-semibold mb-2">Conversion Preview</h4>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-gray-400">You'll receive:</span>
+                        <span className="text-gray-400">You&apos;ll receive:</span>
                         <span className="text-white font-semibold">
                           {conversionPreview.conversion_preview[convertToType === 'sms' ? 'sms_amount' : 'email_amount']} {convertToType.toUpperCase()} credits
                         </span>
@@ -1508,7 +1532,7 @@ export default function UsagePage() {
                           <div>• {parseInt(bulkEmailAmount || '0').toLocaleString()} Email Credits</div>
                         </div>
                       </div>
-                      <p className="text-sm text-gray-400">Click "Pay" below to complete your purchase</p>
+                      <p className="text-sm text-gray-400">Click &quot;Pay&quot; below to complete your purchase</p>
                     </div>
                   </div>
                 ) : (
@@ -1527,7 +1551,7 @@ export default function UsagePage() {
                         <div className="text-lg text-gray-300">
                           {topUpAmount} {topUpCreditType.toUpperCase()} Credits
                         </div>
-                        <p className="text-sm text-gray-400">Click "Pay" below to complete your purchase</p>
+                        <p className="text-sm text-gray-400">Click &quot;Pay&quot; below to complete your purchase</p>
                       </div>
                     ) : (
                       // Custom input for General credits
