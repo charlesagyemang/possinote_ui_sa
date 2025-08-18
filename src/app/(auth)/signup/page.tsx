@@ -209,7 +209,8 @@ export default function SignupPage() {
               ...data,
               plan_type: planType,
               monthly_limit: getPlanInitialCredits(planType)
-            }
+            },
+            reference: reference
           }).then((regResponse) => {
             console.log('🔍 Paid plan AuthService response:', regResponse);
             

@@ -22,6 +22,7 @@ interface RegisterData {
     plan_type: 'free' | 'starter' | 'business' | 'enterprise';
     monthly_limit: number;
   };
+  reference?: string;
 }
 
 interface RegisterResponse {
