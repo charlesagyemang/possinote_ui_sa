@@ -35,7 +35,7 @@ const signupSchema = z.object({
 });
 
 const plans = {
-  free: { name: 'Free', initial_credits: 200, price: '₵0', description: '100 emails, 100 SMS - Perfect for testing' },
+  free: { name: 'Free', initial_credits: 10, price: '₵0', description: '5 emails, 5 SMS - Perfect for testing' },
   starter: { name: 'Starter', initial_credits: 2000, price: '₵99', description: '1,000 emails, 1,000 SMS - Great for growing businesses' },
   business: { name: 'Business', initial_credits: 10000, price: '₵399', description: '5,000 emails, 5,000 SMS - For established businesses' },
   enterprise: { name: 'Enterprise', initial_credits: 20000, price: '₵799', description: '10,000 emails, 10,000 SMS - For large-scale operations' }
@@ -53,7 +53,7 @@ export default function SignupPage() {
   const getPlanInitialCredits = (planType: string): number => {
     switch (planType) {
       case 'free':
-        return 200;
+        return 10;
       case 'starter':
         return 2000;
       case 'business':
