@@ -33,7 +33,7 @@ const plans = [
   {
     id: 'starter',
     name: 'Starter',
-    price: '₵99',
+    price: `₵${process.env.NEXT_PUBLIC_STARTER_PLAN_PRICE || '99'}`,
     initial_credits: 2000,
     email_limit: 1000,
     sms_limit: 1000,
@@ -56,7 +56,7 @@ const plans = [
   {
     id: 'business',
     name: 'Business',
-    price: '₵399',
+    price: `₵${process.env.NEXT_PUBLIC_BUSINESS_PLAN_PRICE || '399'}`,
     initial_credits: 10000,
     email_limit: 5000,
     sms_limit: 5000,
@@ -80,7 +80,7 @@ const plans = [
   {
     id: 'enterprise',
     name: 'Enterprise',
-    price: '₵799',
+    price: `₵${process.env.NEXT_PUBLIC_ENTERPRISE_PLAN_PRICE || '799'}`,
     initial_credits: 20000,
     email_limit: 10000,
     sms_limit: 10000,

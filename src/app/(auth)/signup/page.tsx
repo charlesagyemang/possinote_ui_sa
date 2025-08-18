@@ -36,9 +36,9 @@ const signupSchema = z.object({
 
 const plans = {
   free: { name: 'Free', initial_credits: 10, price: '₵0', description: '5 emails, 5 SMS - Perfect for testing' },
-  starter: { name: 'Starter', initial_credits: 2000, price: '₵99', description: '1,000 emails, 1,000 SMS - Great for growing businesses' },
-  business: { name: 'Business', initial_credits: 10000, price: '₵399', description: '5,000 emails, 5,000 SMS - For established businesses' },
-  enterprise: { name: 'Enterprise', initial_credits: 20000, price: '₵799', description: '10,000 emails, 10,000 SMS - For large-scale operations' }
+  starter: { name: 'Starter', initial_credits: 2000, price: `₵${process.env.NEXT_PUBLIC_STARTER_PLAN_PRICE || '99'}`, description: '1,000 emails, 1,000 SMS - Great for growing businesses' },
+  business: { name: 'Business', initial_credits: 10000, price: `₵${process.env.NEXT_PUBLIC_BUSINESS_PLAN_PRICE || '399'}`, description: '5,000 emails, 5,000 SMS - For established businesses' },
+  enterprise: { name: 'Enterprise', initial_credits: 20000, price: `₵${process.env.NEXT_PUBLIC_ENTERPRISE_PLAN_PRICE || '799'}`, description: '10,000 emails, 10,000 SMS - For large-scale operations' }
 };
 
 export default function SignupPage() {
