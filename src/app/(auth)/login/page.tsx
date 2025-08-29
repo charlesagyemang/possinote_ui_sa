@@ -93,7 +93,7 @@ export default function LoginPage() {
           </div>
           <div className="mt-4 text-center">
             <p className="text-sm text-gray-400 text-center">
-              Need help? Contact us at <a href="mailto:support@possi.com" className="text-purple-400 hover:text-purple-300">support@possi.com</a>
+              Need help? Contact us at <a href="mailto:info@possitech.com" className="text-purple-400 hover:text-purple-300">info@possitech.com</a>
             </p>
           </div>
         </CardContent>

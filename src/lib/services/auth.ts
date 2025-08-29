@@ -19,7 +19,7 @@ interface RegisterData {
     email: string;
     phone: string;
     company_name: string;
-    plan_type: 'free' | 'starter' | 'business' | 'enterprise';
+    plan_type: 'free' | 'starter' | 'business' | 'enterprise' | 'promo';
     monthly_limit: number;
   };
   reference?: string;
@@ -132,8 +132,17 @@ export class AuthService {
   }
 
   static logout() {
+    // Clear all localStorage items
     localStorage.removeItem('api_key');
     localStorage.removeItem('api_token');
+    localStorage.removeItem('conversion_rates');
+    localStorage.removeItem('local_conversions');
+    localStorage.removeItem('user_email');
+    localStorage.removeItem('payment_required');
+    localStorage.removeItem('payment_required_timestamp');
+    localStorage.removeItem('rate_limit_info');
+    localStorage.removeItem('auth-storage');
+    
     window.location.href = '/login';
   }
 

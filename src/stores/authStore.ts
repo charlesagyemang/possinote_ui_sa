@@ -22,7 +22,17 @@ export const useAuthStore = create<AuthState>()(
         set({ token, user, isAuthenticated: true });
       },
       logout: () => {
+        // Clear all localStorage items
         localStorage.removeItem('api_token');
+        localStorage.removeItem('api_key');
+        localStorage.removeItem('conversion_rates');
+        localStorage.removeItem('local_conversions');
+        localStorage.removeItem('user_email');
+        localStorage.removeItem('payment_required');
+        localStorage.removeItem('payment_required_timestamp');
+        localStorage.removeItem('rate_limit_info');
+        localStorage.removeItem('auth-storage');
+        
         set({ token: null, user: null, isAuthenticated: false });
       },
       updateUser: (user) => set({ user }),
