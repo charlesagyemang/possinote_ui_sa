@@ -364,26 +364,51 @@ export default function EmailPage() {
     setIsLoading(true);
     setError(null);
     setSuccess(null);
+    
     try {
-      const concurrency = 5;
-      let index = 0;
-      let successCount = 0;
-      let failCount = 0;
-      const worker = async () => {
-        while (index < emailPreviews.length) {
-          const current = index++;
-          const item = emailPreviews[current];
-          try {
-            const resp = await EmailService.sendEmail(item.email, item.subject, item.content, item.sender_name);
-            if (resp.success) successCount++; else failCount++;
-          } catch {
-            failCount++;
-          }
+      // Convert emailPreviews to the format expected by sendBulkIndividualEmails
+      const emails = emailPreviews.map(preview => ({
+        to: preview.email,
+        subject: preview.subject,
+        html: preview.content,
+        sender_name: preview.sender_name
+      }));
+
+      console.log('📧 Sending dynamic bulk emails:', emails.length);
+      
+      const response = await EmailService.sendBulkIndividualEmails(emails);
+
+      if (response.success) {
+        console.log('✅ DYNAMIC BULK EMAIL SUCCESS RESPONSE:');
+        console.log('📊 Full Response:', JSON.stringify(response, null, 2));
+        console.log('📧 Queued Count:', response.queued_count);
+        console.log('📋 Total Count:', response.total_count);
+        console.log('🆔 Batch ID:', response.batch_id);
+        console.log('📄 Message:', response.message);
+        
+        const successMessage = response.batch_id 
+          ? `Bulk personalized emails queued successfully! Batch ID: ${response.batch_id}, Queued: ${response.queued_count}/${response.total_count}`
+          : `Bulk personalized emails sent! ${response.queued_count || response.sent_count || 0} queued`;
+        
+        setSuccess(successMessage);
+        
+        // Store results for potential display
+        if (response.emails) {
+          setBulkResults(response.emails.map((email) => ({
+            email: email.recipient,
+            success: email.status === 'queued',
+            message_id: email.message_id,
+            submitted_at: new Date().toISOString()
+          })));
         }
-      };
-      const workers = Array.from({ length: Math.min(concurrency, emailPreviews.length) }, () => worker());
-      await Promise.all(workers);
-      setSuccess(`Personalized emails sent. Successful: ${successCount}, Failed: ${failCount}`);
+      } else {
+        console.log('❌ DYNAMIC BULK EMAIL ERROR RESPONSE:');
+        console.log('📊 Full Response:', JSON.stringify(response, null, 2));
+        console.log('🚨 Error Message:', response.error);
+        
+        setError(response.error || 'Failed to send bulk personalized emails');
+      }
+      
       // reset
       setFileData([]);
       setFileHeaders([]);
@@ -393,9 +418,33 @@ export default function EmailPage() {
       setSenderNameTemplate('');
       setEmailPreviews([]);
       setShowDynamicPreview(false);
-    } catch (err) {
-      console.error('Dynamic bulk email send error:', err);
-      setError('Failed to send personalized bulk emails');
+    } catch (error: unknown) {
+      console.error('❌ DYNAMIC BULK EMAIL NETWORK ERROR:');
+      console.error('🚨 Error object:', error);
+      
+      // Handle 402 Payment Required error
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { status?: number; data?: { message?: string } } };
+        if (axiosError.response?.status === 402) {
+          showPaymentRequired(
+            axiosError.response?.data?.message || 'Insufficient credits to send bulk personalized emails. Please reload your account.',
+            '/billing'
+          );
+          return;
+        }
+      }
+      
+      if (error instanceof Error) {
+        console.error('📝 Error message:', error.message);
+        console.error('📚 Error stack:', error.stack);
+      }
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { status?: number; data?: unknown; headers?: unknown } };
+        console.error('🌐 Response status:', axiosError.response?.status);
+        console.error('📄 Response data:', axiosError.response?.data);
+        console.error('📋 Response headers:', axiosError.response?.headers);
+      }
+      setError('Failed to send bulk personalized emails. Please try again.');
     } finally {
       setIsLoading(false);
     }

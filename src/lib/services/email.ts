@@ -19,6 +19,13 @@ interface BulkEmailResponse {
   batch_id?: string;
   sent_count?: number;
   failed_count?: number;
+  job_id?: string;
+  emails?: Array<{
+    message_id: string;
+    recipient: string;
+    subject: string;
+    status: string;
+  }>;
   results?: Array<{
     email: string;
     success: boolean;
@@ -157,58 +164,52 @@ export class EmailService {
     }
   }
 
-  static async sendBulkEmails(emails: Array<{ to: string; subject: string; html: string; sender_name?: string }>): Promise<BulkEmailResponse> {
-    // For now, we'll send emails individually since the backend might not support personalized bulk emails
-    // This can be optimized later with a proper bulk endpoint
-    const results = [];
-    let successCount = 0;
-    let failCount = 0;
-
-    console.log('📧 SENDING PERSONALIZED BULK EMAILS:');
-    console.log('📊 Total emails to send:', emails.length);
-
-    for (const email of emails) {
-      try {
-        const response = await this.sendEmail(email.to, email.subject, email.html, email.sender_name);
-        if (response.success) {
-          successCount++;
-          results.push({
-            email: email.to,
-            success: true,
-            message_id: response.message_id,
-            submitted_at: response.submitted_at
-          });
-        } else {
-          failCount++;
-          results.push({
-            email: email.to,
-            success: false,
-            error: response.error || 'Failed to send email'
-          });
-        }
-      } catch (error) {
-        failCount++;
-        results.push({
-          email: email.to,
-          success: false,
-          error: error instanceof Error ? error.message : 'Unknown error'
-        });
-      }
-    }
-
-    console.log('✅ BULK EMAIL COMPLETE:');
-    console.log('📊 Success:', successCount);
-    console.log('📊 Failed:', failCount);
-
-    return {
-      success: successCount > 0,
-      message: `Sent ${successCount} emails successfully, ${failCount} failed`,
-      queued_count: successCount,
-      total_count: emails.length,
-      sent_count: successCount,
-      failed_count: failCount,
-      results
+  static async sendBulkIndividualEmails(emails: Array<{ to: string; subject: string; html: string; sender_name?: string }>): Promise<BulkEmailResponse> {
+    const payload = {
+      emails: emails.map(email => ({
+        recipient: email.to,
+        subject: email.subject,
+        content: email.html,
+        ...(email.sender_name && { sender_name: email.sender_name })
+      }))
     };
+
+    // Log the full request details
+    console.log('📧 BULK INDIVIDUAL EMAILS SEND REQUEST:');
+    console.log('🔗 URL:', `${api.defaults.baseURL}/emails/send-bulk-individual`);
+    console.log('📦 Payload:', JSON.stringify(payload, null, 2));
+    console.log('🔑 Auth Token:', localStorage.getItem('api_token') || localStorage.getItem('api_key') || 'No token found');
+    console.log('📋 Headers:', {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${localStorage.getItem('api_token') || localStorage.getItem('api_key') || 'No token'}`
+    });
+    console.log('⏰ Timestamp:', new Date().toISOString());
+
+    try {
+      const response = await api.post('/emails/send-bulk-individual', payload);
+      console.log('✅ BULK INDIVIDUAL EMAILS SEND RESPONSE:');
+      console.log('📊 Status:', response.status);
+      console.log('📄 Response Data:', JSON.stringify(response.data, null, 2));
+      return response.data;
+    } catch (error: unknown) {
+      console.error('❌ BULK INDIVIDUAL EMAILS SEND ERROR:');
+      console.error('Error object:', error);
+      if (error instanceof Error) {
+        console.error('Error message:', error.message);
+      }
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { status?: number; data?: unknown; headers?: unknown } };
+        console.error('Response status:', axiosError.response?.status);
+        console.error('Response data:', axiosError.response?.data);
+        console.error('Response headers:', axiosError.response?.headers);
+      }
+      throw error;
+    }
+  }
+
+  static async sendBulkEmails(emails: Array<{ to: string; subject: string; html: string; sender_name?: string }>): Promise<BulkEmailResponse> {
+    // Use the new bulk individual emails endpoint for better performance
+    return this.sendBulkIndividualEmails(emails);
   }
 
   static async validateEmails(emails: string[]): Promise<EmailValidationResponse> {
