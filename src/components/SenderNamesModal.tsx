@@ -96,11 +96,11 @@ export default function SenderNamesModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl max-w-4xl">
+      <DialogContent className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl max-w-md sm:max-w-xl md:max-w-3xl w-[95%] sm:w-auto">
         <DialogHeader className="relative">
-          <DialogTitle className="text-white text-2xl flex items-center space-x-3">
-            <div className="p-2 bg-blue-500/20 rounded-xl">
-              <CheckCircle className="h-6 w-6 text-blue-400" />
+          <DialogTitle className="text-white text-xl sm:text-2xl flex items-center space-x-2 sm:space-x-3">
+            <div className="p-1.5 sm:p-2 bg-blue-500/20 rounded-xl">
+              <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-blue-400" />
             </div>
             <span>Add Sender Name</span>
           </DialogTitle>
@@ -114,44 +114,44 @@ export default function SenderNamesModal({
           </Button>
         </DialogHeader>
 
-        <div className="space-y-8 p-6">
+        <div className="space-y-6 sm:space-y-8 p-3 sm:p-6">
           {/* Rules and Guidelines */}
-          <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-2xl p-6">
-            <h3 className="text-white text-lg font-semibold mb-4 flex items-center space-x-2">
-              <Info className="h-5 w-5 text-blue-400" />
+          <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-2xl p-3 sm:p-6">
+            <h3 className="text-white text-base sm:text-lg font-semibold mb-2 sm:mb-4 flex items-center space-x-2">
+              <Info className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400" />
               <span>Please Note:</span>
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-300">
-              <div className="space-y-3">
-                <div className="flex items-start space-x-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-4 text-xs sm:text-sm text-gray-300">
+              <div className="space-y-2 sm:space-y-3">
+                <div className="flex items-start space-x-2 sm:space-x-3">
                   <span className="text-blue-400 font-semibold flex-shrink-0">1.</span>
                   <p>Sender Name is subject to approval from Mobile Network Operators.</p>
                 </div>
-                <div className="flex items-start space-x-3">
+                <div className="flex items-start space-x-2 sm:space-x-3">
                   <span className="text-blue-400 font-semibold flex-shrink-0">2.</span>
                   <p>Maximum of 11 alpha numeric characters or 14 numbers.</p>
                 </div>
-                <div className="flex items-start space-x-3">
+                <div className="flex items-start space-x-2 sm:space-x-3">
                   <span className="text-blue-400 font-semibold flex-shrink-0">3.</span>
                   <p>Sender name can be a word or a Mobile number.</p>
                 </div>
-                <div className="flex items-start space-x-3">
+                <div className="flex items-start space-x-2 sm:space-x-3">
                   <span className="text-blue-400 font-semibold flex-shrink-0">4.</span>
                   <p>Sender address can also contain underscores (_).</p>
                 </div>
               </div>
-              <div className="space-y-3">
-                <div className="flex items-start space-x-3">
+              <div className="space-y-2 sm:space-y-3">
+                <div className="flex items-start space-x-2 sm:space-x-3">
                   <span className="text-blue-400 font-semibold flex-shrink-0">5.</span>
                   <p>Mobile number sender names must be entered in international formats, example: 233244111222.</p>
                 </div>
-                <div className="flex items-start space-x-3">
+                <div className="flex items-start space-x-2 sm:space-x-3">
                   <span className="text-red-400 font-bold flex-shrink-0">6.</span>
-                  <p className="font-bold text-red-400">Description is required.</p>
+                  <p className="font-bold text-red-400 text-xs sm:text-sm">Description is required.</p>
                 </div>
-                <div className="flex items-start space-x-3">
+                <div className="flex items-start space-x-2 sm:space-x-3">
                   <span className="text-red-400 font-bold flex-shrink-0">7.</span>
-                  <p className="font-bold text-red-400">
+                  <p className="font-bold text-red-400 text-xs sm:text-sm">
                     Do not use names of Brand or Companies you do not own or have any legitimate connections with. 
                     This is considered as spam and is a crime punishable by the laws of Ghana.
                   </p>
@@ -161,14 +161,14 @@ export default function SenderNamesModal({
           </div>
 
           {/* Form */}
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-            <div className="space-y-6">
-              <div className="space-y-3">
-                <Label htmlFor="name" className="text-gray-300 font-medium">Name</Label>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 sm:space-y-6">
+            <div className="space-y-4 sm:space-y-6">
+              <div className="space-y-2 sm:space-y-3">
+                <Label htmlFor="name" className="text-gray-300 font-medium text-sm sm:text-base">Name</Label>
                 <Input
                   {...form.register('name')}
                   placeholder="How do you want to call your sender name"
-                  className="bg-black/30 border-white/20 text-white placeholder-gray-400 rounded-xl h-12 focus:border-blue-500 focus:ring-blue-500/20"
+                  className="bg-black/30 border-white/20 text-white placeholder-gray-400 rounded-xl h-10 sm:h-12 focus:border-blue-500 focus:ring-blue-500/20"
                 />
                 {form.formState.errors.name && (
                   <p className="text-red-400 text-sm flex items-center space-x-2">
@@ -178,13 +178,13 @@ export default function SenderNamesModal({
                 )}
               </div>
 
-              <div className="space-y-3">
-                <Label htmlFor="description" className="text-gray-300 font-medium">Description</Label>
+              <div className="space-y-2 sm:space-y-3">
+                <Label htmlFor="description" className="text-gray-300 font-medium text-sm sm:text-base">Description</Label>
                 <Textarea
                   {...form.register('description')}
                   placeholder="How do you describe the sendername provided"
                   className="bg-black/30 border-white/20 text-white placeholder-gray-400 rounded-xl focus:border-blue-500 focus:ring-blue-500/20"
-                  rows={4}
+                  rows={3}
                 />
                 {form.formState.errors.description && (
                   <p className="text-red-400 text-sm flex items-center space-x-2">
@@ -212,7 +212,7 @@ export default function SenderNamesModal({
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl h-12 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl h-10 sm:h-12 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <div className="flex items-center space-x-2">

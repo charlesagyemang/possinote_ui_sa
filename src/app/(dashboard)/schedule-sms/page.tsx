@@ -393,43 +393,45 @@ export default function ScheduleSMSPage() {
         {/* Header */}
         <div className="text-center space-y-4">
           <div className="flex items-center justify-center space-x-3">
-            <div className="p-3 bg-gradient-to-r from-teal-500 to-emerald-600 rounded-2xl">
-              <Clock className="h-8 w-8 text-white" />
+            <div className="p-2 sm:p-3 bg-gradient-to-r from-teal-500 to-emerald-600 rounded-2xl">
+              <Clock className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
             </div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+            <h1 className="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
               Schedule SMS
             </h1>
           </div>
-          <p className="text-gray-400 text-lg">Schedule SMS messages for future delivery</p>
+          <p className="text-gray-400 text-sm sm:text-lg">Schedule SMS messages for future delivery</p>
         </div>
 
         {/* Mode Toggle */}
         <div className="flex justify-center">
-          <div className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-2xl p-2">
-            <div className="flex space-x-2">
+          <div className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-2xl p-2 w-full max-w-full overflow-x-auto">
+            <div className="flex flex-nowrap md:flex-wrap md:space-x-2 min-w-max md:min-w-0">
               <Button
                 variant={activeTab === 'single' ? 'default' : 'ghost'}
                 onClick={() => setActiveTab('single')}
-                className={`rounded-xl px-6 py-3 transition-all duration-300 ${
+                className={`rounded-xl px-3 sm:px-6 py-3 transition-all duration-300 flex-shrink-0 ${
                   activeTab === 'single'
                     ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/25' 
                     : 'text-gray-400 hover:text-white hover:bg-white/10'
                 }`}
               >
-                <Send className="h-4 w-4 mr-2" />
-                Single SMS
+                <Send className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Single SMS</span>
+                <span className="sm:hidden">Single</span>
               </Button>
               <Button
                 variant={activeTab === 'bulk' ? 'default' : 'ghost'}
                 onClick={() => setActiveTab('bulk')}
-                className={`rounded-xl px-6 py-3 transition-all duration-300 ${
+                className={`rounded-xl px-3 sm:px-6 py-3 transition-all duration-300 flex-shrink-0 ml-2 md:ml-0 ${
                   activeTab === 'bulk'
                     ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/25' 
                     : 'text-gray-400 hover:text-white hover:bg-white/10'
                 }`}
               >
-                <Upload className="h-4 w-4 mr-2" />
-                Bulk SMS
+                <Upload className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Bulk SMS</span>
+                <span className="sm:hidden">Bulk</span>
               </Button>
               <Button
                 variant={activeTab === 'scheduled' ? 'default' : 'ghost'}
@@ -437,14 +439,15 @@ export default function ScheduleSMSPage() {
                   setActiveTab('scheduled');
                   fetchScheduledSMS();
                 }}
-                className={`rounded-xl px-6 py-3 transition-all duration-300 ${
+                className={`rounded-xl px-3 sm:px-6 py-3 transition-all duration-300 flex-shrink-0 ml-2 md:ml-0 ${
                   activeTab === 'scheduled'
                     ? 'bg-gradient-to-r from-teal-500 to-emerald-600 text-white shadow-lg shadow-teal-500/25' 
                     : 'text-gray-400 hover:text-white hover:bg-white/10'
                 }`}
               >
-                <Clock className="h-4 w-4 mr-2" />
-                Scheduled SMS
+                <Clock className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Scheduled SMS</span>
+                <span className="sm:hidden">History</span>
               </Button>
             </div>
           </div>
@@ -454,20 +457,20 @@ export default function ScheduleSMSPage() {
         {activeTab === 'single' && (
           <div className="space-y-8">
             <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden">
-              <CardHeader className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-b border-white/10">
-                <CardTitle className="text-white text-2xl flex items-center space-x-3">
+              <CardHeader className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-b border-white/10 p-4 sm:p-6">
+                <CardTitle className="text-white text-xl sm:text-2xl flex items-center space-x-3">
                   <div className="p-2 bg-blue-500/20 rounded-xl">
-                    <MessageSquare className="h-6 w-6 text-blue-400" />
+                    <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6 text-blue-400" />
                   </div>
                   <span>Schedule Single SMS</span>
                 </CardTitle>
-                <p className="text-gray-400">Schedule a single SMS message for future delivery</p>
+                <p className="text-gray-400 text-sm sm:text-base">Schedule a single SMS message for future delivery</p>
               </CardHeader>
-              <CardContent className="p-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-6">
-                    <div className="space-y-3">
-                      <Label htmlFor="recipient" className="text-gray-300 font-medium">Phone Number</Label>
+              <CardContent className="p-4 sm:p-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
+                  <div className="space-y-4 sm:space-y-6">
+                    <div className="space-y-2 sm:space-y-3">
+                      <Label htmlFor="recipient" className="text-gray-300 font-medium text-sm sm:text-base">Phone Number</Label>
                       <div className="relative">
                         <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <Input
@@ -476,18 +479,18 @@ export default function ScheduleSMSPage() {
                           placeholder="+233244123456"
                           value={singleSMS.recipient}
                           onChange={(e) => setSingleSMS(prev => ({ ...prev, recipient: e.target.value }))}
-                          className="pl-10 bg-black/30 border-white/20 text-white placeholder-gray-400 rounded-xl h-12 focus:border-blue-500 focus:ring-blue-500/20"
+                          className="pl-10 bg-black/30 border-white/20 text-white placeholder-gray-400 rounded-xl h-10 sm:h-12 focus:border-blue-500 focus:ring-blue-500/20"
                         />
                       </div>
                     </div>
 
-                    <div className="space-y-3">
-                      <Label htmlFor="sender_id" className="text-gray-300 font-medium">Sender ID</Label>
+                    <div className="space-y-2 sm:space-y-3">
+                      <Label htmlFor="sender_id" className="text-gray-300 font-medium text-sm sm:text-base">Sender ID</Label>
                       <select
                         id="sender_id"
                         value={singleSMS.sender_id}
                         onChange={(e) => setSingleSMS(prev => ({ ...prev, sender_id: e.target.value }))}
-                        className="w-full bg-black/30 border border-white/20 text-white rounded-xl px-4 py-3 h-12 focus:border-blue-500 focus:ring-blue-500/20"
+                        className="w-full bg-black/30 border border-white/20 text-white rounded-xl px-4 py-2 sm:py-3 h-10 sm:h-12 focus:border-blue-500 focus:ring-blue-500/20"
                         disabled={isLoadingSenders}
                       >
                         <option value="">{isLoadingSenders ? 'Loading senders...' : 'Select sender name'}</option>
@@ -502,8 +505,8 @@ export default function ScheduleSMSPage() {
                       </select>
                     </div>
 
-                    <div className="space-y-3">
-                      <Label htmlFor="scheduled_at" className="text-gray-300 font-medium">Schedule Date & Time</Label>
+                    <div className="space-y-2 sm:space-y-3">
+                      <Label htmlFor="scheduled_at" className="text-gray-300 font-medium text-sm sm:text-base">Schedule Date & Time</Label>
                       <div className="relative">
                         <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <Input
@@ -512,15 +515,15 @@ export default function ScheduleSMSPage() {
                           min={getMinDateTime()}
                           value={singleSMS.scheduled_at}
                           onChange={(e) => setSingleSMS(prev => ({ ...prev, scheduled_at: e.target.value }))}
-                          className="pl-10 bg-black/30 border-white/20 text-white rounded-xl h-12 focus:border-blue-500 focus:ring-blue-500/20"
+                          className="pl-10 bg-black/30 border-white/20 text-white rounded-xl h-10 sm:h-12 focus:border-blue-500 focus:ring-blue-500/20"
                         />
                       </div>
                     </div>
                   </div>
 
-                  <div className="space-y-6">
-                    <div className="space-y-3">
-                      <Label htmlFor="message" className="text-gray-300 font-medium">Message</Label>
+                  <div className="space-y-4 sm:space-y-6">
+                    <div className="space-y-2 sm:space-y-3">
+                      <Label htmlFor="message" className="text-gray-300 font-medium text-sm sm:text-base">Message</Label>
                       <Textarea
                         id="message"
                         placeholder="Enter your SMS message..."
@@ -528,10 +531,10 @@ export default function ScheduleSMSPage() {
                         onChange={(e) => setSingleSMS(prev => ({ ...prev, message: e.target.value }))}
                         className="bg-black/30 border-white/20 text-white placeholder-gray-400 rounded-xl focus:border-blue-500 focus:ring-blue-500/20"
                         maxLength={160}
-                        rows={8}
+                        rows={6}
                       />
                       <div className="flex justify-between items-center">
-                        <p className="text-sm text-gray-400">
+                        <p className="text-xs sm:text-sm text-gray-400">
                           {singleSMS.message?.length || 0}/160 characters
                         </p>
                         {singleSMS.message && (
@@ -544,20 +547,21 @@ export default function ScheduleSMSPage() {
                   </div>
                 </div>
 
-                <div className="mt-8 flex justify-end">
+                <div className="mt-6 sm:mt-8 flex justify-center sm:justify-end">
                   <Button
                     onClick={handleSingleSMSSchedule}
                     disabled={isLoading || !singleSMS.recipient || !singleSMS.message || !singleSMS.scheduled_at}
-                    className="w-full md:w-auto bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl h-12 px-8 font-medium shadow-lg shadow-blue-500/25 transition-all duration-300"
+                    className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl h-10 sm:h-12 px-4 sm:px-8 text-sm sm:text-base font-medium shadow-lg shadow-blue-500/25 transition-all duration-300"
                   >
                     {isLoading ? (
                       <>
-                        <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                        Scheduling...
+                        <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 mr-2 animate-spin" />
+                        <span className="hidden sm:inline">Scheduling...</span>
+                        <span className="sm:hidden">Sending...</span>
                       </>
                     ) : (
                       <>
-                        <Clock className="h-5 w-5 mr-2" />
+                        <Clock className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                         Schedule SMS
                       </>
                     )}
@@ -572,25 +576,25 @@ export default function ScheduleSMSPage() {
         {activeTab === 'bulk' && (
           <div className="space-y-8">
             <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden">
-              <CardHeader className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-b border-white/10">
-                <CardTitle className="text-white text-2xl flex items-center space-x-3">
+              <CardHeader className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-b border-white/10 p-4 sm:p-6">
+                <CardTitle className="text-white text-xl sm:text-2xl flex items-center space-x-3">
                   <div className="p-2 bg-green-500/20 rounded-xl">
-                    <Upload className="h-6 w-6 text-green-400" />
+                    <Upload className="h-5 w-5 sm:h-6 sm:w-6 text-green-400" />
                   </div>
                   <span>Schedule Bulk SMS</span>
                 </CardTitle>
-                <p className="text-gray-400">Schedule multiple SMS messages for future delivery using CSV upload</p>
+                <p className="text-gray-400 text-sm sm:text-base">Schedule multiple SMS messages for future delivery using CSV upload</p>
               </CardHeader>
-              <CardContent className="p-8">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  <div className="space-y-6">
-                    <div className="space-y-3">
-                      <Label htmlFor="bulk_sender_id" className="text-gray-300 font-medium">Sender ID</Label>
+              <CardContent className="p-4 sm:p-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
+                  <div className="space-y-4 sm:space-y-6">
+                    <div className="space-y-2 sm:space-y-3">
+                      <Label htmlFor="bulk_sender_id" className="text-gray-300 font-medium text-sm sm:text-base">Sender ID</Label>
                       <select
                         id="bulk_sender_id"
                         value={bulkSMS.sender_id}
                         onChange={(e) => setBulkSMS(prev => ({ ...prev, sender_id: e.target.value }))}
-                        className="w-full bg-black/30 border border-white/20 text-white rounded-xl px-4 py-3 h-12 focus:border-green-500 focus:ring-green-500/20"
+                        className="w-full bg-black/30 border border-white/20 text-white rounded-xl px-4 py-2 sm:py-3 h-10 sm:h-12 focus:border-green-500 focus:ring-green-500/20"
                         disabled={isLoadingSenders}
                       >
                         <option value="">{isLoadingSenders ? 'Loading senders...' : 'Select sender name'}</option>
@@ -605,8 +609,8 @@ export default function ScheduleSMSPage() {
                       </select>
                     </div>
 
-                    <div className="space-y-3">
-                      <Label htmlFor="bulk_scheduled_at" className="text-gray-300 font-medium">Schedule Date & Time</Label>
+                    <div className="space-y-2 sm:space-y-3">
+                      <Label htmlFor="bulk_scheduled_at" className="text-gray-300 font-medium text-sm sm:text-base">Schedule Date & Time</Label>
                       <div className="relative">
                         <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <Input
@@ -615,14 +619,14 @@ export default function ScheduleSMSPage() {
                           min={getMinDateTime()}
                           value={bulkSMS.scheduled_at}
                           onChange={(e) => setBulkSMS(prev => ({ ...prev, scheduled_at: e.target.value }))}
-                          className="pl-10 bg-black/30 border-white/20 text-white rounded-xl h-12 focus:border-green-500 focus:ring-green-500/20"
+                          className="pl-10 bg-black/30 border-white/20 text-white rounded-xl h-10 sm:h-12 focus:border-green-500 focus:ring-green-500/20"
                         />
                       </div>
                     </div>
 
-                    <div className="space-y-3">
-                      <Label className="text-gray-300 font-medium">Upload CSV File</Label>
-                      <div className="border-2 border-dashed border-green-500/30 rounded-2xl p-8 text-center bg-gradient-to-br from-green-500/5 to-emerald-500/5 hover:border-green-500/50 transition-colors">
+                    <div className="space-y-2 sm:space-y-3">
+                      <Label className="text-gray-300 font-medium text-sm sm:text-base">Upload CSV File</Label>
+                      <div className="border-2 border-dashed border-green-500/30 rounded-2xl p-4 sm:p-8 text-center bg-gradient-to-br from-green-500/5 to-emerald-500/5 hover:border-green-500/50 transition-colors">
                         <input
                           type="file"
                           accept=".csv"
@@ -631,66 +635,64 @@ export default function ScheduleSMSPage() {
                           id="csv-upload"
                         />
                         <label htmlFor="csv-upload" className="cursor-pointer">
-                          <Upload className="h-12 w-12 mx-auto text-green-400 mb-4" />
-                          <p className="text-gray-300 mb-2 text-lg">Drag and drop a CSV file here, or click to select</p>
-                          <p className="text-sm text-gray-400">CSV must contain &apos;recipient&apos; and &apos;message&apos; columns</p>
+                          <Upload className="h-8 w-8 sm:h-12 sm:w-12 mx-auto text-green-400 mb-2 sm:mb-4" />
+                          <p className="text-gray-300 mb-1 sm:mb-2 text-base sm:text-lg">Drag and drop a CSV file here, or click to select</p>
+                          <p className="text-xs sm:text-sm text-gray-400">CSV must contain &apos;recipient&apos; and &apos;message&apos; columns</p>
                         </label>
                       </div>
                       
                       {csvFile && (
                         <div className="flex items-center space-x-2 mt-2">
                           <FileText className="h-4 w-4 text-teal-400" />
-                          <span className="text-sm text-gray-300">{csvFile.name}</span>
+                          <span className="text-xs sm:text-sm text-gray-300 truncate">{csvFile.name}</span>
                         </div>
                       )}
-
-
 
                       <Button
                         variant="outline"
                         onClick={downloadSampleCSV}
-                        className="mt-4 w-full border-green-500/30 text-green-300 hover:bg-green-500/10 rounded-xl h-10"
+                        className="mt-2 sm:mt-4 w-full border-green-500/30 text-green-300 hover:bg-green-500/10 rounded-xl h-8 sm:h-10 text-xs sm:text-sm"
                       >
-                        <FileText className="h-4 w-4 mr-2" />
+                        <FileText className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                         Download Sample CSV
                       </Button>
                     </div>
                   </div>
 
-                  <div className="space-y-6">
-                    <div className="space-y-3">
-                      <Label className="text-gray-300 font-medium">CSV Preview</Label>
-                      <div className="bg-black/30 border border-white/20 rounded-xl p-6 max-h-80 overflow-y-auto">
+                  <div className="space-y-4 sm:space-y-6">
+                    <div className="space-y-2 sm:space-y-3">
+                      <Label className="text-gray-300 font-medium text-sm sm:text-base">CSV Preview</Label>
+                      <div className="bg-black/30 border border-white/20 rounded-xl p-3 sm:p-6 max-h-60 sm:max-h-80 overflow-y-auto">
                         {csvData.length > 0 ? (
-                          <div className="space-y-3">
-                            <div className="grid grid-cols-2 gap-4 text-sm text-gray-400 font-medium border-b border-white/10 pb-2">
+                          <div className="space-y-2 sm:space-y-3">
+                            <div className="grid grid-cols-2 gap-2 sm:gap-4 text-xs sm:text-sm text-gray-400 font-medium border-b border-white/10 pb-2">
                               <span>Recipient</span>
                               <span>Message</span>
                             </div>
-                            {csvData.slice(0, 8).map((row, index) => (
-                              <div key={index} className="grid grid-cols-2 gap-4 text-sm text-gray-300 border-b border-white/10 pb-2">
+                            {csvData.slice(0, 6).map((row, index) => (
+                              <div key={index} className="grid grid-cols-2 gap-2 sm:gap-4 text-xs sm:text-sm text-gray-300 border-b border-white/10 pb-2">
                                 <span className="truncate font-mono">{row.recipient}</span>
                                 <span className="truncate">{row.message}</span>
                               </div>
                             ))}
-                            {csvData.length > 8 && (
+                            {csvData.length > 6 && (
                               <div className="text-xs text-gray-500 text-center pt-2">
-                                ... and {csvData.length - 8} more rows
+                                ... and {csvData.length - 6} more rows
                               </div>
                             )}
                           </div>
                         ) : (
-                          <div className="text-center text-gray-500 py-12">
-                            <FileText className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                            <p className="text-lg">Upload a CSV file to see preview</p>
-                            <p className="text-sm mt-1">Your data will appear here once uploaded</p>
+                          <div className="text-center text-gray-500 py-8 sm:py-12">
+                            <FileText className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 sm:mb-4 text-gray-400" />
+                            <p className="text-base sm:text-lg">Upload a CSV file to see preview</p>
+                            <p className="text-xs sm:text-sm mt-1">Your data will appear here once uploaded</p>
                           </div>
                         )}
                       </div>
                       
                       {csvData.length > 0 && (
                         <div className="flex justify-between items-center">
-                          <p className="text-sm text-gray-400">
+                          <p className="text-xs sm:text-sm text-gray-400">
                             {csvData.length} recipients loaded
                           </p>
                           <Badge variant="outline" className="text-xs bg-green-500/20 border-green-500/30 text-green-300">
@@ -702,21 +704,23 @@ export default function ScheduleSMSPage() {
                   </div>
                 </div>
 
-                <div className="mt-8 flex justify-end">
+                <div className="mt-6 sm:mt-8 flex justify-center sm:justify-end">
                   <Button
                     onClick={handleBulkSMSSchedule}
                     disabled={isLoading || csvData.length === 0 || !bulkSMS.sender_id || !bulkSMS.scheduled_at}
-                    className="w-full md:w-auto bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl h-12 px-8 font-medium shadow-lg shadow-green-500/25 transition-all duration-300"
+                    className="w-full sm:w-auto bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl h-10 sm:h-12 px-4 sm:px-8 text-sm sm:text-base font-medium shadow-lg shadow-green-500/25 transition-all duration-300"
                   >
                     {isLoading ? (
                       <>
-                        <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                        Scheduling...
+                        <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 mr-2 animate-spin" />
+                        <span className="hidden sm:inline">Scheduling...</span>
+                        <span className="sm:hidden">Sending...</span>
                       </>
                     ) : (
                       <>
-                        <Clock className="h-5 w-5 mr-2" />
-                        Schedule Bulk SMS ({csvData.length})
+                        <Clock className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                        <span className="hidden sm:inline">Schedule Bulk SMS ({csvData.length})</span>
+                        <span className="sm:hidden">Schedule ({csvData.length})</span>
                       </>
                     )}
                   </Button>
@@ -730,24 +734,24 @@ export default function ScheduleSMSPage() {
         {activeTab === 'scheduled' && (
           <div className="space-y-8">
             <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden">
-              <CardHeader className="bg-gradient-to-r from-teal-500/10 to-emerald-500/10 border-b border-white/10">
-                <CardTitle className="text-white text-2xl flex items-center space-x-3">
+              <CardHeader className="bg-gradient-to-r from-teal-500/10 to-emerald-500/10 border-b border-white/10 p-4 sm:p-6">
+                <CardTitle className="text-white text-xl sm:text-2xl flex items-center space-x-3">
                   <div className="p-2 bg-teal-500/20 rounded-xl">
-                    <Clock className="h-6 w-6 text-teal-400" />
+                    <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-teal-400" />
                   </div>
                   <span>Scheduled SMS Messages</span>
                 </CardTitle>
-                <p className="text-gray-400">View and manage your scheduled SMS messages</p>
+                <p className="text-gray-400 text-sm sm:text-base">View and manage your scheduled SMS messages</p>
               </CardHeader>
-              <CardContent className="p-8">
+              <CardContent className="p-4 sm:p-8">
                 {/* Filters */}
-                <div className="mb-8 grid grid-cols-1 md:grid-cols-4 gap-6">
-                  <div className="space-y-3">
-                    <Label className="text-gray-300 font-medium">Status</Label>
+                <div className="mb-6 sm:mb-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6">
+                  <div className="space-y-2 sm:space-y-3">
+                    <Label className="text-gray-300 font-medium text-sm sm:text-base">Status</Label>
                     <select
                       value={scheduledFilters.status}
                       onChange={(e) => setScheduledFilters(prev => ({ ...prev, status: e.target.value }))}
-                      className="w-full bg-black/30 border border-white/20 text-white rounded-xl px-4 py-3 h-12 focus:border-teal-500 focus:ring-teal-500/20"
+                      className="w-full bg-black/30 border border-white/20 text-white rounded-xl px-4 py-2 sm:py-3 h-10 sm:h-12 focus:border-teal-500 focus:ring-teal-500/20"
                     >
                       <option value="">All Status</option>
                       <option value="pending">Pending</option>
@@ -756,34 +760,34 @@ export default function ScheduleSMSPage() {
                       <option value="cancelled">Cancelled</option>
                     </select>
                   </div>
-                  <div className="space-y-3">
-                    <Label className="text-gray-300 font-medium">Recipient</Label>
+                  <div className="space-y-2 sm:space-y-3">
+                    <Label className="text-gray-300 font-medium text-sm sm:text-base">Recipient</Label>
                     <Input
                       type="text"
                       placeholder="Filter by recipient"
                       value={scheduledFilters.recipient}
                       onChange={(e) => setScheduledFilters(prev => ({ ...prev, recipient: e.target.value }))}
-                      className="bg-black/30 border-white/20 text-white placeholder-gray-400 rounded-xl h-12 focus:border-teal-500 focus:ring-teal-500/20"
+                      className="bg-black/30 border-white/20 text-white placeholder-gray-400 rounded-xl h-10 sm:h-12 focus:border-teal-500 focus:ring-teal-500/20"
                     />
                   </div>
-                  <div className="space-y-3">
-                    <Label className="text-gray-300 font-medium">Page</Label>
+                  <div className="space-y-2 sm:space-y-3">
+                    <Label className="text-gray-300 font-medium text-sm sm:text-base">Page</Label>
                     <Input
                       type="number"
                       min="1"
                       value={scheduledFilters.page}
                       onChange={(e) => setScheduledFilters(prev => ({ ...prev, page: parseInt(e.target.value) || 1 }))}
-                      className="bg-black/30 border-white/20 text-white rounded-xl h-12 focus:border-teal-500 focus:ring-teal-500/20"
+                      className="bg-black/30 border-white/20 text-white rounded-xl h-10 sm:h-12 focus:border-teal-500 focus:ring-teal-500/20"
                     />
                   </div>
                   <div className="flex items-end">
                     <Button
                       onClick={fetchScheduledSMS}
                       disabled={isLoadingScheduled}
-                      className="w-full bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white rounded-xl h-12 font-medium shadow-lg shadow-teal-500/25 transition-all duration-300"
+                      className="w-full bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white rounded-xl h-10 sm:h-12 text-sm sm:text-base font-medium shadow-lg shadow-teal-500/25 transition-all duration-300"
                     >
                       {isLoadingScheduled ? (
-                        <Loader2 className="h-5 w-5 animate-spin" />
+                        <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
                       ) : (
                         'Refresh'
                       )}
@@ -794,28 +798,28 @@ export default function ScheduleSMSPage() {
                 {/* Scheduled SMS List */}
                 <div className="space-y-6">
                   {isLoadingScheduled ? (
-                    <div className="text-center py-12">
-                      <Loader2 className="h-12 w-12 mx-auto animate-spin text-teal-400" />
-                      <p className="text-gray-400 mt-4 text-lg">Loading scheduled SMS...</p>
+                    <div className="text-center py-8 sm:py-12">
+                      <Loader2 className="h-8 w-8 sm:h-12 sm:w-12 mx-auto animate-spin text-teal-400" />
+                      <p className="text-gray-400 mt-3 sm:mt-4 text-base sm:text-lg">Loading scheduled SMS...</p>
                     </div>
                   ) : scheduledSMS.length > 0 ? (
                     scheduledSMS.map((sms) => (
-                      <div key={sms.id} className="bg-black/30 border border-white/10 rounded-2xl p-6 hover:border-teal-500/30 transition-colors">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1 space-y-4">
-                            <div className="flex items-center space-x-4">
-                              <div className={`p-3 rounded-xl ${getStatusColor(sms.status || 'pending')}`}>
+                      <div key={sms.id} className="bg-black/30 border border-white/10 rounded-2xl p-4 sm:p-6 hover:border-teal-500/30 transition-colors">
+                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 sm:gap-0">
+                          <div className="flex-1 space-y-3 sm:space-y-4">
+                            <div className="flex items-center space-x-3 sm:space-x-4">
+                              <div className={`p-2 sm:p-3 rounded-xl ${getStatusColor(sms.status || 'pending')}`}>
                                 {getStatusIcon(sms.status || 'pending')}
                               </div>
                               <div>
-                                <h3 className="text-white font-semibold text-lg">{sms.recipient}</h3>
-                                <p className="text-sm text-gray-400">Scheduled for {new Date(sms.scheduled_at).toLocaleString()}</p>
+                                <h3 className="text-white font-semibold text-base sm:text-lg">{sms.recipient}</h3>
+                                <p className="text-xs sm:text-sm text-gray-400">Scheduled for {new Date(sms.scheduled_at).toLocaleString()}</p>
                               </div>
                             </div>
-                            <div className="bg-black/20 rounded-xl p-4 border border-white/5">
-                              <p className="text-gray-300">{sms.message}</p>
+                            <div className="bg-black/20 rounded-xl p-3 sm:p-4 border border-white/5">
+                              <p className="text-gray-300 text-sm sm:text-base">{sms.message}</p>
                             </div>
-                            <div className="flex items-center space-x-6 text-sm text-gray-500">
+                            <div className="flex flex-wrap gap-y-2 items-center space-x-3 sm:space-x-6 text-xs sm:text-sm text-gray-500">
                               <span className="flex items-center space-x-2">
                                 <span className="w-2 h-2 bg-teal-400 rounded-full"></span>
                                 <span>Sender: {sms.sender_id}</span>
@@ -832,18 +836,18 @@ export default function ScheduleSMSPage() {
                               )}
                             </div>
                           </div>
-                          <div className="flex items-center space-x-3">
+                          <div className="flex items-center space-x-3 self-end sm:self-start">
                             {sms.status === 'pending' && (
                               <Button
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleCancelScheduledSMS(sms.id!)}
-                                className="border-red-500/30 text-red-300 hover:bg-red-500/20 rounded-xl"
+                                className="border-red-500/30 text-red-300 hover:bg-red-500/20 rounded-xl h-8 text-xs sm:text-sm"
                               >
                                 Cancel
                               </Button>
                             )}
-                            <Badge className={`${getStatusColor(sms.status || 'pending')} border-0 px-3 py-1`}>
+                            <Badge className={`${getStatusColor(sms.status || 'pending')} border-0 px-2 sm:px-3 py-0.5 sm:py-1 text-xs`}>
                               {sms.status || 'pending'}
                             </Badge>
                           </div>
@@ -851,11 +855,11 @@ export default function ScheduleSMSPage() {
                       </div>
                     ))
                   ) : (
-                    <div className="text-center py-16">
-                      <Clock className="h-16 w-16 mx-auto text-gray-500 mb-6" />
-                      <h3 className="text-white text-xl font-semibold mb-3">No Scheduled SMS</h3>
-                      <p className="text-gray-400 text-lg">You haven&apos;t scheduled any SMS messages yet.</p>
-                      <p className="text-gray-500 mt-2">Use the tabs above to schedule your first SMS message.</p>
+                    <div className="text-center py-10 sm:py-16">
+                      <Clock className="h-12 w-12 sm:h-16 sm:w-16 mx-auto text-gray-500 mb-4 sm:mb-6" />
+                      <h3 className="text-white text-lg sm:text-xl font-semibold mb-2 sm:mb-3">No Scheduled SMS</h3>
+                      <p className="text-gray-400 text-base sm:text-lg">You haven&apos;t scheduled any SMS messages yet.</p>
+                      <p className="text-gray-500 text-sm sm:text-base mt-2">Use the tabs above to schedule your first SMS message.</p>
                     </div>
                   )}
                 </div>

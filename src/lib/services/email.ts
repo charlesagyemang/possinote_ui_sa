@@ -90,35 +90,10 @@ export class EmailService {
       ...(sender_name && { sender_name })
     };
 
-    // Log the full request details
-    console.log('📧 EMAIL SEND REQUEST:');
-    console.log('🔗 URL:', `${api.defaults.baseURL}/emails/send`);
-    console.log('📦 Payload:', JSON.stringify(payload, null, 2));
-    console.log('🔑 Auth Token:', localStorage.getItem('api_token') || localStorage.getItem('api_key') || 'No token found');
-    console.log('📋 Headers:', {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('api_token') || localStorage.getItem('api_key') || 'No token'}`
-    });
-    console.log('⏰ Timestamp:', new Date().toISOString());
-
     try {
       const response = await api.post('/emails/send', payload);
-      console.log('✅ EMAIL SEND RESPONSE:');
-      console.log('📊 Status:', response.status);
-      console.log('📄 Response Data:', JSON.stringify(response.data, null, 2));
       return response.data;
     } catch (error: unknown) {
-      console.error('❌ EMAIL SEND ERROR:');
-      console.error('Error object:', error);
-      if (error instanceof Error) {
-        console.error('Error message:', error.message);
-      }
-      if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as { response?: { status?: number; data?: unknown; headers?: unknown } };
-        console.error('Response status:', axiosError.response?.status);
-        console.error('Response data:', axiosError.response?.data);
-        console.error('Response headers:', axiosError.response?.headers);
-      }
       throw error;
     }
   }
@@ -131,35 +106,10 @@ export class EmailService {
       ...(sender_name && { sender_name })
     };
 
-    // Log the full request details
-    console.log('📧 BULK EMAIL SEND REQUEST:');
-    console.log('🔗 URL:', `${api.defaults.baseURL}/emails/bulk`);
-    console.log('📦 Payload:', JSON.stringify(payload, null, 2));
-    console.log('🔑 Auth Token:', localStorage.getItem('api_token') || localStorage.getItem('api_key') || 'No token found');
-    console.log('📋 Headers:', {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('api_token') || localStorage.getItem('api_key') || 'No token'}`
-    });
-    console.log('⏰ Timestamp:', new Date().toISOString());
-
     try {
       const response = await api.post('/emails/bulk', payload);
-      console.log('✅ BULK EMAIL SEND RESPONSE:');
-      console.log('📊 Status:', response.status);
-      console.log('📄 Response Data:', JSON.stringify(response.data, null, 2));
       return response.data;
     } catch (error: unknown) {
-      console.error('❌ BULK EMAIL SEND ERROR:');
-      console.error('Error object:', error);
-      if (error instanceof Error) {
-        console.error('Error message:', error.message);
-      }
-      if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as { response?: { status?: number; data?: unknown; headers?: unknown } };
-        console.error('Response status:', axiosError.response?.status);
-        console.error('Response data:', axiosError.response?.data);
-        console.error('Response headers:', axiosError.response?.headers);
-      }
       throw error;
     }
   }
@@ -174,35 +124,10 @@ export class EmailService {
       }))
     };
 
-    // Log the full request details
-    console.log('📧 BULK INDIVIDUAL EMAILS SEND REQUEST:');
-    console.log('🔗 URL:', `${api.defaults.baseURL}/emails/send-bulk-individual`);
-    console.log('📦 Payload:', JSON.stringify(payload, null, 2));
-    console.log('🔑 Auth Token:', localStorage.getItem('api_token') || localStorage.getItem('api_key') || 'No token found');
-    console.log('📋 Headers:', {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('api_token') || localStorage.getItem('api_key') || 'No token'}`
-    });
-    console.log('⏰ Timestamp:', new Date().toISOString());
-
     try {
       const response = await api.post('/emails/send-bulk-individual', payload);
-      console.log('✅ BULK INDIVIDUAL EMAILS SEND RESPONSE:');
-      console.log('📊 Status:', response.status);
-      console.log('📄 Response Data:', JSON.stringify(response.data, null, 2));
       return response.data;
     } catch (error: unknown) {
-      console.error('❌ BULK INDIVIDUAL EMAILS SEND ERROR:');
-      console.error('Error object:', error);
-      if (error instanceof Error) {
-        console.error('Error message:', error.message);
-      }
-      if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as { response?: { status?: number; data?: unknown; headers?: unknown } };
-        console.error('Response status:', axiosError.response?.status);
-        console.error('Response data:', axiosError.response?.data);
-        console.error('Response headers:', axiosError.response?.headers);
-      }
       throw error;
     }
   }
@@ -217,68 +142,19 @@ export class EmailService {
       emails
     };
 
-    // Log the full request details
-    console.log('📧 EMAIL VALIDATION REQUEST:');
-    console.log('🔗 URL:', `${api.defaults.baseURL}/emails/validate`);
-    console.log('📦 Payload:', JSON.stringify(payload, null, 2));
-    console.log('🔑 Auth Token:', localStorage.getItem('api_token') || localStorage.getItem('api_key') || 'No token found');
-    console.log('📋 Headers:', {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('api_token') || localStorage.getItem('api_key') || 'No token'}`
-    });
-    console.log('⏰ Timestamp:', new Date().toISOString());
-
     try {
       const response = await api.post('/emails/validate', payload);
-      console.log('✅ EMAIL VALIDATION RESPONSE:');
-      console.log('📊 Status:', response.status);
-      console.log('📄 Response Data:', JSON.stringify(response.data, null, 2));
       return response.data;
     } catch (error: unknown) {
-      console.error('❌ EMAIL VALIDATION ERROR:');
-      console.error('Error object:', error);
-      if (error instanceof Error) {
-        console.error('Error message:', error.message);
-      }
-      if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as { response?: { status?: number; data?: unknown; headers?: unknown } };
-        console.error('Response status:', axiosError.response?.status);
-        console.error('Response data:', axiosError.response?.data);
-        console.error('Response headers:', axiosError.response?.headers);
-      }
       throw error;
     }
   }
 
   static async getEmailHistory(params?: EmailHistoryParams): Promise<EmailHistoryResponse> {
-    console.log('📧 EmailService.getEmailHistory called with params:', params);
-    console.log('🔗 API base URL:', api.defaults.baseURL);
-    console.log('🔗 Full URL will be:', `${api.defaults.baseURL}/emails`);
-    console.log('🔗 Query parameters:', params);
-    
-    // Log the actual request being made
-    const requestConfig = { params };
-    console.log('🔗 Request config:', JSON.stringify(requestConfig, null, 2));
-    
     try {
       const response = await api.get('/emails', { params });
-      console.log('📧 EmailService response status:', response.status);
-      console.log('📧 EmailService response data:', response.data);
-      
-      // Check if the response contains the expected data structure
-      if (response.data && response.data.emails) {
-        console.log('📧 Emails found:', response.data.emails.length);
-        console.log('📧 First email status:', response.data.emails[0]?.status);
-      } else {
-        console.warn('📧 Unexpected response structure:', response.data);
-      }
-      
       return response.data;
     } catch (error: unknown) {
-      console.error('📧 EmailService error:', error);
-      if (error instanceof Error) {
-        console.error('📧 Error message:', error.message);
-      }
       throw error;
     }
   }

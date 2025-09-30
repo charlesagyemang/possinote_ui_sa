@@ -197,7 +197,6 @@ export default function EmailTemplatesPage() {
       const fetchedTemplates = await EmailTemplateService.getTemplates();
       setTemplates(fetchedTemplates);
     } catch (error) {
-      console.error('Failed to load templates:', error);
     } finally {
       setIsLoading(false);
     }
@@ -210,7 +209,6 @@ export default function EmailTemplatesPage() {
       await EmailTemplateService.deleteTemplate(templateId);
       setTemplates(prev => prev.filter(t => t.id !== templateId));
     } catch (error) {
-      console.error('Failed to delete template:', error);
     }
   };
 
@@ -225,7 +223,6 @@ export default function EmailTemplatesPage() {
       const created = await EmailTemplateService.createTemplate(newTemplate);
       setTemplates(prev => [...prev, created]);
     } catch (error) {
-      console.error('Failed to duplicate template:', error);
     }
   };
 
@@ -260,7 +257,6 @@ export default function EmailTemplatesPage() {
         showToast('error', 'Send Failed', 'Failed to send email: ' + response.error);
       }
     } catch (error: unknown) {
-      console.error('Failed to send template email:', error);
       
       // Handle 402 Payment Required error
       if (error && typeof error === 'object' && 'response' in error) {
@@ -363,7 +359,6 @@ export default function EmailTemplatesPage() {
         showToast('error', 'Bulk Send Failed', 'Failed to send bulk emails: ' + response.error);
       }
     } catch (error: unknown) {
-      console.error('Failed to send bulk emails:', error);
       
       // Handle 402 Payment Required error
       if (error && typeof error === 'object' && 'response' in error) {
@@ -421,7 +416,6 @@ export default function EmailTemplatesPage() {
         showToast('error', 'Schedule Failed', 'Failed to schedule email: ' + response.error);
       }
     } catch (error: unknown) {
-      console.error('Failed to schedule template email:', error);
       
       // Handle 402 Payment Required error
       if (error && typeof error === 'object' && 'response' in error) {
@@ -467,45 +461,19 @@ export default function EmailTemplatesPage() {
         };
       });
 
-      // Debug logging
-      console.log('Scheduling bulk emails:', {
-        totalEmails: emails.length,
-        sampleEmail: emails[0],
-        scheduledAt: scheduleBulkEmail.scheduled_at
-      });
+      // Prepare to schedule emails
 
       // Schedule all emails in one request
       const request: ScheduleMultipleEmailsRequest = {
         emails: emails
       };
 
-      // Log the full payload being sent
-      console.log('📧 SCHEDULE BULK PAYLOAD:');
-      console.log('🔗 Endpoint:', '/emails/schedule-bulk-individual');
-      console.log('📦 Full Request:', JSON.stringify(request, null, 2));
-      console.log('📊 Email Count:', emails.length);
-      console.log('⏰ Scheduled At:', scheduleBulkEmail.scheduled_at);
-      console.log('📋 Sample Email Structure:', {
-        recipient: emails[0]?.recipient,
-        subject: emails[0]?.subject,
-        contentLength: emails[0]?.content?.length,
-        scheduledAt: emails[0]?.scheduled_at
-      });
-      console.log('🔍 All Emails Preview:', emails.map((email, index) => ({
-        index,
-        recipient: email.recipient,
-        subject: email.subject,
-        contentPreview: email.content.substring(0, 100) + '...',
-        scheduledAt: email.scheduled_at
-      })));
-      console.log('🎯 Template Variables Used:', scheduleBulkEmail.requiredColumns);
-      console.log('📄 CSV Data Sample:', scheduleBulkEmail.csvData.slice(0, 3));
+      // Process the request to schedule emails
 
       const response = await SchedulingService.scheduleMultipleEmails(request);
       
       if (response.success) {
         showToast('success', 'Bulk Emails Scheduled', `Successfully scheduled ${response.data.total_scheduled} emails for ${new Date(scheduleBulkEmail.scheduled_at).toLocaleString()}`);
-        console.log('Bulk scheduling response:', response.data);
       } else {
         showToast('error', 'Bulk Schedule Failed', 'Failed to schedule bulk emails: ' + response.error);
       }
@@ -515,7 +483,6 @@ export default function EmailTemplatesPage() {
       setCsvError('');
       setCsvSuccess('');
     } catch (error: unknown) {
-      console.error('Failed to schedule bulk emails:', error);
       
       // Handle 402 Payment Required error
       if (error && typeof error === 'object' && 'response' in error) {
@@ -584,7 +551,6 @@ export default function EmailTemplatesPage() {
         setScheduledHistoryError(data.error || 'Failed to fetch scheduled emails');
       }
     } catch (error: unknown) {
-      console.error('Failed to fetch scheduled emails:', error);
       
       // Handle 402 Payment Required error
       if (error && typeof error === 'object' && 'response' in error) {
@@ -628,7 +594,6 @@ export default function EmailTemplatesPage() {
         showToast('error', 'Cancel Failed', 'Failed to cancel scheduled email: ' + response.error);
       }
     } catch (error: unknown) {
-      console.error('Failed to cancel scheduled email:', error);
       showToast('error', 'Cancel Failed', 'Failed to cancel scheduled email. Please try again.');
     }
   };
@@ -663,7 +628,6 @@ export default function EmailTemplatesPage() {
       // Navigate to the builder with base64 encoded data
       window.location.href = `/email-templates/builder?templateBase64=${base64Data}`;
     } catch (error) {
-      console.error('Failed to encode template data:', error);
       // Fallback: navigate without template data
       window.location.href = '/email-templates/builder';
     }
@@ -728,7 +692,6 @@ export default function EmailTemplatesPage() {
         setHistoryError(data.error || 'Failed to fetch email history');
       }
     } catch (error: unknown) {
-      console.error('Failed to fetch email history:', error);
       
       // Handle rate limiting
       if (error instanceof Error && error.message.includes('429')) {
@@ -926,7 +889,7 @@ export default function EmailTemplatesPage() {
       document.body.removeChild(link);
       
     } catch (error) {
-      console.error('Export failed:', error);
+      showToast('error', 'Export Failed', 'Failed to export data. Please try again.');
     } finally {
       setIsExporting(false);
     }
@@ -950,13 +913,13 @@ export default function EmailTemplatesPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-teal-900 to-emerald-900 p-6">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Email Templates</h1>
-            <p className="text-gray-400">Create and manage beautiful email templates</p>
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-0">
+          <div className="text-center sm:text-left">
+            <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1 sm:mb-2">Email Templates</h1>
+            <p className="text-sm sm:text-base text-gray-400">Create and manage beautiful email templates</p>
           </div>
-          <Link href="/email-templates/builder">
-            <Button className="bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700">
+          <Link href="/email-templates/builder" className="w-full sm:w-auto">
+            <Button className="bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 w-full sm:w-auto">
               <Plus className="h-4 w-4 mr-2" />
               Create Template
             </Button>
@@ -980,24 +943,30 @@ export default function EmailTemplatesPage() {
 
         {/* Main Content with Tabs */}
         <Tabs defaultValue="my-templates" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-slate-800/50">
-            <TabsTrigger value="my-templates" className="data-[state=active]:bg-gradient-to-r from-teal-600 to-emerald-600">
-              <Folder className="h-4 w-4 mr-2" />
-              My Templates
-            </TabsTrigger>
-            <TabsTrigger value="template-store" className="data-[state=active]:bg-gradient-to-r from-teal-600 to-emerald-600">
-              <Store className="h-4 w-4 mr-2" />
-              Template Store
-            </TabsTrigger>
-            <TabsTrigger value="email-history" className="data-[state=active]:bg-gradient-to-r from-teal-600 to-emerald-600">
-              <MessageSquare className="h-4 w-4 mr-2" />
-              Email History
-            </TabsTrigger>
-            <TabsTrigger value="scheduled-email-history" className="data-[state=active]:bg-gradient-to-r from-teal-600 to-emerald-600">
-              <Clock className="h-4 w-4 mr-2" />
-              Scheduled Email History
-            </TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto">
+            <TabsList className="w-full min-w-max sm:grid sm:grid-cols-4 bg-slate-800/50">
+              <TabsTrigger value="my-templates" className="data-[state=active]:bg-gradient-to-r from-teal-600 to-emerald-600 flex-shrink-0 px-2 sm:px-4">
+                <Folder className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">My Templates</span>
+                <span className="sm:hidden ml-1">Templates</span>
+              </TabsTrigger>
+              <TabsTrigger value="template-store" className="data-[state=active]:bg-gradient-to-r from-teal-600 to-emerald-600 flex-shrink-0 px-2 sm:px-4">
+                <Store className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Template Store</span>
+                <span className="sm:hidden ml-1">Store</span>
+              </TabsTrigger>
+              <TabsTrigger value="email-history" className="data-[state=active]:bg-gradient-to-r from-teal-600 to-emerald-600 flex-shrink-0 px-2 sm:px-4">
+                <MessageSquare className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Email History</span>
+                <span className="sm:hidden ml-1">History</span>
+              </TabsTrigger>
+              <TabsTrigger value="scheduled-email-history" className="data-[state=active]:bg-gradient-to-r from-teal-600 to-emerald-600 flex-shrink-0 px-2 sm:px-4">
+                <Clock className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Scheduled Email History</span>
+                <span className="sm:hidden ml-1">Scheduled</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* My Templates Tab */}
           <TabsContent value="my-templates" className="space-y-6">
@@ -1038,17 +1007,17 @@ export default function EmailTemplatesPage() {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 {filteredTemplates.map((template) => (
               <Card key={template.id} className="bg-slate-800/50 border-slate-700 hover:border-slate-600 transition-colors">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
+                <CardHeader className="p-4 sm:p-6">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-0">
                     <div className="flex-1">
-                      <CardTitle className="text-white text-lg mb-2">{template.name}</CardTitle>
+                      <CardTitle className="text-white text-base sm:text-lg mb-1 sm:mb-2">{template.name}</CardTitle>
                       {template.description && (
-                        <p className="text-gray-400 text-sm mb-3">{template.description}</p>
+                        <p className="text-gray-400 text-xs sm:text-sm mb-2 sm:mb-3">{template.description}</p>
                       )}
-                      <div className="flex items-center space-x-4 text-xs text-gray-500">
+                      <div className="flex flex-wrap items-center gap-3 sm:space-x-4 text-xs text-gray-500">
                         <div className="flex items-center space-x-1">
                           <Calendar className="h-3 w-3" />
                           <span>{formatDate(template.created_at)}</span>
@@ -1060,20 +1029,20 @@ export default function EmailTemplatesPage() {
                       </div>
                     </div>
                     {template.is_default && (
-                      <Badge variant="secondary" className="bg-green-500/20 text-green-300">
+                      <Badge variant="secondary" className="bg-green-500/20 text-green-300 text-xs self-start">
                         Default
                       </Badge>
                     )}
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
                   <div className="space-y-3">
                     {/* Actions */}
                     <div className="space-y-3">
                       {/* First row: Edit, Copy, Delete */}
-                      <div className="flex items-center gap-2">
-                        <Link href={`/email-templates/builder?id=${template.id}`}>
-                          <Button variant="outline" size="sm" className="border-slate-600 text-gray-300 hover:bg-slate-700">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Link href={`/email-templates/builder?id=${template.id}`} className="flex-1 sm:flex-none">
+                          <Button variant="outline" size="sm" className="border-slate-600 text-gray-300 hover:bg-slate-700 w-full sm:w-auto">
                             <Edit className="h-3 w-3 mr-1" />
                             Edit
                           </Button>
@@ -1082,7 +1051,7 @@ export default function EmailTemplatesPage() {
                           variant="outline"
                           size="sm"
                           onClick={() => duplicateTemplate(template)}
-                          className="border-slate-600 text-gray-300 hover:bg-slate-700"
+                          className="border-slate-600 text-gray-300 hover:bg-slate-700 flex-1 sm:flex-none"
                         >
                           <Copy className="h-3 w-3 mr-1" />
                           Copy
@@ -1091,15 +1060,16 @@ export default function EmailTemplatesPage() {
                           variant="outline"
                           size="sm"
                           onClick={() => deleteTemplate(template.id)}
-                          className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+                          className="border-red-500/30 text-red-400 hover:bg-red-500/10 flex-1 sm:flex-none"
                         >
-                          <Trash2 className="h-3 w-3" />
-                          Delete
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          <span className="sm:hidden">Delete</span>
+                          <span className="hidden sm:inline">Delete</span>
                         </Button>
                       </div>
 
                       {/* Second row: Send buttons */}
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Button
                           variant="outline"
                           size="sm"
@@ -1117,10 +1087,11 @@ export default function EmailTemplatesPage() {
                             });
                             setSelectedTemplate(template);
                           }}
-                          className="border-slate-600 text-gray-300 hover:bg-slate-700"
+                          className="border-slate-600 text-gray-300 hover:bg-slate-700 flex-1 sm:flex-none"
                         >
                           <Send className="h-3 w-3 mr-1" />
-                          Send Single
+                          <span className="hidden sm:inline">Send Single</span>
+                          <span className="sm:hidden">Send</span>
                         </Button>
                         <Button
                           variant="outline"
@@ -1135,15 +1106,16 @@ export default function EmailTemplatesPage() {
                             });
                             setShowBulkModal(true);
                           }}
-                          className="border-green-600 text-green-300 hover:bg-green-500/10"
+                          className="border-green-600 text-green-300 hover:bg-green-500/10 flex-1 sm:flex-none"
                         >
                           <Users className="h-3 w-3 mr-1" />
-                          Send Bulk
+                          <span className="hidden sm:inline">Send Bulk</span>
+                          <span className="sm:hidden">Bulk</span>
                         </Button>
                       </div>
 
                       {/* Third row: Schedule buttons */}
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Button
                           variant="outline"
                           size="sm"
@@ -1163,10 +1135,11 @@ export default function EmailTemplatesPage() {
                             setSelectedTemplate(template);
                             setShowScheduleModal(true);
                           }}
-                          className="border-blue-600 text-blue-300 hover:bg-blue-500/10"
+                          className="border-blue-600 text-blue-300 hover:bg-blue-500/10 flex-1 sm:flex-none"
                         >
                           <Clock className="h-3 w-3 mr-1" />
-                          Schedule Single
+                          <span className="hidden sm:inline">Schedule Single</span>
+                          <span className="sm:hidden">Schedule</span>
                         </Button>
                         <Button
                           variant="outline"
@@ -1182,10 +1155,11 @@ export default function EmailTemplatesPage() {
                             });
                             setShowScheduleBulkModal(true);
                           }}
-                          className="border-purple-600 text-purple-300 hover:bg-purple-500/10"
+                          className="border-purple-600 text-purple-300 hover:bg-purple-500/10 flex-1 sm:flex-none"
                         >
                           <Clock className="h-3 w-3 mr-1" />
-                          Schedule Bulk
+                          <span className="hidden sm:inline">Schedule Bulk</span>
+                          <span className="sm:hidden">Bulk</span>
                         </Button>
                       </div>
                     </div>
@@ -1208,27 +1182,27 @@ export default function EmailTemplatesPage() {
           {/* Template Store Tab */}
           <TabsContent value="template-store" className="space-y-6">
             {/* Search and Filter Controls */}
-            <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6">
-              <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-                <div className="flex-1 max-w-md">
+            <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4 sm:p-6">
+              <div className="flex flex-col gap-4 items-start justify-between">
+                <div className="w-full">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                     <Input
-                      placeholder="Search templates by name, description, or subject..."
+                      placeholder="Search templates..."
                       value={storeSearchTerm}
                       onChange={(e) => setStoreSearchTerm(e.target.value)}
-                      className="pl-10 bg-slate-700/50 border-slate-600 text-white placeholder-gray-400"
+                      className="pl-10 bg-slate-700/50 border-slate-600 text-white placeholder-gray-400 h-10 sm:h-12 text-sm sm:text-base"
                     />
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 w-full">
                   <div className="flex items-center gap-2">
                     <Filter className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm text-gray-400">Category:</span>
+                    <span className="text-xs sm:text-sm text-gray-400">Category:</span>
                   </div>
                   <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                    <SelectTrigger className="w-40 bg-slate-700/50 border-slate-600 text-white">
+                    <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white flex-1 h-10 sm:h-12 text-sm sm:text-base">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-slate-800 border-slate-700">
@@ -1247,8 +1221,8 @@ export default function EmailTemplatesPage() {
               </div>
               
               {/* Results counter */}
-              <div className="mt-4 flex items-center justify-between">
-                <span className="text-sm text-gray-400">
+              <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
+                <span className="text-xs sm:text-sm text-gray-400">
                   Showing {filteredStoreTemplates.length} of {templateStore.length} templates
                 </span>
                 
@@ -1284,9 +1258,9 @@ export default function EmailTemplatesPage() {
                       setStoreSearchTerm('');
                       setSelectedCategory('All');
                     }}
-                    className="text-gray-400 border-slate-600 hover:bg-slate-700"
+                    className="text-gray-400 border-slate-600 hover:bg-slate-700 text-xs sm:text-sm h-8 sm:h-9 w-full sm:w-auto"
                   >
-                    <XCircle className="h-4 w-4 mr-2" />
+                    <XCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                     Clear Filters
                   </Button>
                 </div>
@@ -1316,31 +1290,32 @@ export default function EmailTemplatesPage() {
               <div className="space-y-8">
                 {filteredStoreTemplates.map((template) => (
                 <Card key={template.id} className="bg-slate-800/50 border-slate-700 hover:border-slate-600 transition-colors">
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
+                  <CardHeader className="p-4 sm:p-6">
+                    <div className="flex flex-col space-y-4">
                       <div className="flex-1">
-                        <CardTitle className="text-white text-xl mb-2">{template.name}</CardTitle>
-                        <p className="text-gray-400 text-base mb-3">{template.description}</p>
-                        <div className="flex items-center gap-3 mb-4">
-                          <Badge variant="secondary" className="bg-blue-500/20 text-blue-300">
+                        <CardTitle className="text-white text-lg sm:text-xl mb-1 sm:mb-2">{template.name}</CardTitle>
+                        <p className="text-gray-400 text-sm sm:text-base mb-2 sm:mb-3">{template.description}</p>
+                        <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                          <Badge variant="secondary" className="bg-blue-500/20 text-blue-300 text-xs">
                             {template.category}
                           </Badge>
-                          <span className="text-gray-500 text-sm">
+                          <span className="text-gray-500 text-xs sm:text-sm">
                             {template.variables.length} variables
                           </span>
                         </div>
                       </div>
                       
                       {/* Actions - Moved to header */}
-                      <div className="flex items-center space-x-2">
+                      <div className="flex flex-wrap gap-2">
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => navigateToTemplateBuilder(template)}
-                          className="border-slate-600 text-gray-300 hover:bg-slate-700"
+                          className="border-slate-600 text-gray-300 hover:bg-slate-700 flex-1 sm:flex-none h-8 sm:h-9 text-xs sm:text-sm"
                         >
-                          <Copy className="h-4 w-4 mr-2" />
-                          Use Template
+                          <Copy className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                          <span className="hidden sm:inline">Use Template</span>
+                          <span className="sm:hidden">Use</span>
                         </Button>
                         <Button
                           variant="outline"
@@ -1373,24 +1348,25 @@ export default function EmailTemplatesPage() {
                             });
                             setShowBulkModal(true);
                           }}
-                          className="border-green-600 text-green-300 hover:bg-green-500/10"
+                          className="border-green-600 text-green-300 hover:bg-green-500/10 flex-1 sm:flex-none h-8 sm:h-9 text-xs sm:text-sm"
                         >
-                          <Users className="h-4 w-4 mr-2" />
-                          Send Bulk
+                          <Users className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                          <span className="hidden sm:inline">Send Bulk</span>
+                          <span className="sm:hidden">Send</span>
                         </Button>
                       </div>
                     </div>
                   </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
                       {/* Left Column - Variables & Info */}
-                      <div className="lg:col-span-1 space-y-4">
+                      <div className="lg:col-span-1 space-y-3 sm:space-y-4">
                         <div>
-                          <h4 className="text-white font-semibold mb-3 flex items-center">
-                            <Variable className="h-4 w-4 mr-2 text-purple-400" />
+                          <h4 className="text-white font-semibold text-sm sm:text-base mb-2 sm:mb-3 flex items-center">
+                            <Variable className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-purple-400" />
                             Template Variables
                           </h4>
-                          <div className="flex flex-wrap gap-1.5">
+                          <div className="flex flex-wrap gap-1 sm:gap-1.5">
                             {template.variables.map((varName) => (
                               <Badge key={varName} variant="outline" className="bg-purple-500/20 border-purple-500/30 text-purple-300 text-xs">
                                 {`{{${varName}}}`}
@@ -1400,21 +1376,21 @@ export default function EmailTemplatesPage() {
                         </div>
                         
                         <div>
-                          <h4 className="text-white font-semibold mb-2 flex items-center">
-                            <Mail className="h-4 w-4 mr-2 text-blue-400" />
+                          <h4 className="text-white font-semibold text-sm sm:text-base mb-1 sm:mb-2 flex items-center">
+                            <Mail className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-blue-400" />
                             Subject Line
                           </h4>
-                          <p className="text-gray-300 text-sm bg-slate-700/50 p-3 rounded-lg font-mono">
+                          <p className="text-gray-300 text-xs sm:text-sm bg-slate-700/50 p-2 sm:p-3 rounded-lg font-mono overflow-x-auto whitespace-pre-wrap">
                             {template.subject}
                           </p>
                         </div>
 
                         <div>
-                          <h4 className="text-white font-semibold mb-2 flex items-center">
-                            <FileText className="h-4 w-4 mr-2 text-green-400" />
+                          <h4 className="text-white font-semibold text-sm sm:text-base mb-1 sm:mb-2 flex items-center">
+                            <FileText className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-green-400" />
                             Template Details
                           </h4>
-                          <div className="space-y-2 text-sm">
+                          <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm">
                             <div className="flex justify-between">
                               <span className="text-gray-400">Category:</span>
                               <span className="text-gray-300">{template.category}</span>
@@ -1425,7 +1401,7 @@ export default function EmailTemplatesPage() {
                             </div>
                             <div className="flex justify-between">
                               <span className="text-gray-400">Template ID:</span>
-                              <span className="text-gray-300 font-mono text-xs">{template.id}</span>
+                              <span className="text-gray-300 font-mono text-xs truncate max-w-[120px] sm:max-w-none">{template.id}</span>
                             </div>
                           </div>
                         </div>
@@ -1433,24 +1409,24 @@ export default function EmailTemplatesPage() {
 
                       {/* Right Column - Large Preview */}
                       <div className="lg:col-span-2">
-                        <h4 className="text-white font-semibold mb-3 flex items-center">
-                          <Eye className="h-4 w-4 mr-2 text-yellow-400" />
+                        <h4 className="text-white font-semibold text-sm sm:text-base mb-2 sm:mb-3 flex items-center">
+                          <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-yellow-400" />
                           Live Preview
                         </h4>
-                        <div className="bg-white rounded-lg shadow-xl overflow-hidden border-2 border-slate-600">
+                        <div className="bg-white rounded-lg shadow-xl overflow-hidden border border-slate-600">
                           <div 
-                            className="p-6 text-black w-full"
+                            className="p-3 sm:p-6 text-black w-full"
                             style={{ 
-                              fontSize: '12px',
+                              fontSize: '10px',
                               lineHeight: '1.3',
-                              transform: 'scale(0.8)',
+                              transform: 'scale(0.7)',
                               transformOrigin: 'top left',
-                              width: '125%'
+                              width: '142%'
                             }}
                             dangerouslySetInnerHTML={{ __html: renderTemplatePreview(template.html, template.variables) }}
                           />
                         </div>
-                        <p className="text-gray-400 text-xs mt-2 text-center">
+                        <p className="text-gray-400 text-xs mt-1 sm:mt-2 text-center">
                           Preview shows sample data. Customize variables when using the template.
                         </p>
                       </div>
@@ -1479,13 +1455,13 @@ export default function EmailTemplatesPage() {
 
             {/* Filters */}
             <Card className="bg-slate-800/50 border-slate-700">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center space-x-2">
-                  <Filter className="h-5 w-5 text-purple-400" />
+              <CardHeader className="p-4 sm:p-6">
+                <CardTitle className="text-white flex items-center space-x-2 text-base sm:text-lg">
+                  <Filter className="h-4 w-4 sm:h-5 sm:w-5 text-purple-400" />
                   <span>Filters</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 p-4 sm:p-6">
                 {/* Search */}
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -1493,15 +1469,15 @@ export default function EmailTemplatesPage() {
                     placeholder="Search by email, subject, or content..."
                     value={searchTermHistory}
                     onChange={(e) => setSearchTermHistory(e.target.value)}
-                    className="pl-10 bg-slate-700 border-slate-600 text-white"
+                    className="pl-10 bg-slate-700 border-slate-600 text-white h-10 sm:h-12 text-sm sm:text-base"
                   />
                 </div>
 
                 {/* Filter Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                   {/* Status Filter */}
                   <div className="space-y-2">
-                    <Label className="text-gray-300">Status</Label>
+                    <Label className="text-gray-300 text-sm sm:text-base">Status</Label>
                     <Select value={statusFilter} onValueChange={setStatusFilter}>
                       <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
                         <SelectValue placeholder="All Statuses" />
@@ -1740,7 +1716,7 @@ export default function EmailTemplatesPage() {
                                 size="sm"
                                 onClick={() => {
                                   // Show email content in a modal or expand
-                                  console.log('Email content:', email.content);
+                                  showToast('info', 'Email Content', 'Email content preview functionality coming soon');
                                 }}
                                 className="border-slate-600 text-gray-300 hover:bg-slate-700"
                               >
@@ -2052,7 +2028,7 @@ export default function EmailTemplatesPage() {
                                 size="sm"
                                 onClick={() => {
                                   // Show email content in a modal or expand
-                                  console.log('Email content:', email.content);
+                                  showToast('info', 'Email Content', 'Email content preview functionality coming soon');
                                 }}
                                 className="border-slate-600 text-gray-300 hover:bg-slate-700"
                               >

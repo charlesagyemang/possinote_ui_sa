@@ -639,16 +639,16 @@ export default function ScheduleEmailPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-teal-900 to-emerald-900 p-6">
-      <div className="max-w-6xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-teal-900 to-emerald-900 p-3 sm:p-6">
+      <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Schedule Email</h1>
-            <p className="text-gray-400">Schedule emails for future delivery and manage scheduled emails</p>
+        <div className="flex flex-col sm:flex-row items-center sm:items-center justify-between gap-3 sm:gap-0">
+          <div className="text-center sm:text-left">
+            <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1 sm:mb-2">Schedule Email</h1>
+            <p className="text-sm sm:text-base text-gray-400">Schedule emails for future delivery and manage scheduled emails</p>
           </div>
           <div className="flex items-center space-x-2">
-            <Clock className="h-8 w-8 text-purple-400" />
+            <Clock className="h-6 w-6 sm:h-8 sm:w-8 text-purple-400" />
           </div>
         </div>
 
@@ -669,20 +669,25 @@ export default function ScheduleEmailPage() {
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 bg-slate-800/50">
-            <TabsTrigger value="schedule-single" className="data-[state=active]:bg-purple-600">
-              <Mail className="h-4 w-4 mr-2" />
-              Schedule Single
-            </TabsTrigger>
-            <TabsTrigger value="schedule-bulk" className="data-[state=active]:bg-purple-600">
-              <Users className="h-4 w-4 mr-2" />
-              Schedule Bulk
-            </TabsTrigger>
-            <TabsTrigger value="scheduled" className="data-[state=active]:bg-purple-600">
-              <Clock className="h-4 w-4 mr-2" />
-              Scheduled Emails
-            </TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto">
+            <TabsList className="w-full min-w-max sm:grid sm:grid-cols-3 bg-slate-800/50">
+              <TabsTrigger value="schedule-single" className="data-[state=active]:bg-purple-600 flex-shrink-0 px-2 sm:px-4">
+                <Mail className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Schedule Single</span>
+                <span className="sm:hidden ml-1">Single</span>
+              </TabsTrigger>
+              <TabsTrigger value="schedule-bulk" className="data-[state=active]:bg-purple-600 flex-shrink-0 px-2 sm:px-4">
+                <Users className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Schedule Bulk</span>
+                <span className="sm:hidden ml-1">Bulk</span>
+              </TabsTrigger>
+              <TabsTrigger value="scheduled" className="data-[state=active]:bg-purple-600 flex-shrink-0 px-2 sm:px-4">
+                <Clock className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Scheduled Emails</span>
+                <span className="sm:hidden ml-1">History</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Scheduled Emails Tab */}
           <TabsContent value="scheduled" className="space-y-6">
@@ -696,31 +701,31 @@ export default function ScheduleEmailPage() {
 
             {/* Filters */}
             <Card className="bg-slate-800/50 border-slate-700">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center space-x-2">
-                  <Filter className="h-5 w-5 text-purple-400" />
+              <CardHeader className="p-4 sm:p-6">
+                <CardTitle className="text-white flex items-center space-x-2 text-base sm:text-lg">
+                  <Filter className="h-4 w-4 sm:h-5 sm:w-5 text-purple-400" />
                   <span>Filters</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="p-4 sm:p-6 space-y-3 sm:space-y-4">
                 {/* Search */}
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                   <Input
-                    placeholder="Search by email, subject, or content..."
+                    placeholder="Search by email, subject..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 bg-slate-700 border-slate-600 text-white"
+                    className="pl-10 bg-slate-700 border-slate-600 text-white h-9 sm:h-10 text-sm sm:text-base"
                   />
                 </div>
 
                 {/* Filter Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                   {/* Status Filter */}
-                  <div className="space-y-2">
-                    <Label className="text-gray-300">Status</Label>
+                  <div className="space-y-1 sm:space-y-2">
+                    <Label className="text-gray-300 text-sm sm:text-base">Status</Label>
                     <Select value={statusFilter} onValueChange={setStatusFilter}>
-                      <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                      <SelectTrigger className="bg-slate-700 border-slate-600 text-white h-9 sm:h-10 text-sm sm:text-base">
                         <SelectValue placeholder="All Statuses" />
                       </SelectTrigger>
                       <SelectContent className="bg-slate-700 border-slate-600">
@@ -734,10 +739,10 @@ export default function ScheduleEmailPage() {
                   </div>
 
                   {/* Date Filter */}
-                  <div className="space-y-2">
-                    <Label className="text-gray-300">Date Range</Label>
+                  <div className="space-y-1 sm:space-y-2">
+                    <Label className="text-gray-300 text-sm sm:text-base">Date Range</Label>
                     <Select value={dateFilter} onValueChange={setDateFilter}>
-                      <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                      <SelectTrigger className="bg-slate-700 border-slate-600 text-white h-9 sm:h-10 text-sm sm:text-base">
                         <SelectValue placeholder="Select date range" />
                       </SelectTrigger>
                       <SelectContent className="bg-slate-700 border-slate-600">
@@ -752,86 +757,86 @@ export default function ScheduleEmailPage() {
                   </div>
 
                   {/* Email Filter */}
-                  <div className="space-y-2">
-                    <Label className="text-gray-300">Email Address</Label>
+                  <div className="space-y-1 sm:space-y-2">
+                    <Label className="text-gray-300 text-sm sm:text-base">Email Address</Label>
                     <Input
                       placeholder="Filter by email..."
                       value={emailFilter}
                       onChange={(e) => setEmailFilter(e.target.value)}
-                      className="bg-slate-700 border-slate-600 text-white"
+                      className="bg-slate-700 border-slate-600 text-white h-9 sm:h-10 text-sm sm:text-base"
                     />
                   </div>
 
                   {/* Sender Name Filter */}
-                  <div className="space-y-2">
-                    <Label className="text-gray-300">Sender Name</Label>
+                  <div className="space-y-1 sm:space-y-2">
+                    <Label className="text-gray-300 text-sm sm:text-base">Sender Name</Label>
                     <Input
                       placeholder="Filter by sender..."
                       value={senderNameFilter}
                       onChange={(e) => setSenderNameFilter(e.target.value)}
-                      className="bg-slate-700 border-slate-600 text-white"
+                      className="bg-slate-700 border-slate-600 text-white h-9 sm:h-10 text-sm sm:text-base"
                     />
                   </div>
                 </div>
 
                 {/* Subject Filter */}
-                <div className="space-y-2">
-                  <Label className="text-gray-300">Subject</Label>
+                <div className="space-y-1 sm:space-y-2">
+                  <Label className="text-gray-300 text-sm sm:text-base">Subject</Label>
                   <Input
                     placeholder="Filter by subject..."
                     value={subjectFilter}
                     onChange={(e) => setSubjectFilter(e.target.value)}
-                    className="bg-slate-700 border-slate-600 text-white"
+                    className="bg-slate-700 border-slate-600 text-white h-9 sm:h-10 text-sm sm:text-base"
                   />
                 </div>
 
                 {/* Custom Date Range */}
                 {dateFilter === 'custom' && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-gray-300">Start Date</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                    <div className="space-y-1 sm:space-y-2">
+                      <Label className="text-gray-300 text-sm sm:text-base">Start Date</Label>
                       <Input
                         type="date"
                         value={startDate}
                         onChange={(e) => setStartDate(e.target.value)}
-                        className="bg-slate-700 border-slate-600 text-white"
+                        className="bg-slate-700 border-slate-600 text-white h-9 sm:h-10 text-sm sm:text-base"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label className="text-gray-300">End Date</Label>
+                    <div className="space-y-1 sm:space-y-2">
+                      <Label className="text-gray-300 text-sm sm:text-base">End Date</Label>
                       <Input
                         type="date"
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
-                        className="bg-slate-700 border-slate-600 text-white"
+                        className="bg-slate-700 border-slate-600 text-white h-9 sm:h-10 text-sm sm:text-base"
                       />
                     </div>
                   </div>
                 )}
 
                 {/* Action Buttons */}
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-0">
                   <Button
                     onClick={resetFilters}
                     variant="outline"
-                    className="border-slate-600 text-gray-300 hover:bg-slate-700"
+                    className="border-slate-600 text-gray-300 hover:bg-slate-700 w-full sm:w-auto h-9 sm:h-10 text-sm sm:text-base"
                   >
                     Reset Filters
                   </Button>
                   <Button
                     onClick={exportToCSV}
                     disabled={isExporting}
-                    className="bg-purple-600 hover:bg-purple-700"
+                    className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto h-9 sm:h-10 text-sm sm:text-base"
                   >
                     {isExporting ? (
                       <div className="flex items-center space-x-2">
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        <span>Exporting...</span>
+                        <span className="text-sm sm:text-base">Exporting...</span>
                       </div>
                     ) : (
                       <div className="flex items-center space-x-2">
-                        <FileDown className="h-4 w-4" />
-                        <span>Export CSV</span>
+                        <FileDown className="h-3 w-3 sm:h-4 sm:w-4" />
+                        <span className="text-sm sm:text-base">Export CSV</span>
                       </div>
                     )}
                   </Button>

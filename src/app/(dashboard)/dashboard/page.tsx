@@ -244,7 +244,6 @@ export default function UsagePage() {
     }
 
     // Force fresh data fetch - disable caching for now
-    console.log('🔄 Always fetching fresh data (cache disabled)');
     sessionStorage.removeItem('usage_data_cache');
     sessionStorage.removeItem('usage_data_cache_time');
 
@@ -255,12 +254,7 @@ export default function UsagePage() {
       setIsLoading(true);
       setHasError(false);
 
-      // Check network connectivity
-      console.log('🔍 Checking network connectivity...');
-      console.log('🌐 API Base URL:', process.env.NEXT_PUBLIC_API_URL || 'https://notifyapi.possitech.net/api/v1');
-      console.log('🔑 API Token:', localStorage.getItem('api_token') || localStorage.getItem('api_key') ? 'Present' : 'Missing');
-
-      console.log('🚀 Starting API calls...');
+      // Start API calls
       
       const [currentResponse, , creditHistoryResponse] = await Promise.all([
         UsageService.getCurrentUsage(),
@@ -271,18 +265,10 @@ export default function UsagePage() {
         CreditService.getCreditHistory({ per_page: 10 })
       ]);
       
-      console.log('✅ All API calls completed successfully');
-
       setCurrentUsage(currentResponse.data);
-
       setCreditTransactions(creditHistoryResponse.data.transactions || []);
       
-      // Never cache credit/usage data - always fetch fresh for money-related data
-      console.log('💰 Credit data updated - no caching for financial data');
-      
     } catch (error: unknown) {
-      console.error('Failed to fetch usage data:', error);
-      
       // Only retry for 429 errors, and only once
       if (error && typeof error === 'object' && 'response' in error && (error as { response?: { status?: number } }).response?.status === 429 && !isRetry) {
         // Clear any existing timeout
@@ -297,10 +283,7 @@ export default function UsagePage() {
         return;
       }
       
-      // No cache to clear - always fetch fresh data
-      console.log('❌ API error - will retry with fresh data');
-      
-      console.log('⚠️ API calls failed, using fallback data');
+      // Use fallback data when API fails
       // Set fallback data when API fails
       setCurrentUsage({
         sms_credit_balance: 4979.0,
@@ -451,9 +434,8 @@ export default function UsagePage() {
       };
 
       localStorage.setItem('conversion_rates', JSON.stringify(rates));
-      console.log('✅ Conversion rates saved to localStorage:', rates);
     } catch (error) {
-      console.error('Failed to fetch conversion rates:', error);
+      // Failed to fetch conversion rates, will use default rates
     }
   }, []);
 
@@ -509,14 +491,6 @@ export default function UsagePage() {
       });
       localStorage.setItem('local_conversions', JSON.stringify(transactions));
 
-      console.log('✅ Local conversion completed:', {
-        from: convertFromType,
-        to: convertToType,
-        amount: amount,
-        converted: convertedAmount,
-        newSmsBalance,
-        newEmailBalance
-      });
 
       setConvertAmount('');
       setShowConvertModal(false);
@@ -525,36 +499,22 @@ export default function UsagePage() {
       // Sync with server in background (optional)
       setTimeout(async () => {
         try {
-          console.log('🔄 Sending conversion request to server...');
           const requestPayload = {
             from_type: convertFromType,
             to_type: convertToType,
             credits: amount,
             description: `Converting ${convertFromType.toUpperCase()} to ${convertToType.toUpperCase()} credits`
           };
-          console.log('📤 Request payload:', JSON.stringify(requestPayload, null, 2));
-          console.log('🌐 API URL:', `${process.env.NEXT_PUBLIC_API_URL || 'https://notifyapi.possitech.net/api/v1'}/credits/convert`);
           
-          const response = await CreditService.convertCredits(requestPayload);
-          
-          console.log('✅ Server sync completed');
-          console.log('📊 Full API Response:', JSON.stringify(response, null, 2));
-          console.log('📈 New Balances from Server:', response.data?.new_balances);
-          console.log('💱 Conversion Details:', response.data?.conversion_details);
-          console.log('🆔 Transaction ID:', response.data?.transaction_id);
+          await CreditService.convertCredits(requestPayload);
           
         } catch (error) {
-          console.error('❌ Server sync failed, but local transaction completed:', error);
-          console.error('🔍 Error details:', {
-            message: error instanceof Error ? error.message : 'Unknown error',
-            status: (error as { response?: { status?: number } })?.response?.status,
-            data: (error as { response?: { data?: unknown } })?.response?.data
-          });
+          // Server sync failed, but local transaction completed
         }
       }, 1000);
 
     } catch (error) {
-      console.error('Failed to convert credits:', error);
+      // Failed to convert credits
     } finally {
       setIsConverting(false);
     }
@@ -614,8 +574,6 @@ export default function UsagePage() {
         currency: 'GHS',
         ref: reference,
         callback: (response: PaystackResponse) => {
-          console.log('Payment successful:', response);
-          
           // Only call the top-up endpoint if payment is successful
           setIsToppingUp(true);
           
@@ -652,8 +610,8 @@ export default function UsagePage() {
                 // Refresh data after successful top-up
                 setTimeout(() => fetchData(false, true), 1000);
               }
-            }).catch((error) => {
-              console.error('Failed to bulk top up credits after payment:', error);
+            }).catch(() => {
+              // Failed to bulk top up credits after payment
             }).finally(() => {
               setIsToppingUp(false);
             });
@@ -670,20 +628,19 @@ export default function UsagePage() {
                 // Refresh data after successful top-up
                 setTimeout(() => fetchData(false, true), 1000);
               }
-            }).catch((error) => {
-              console.error('Failed to top up credits after payment:', error);
+            }).catch(() => {
+              // Failed to top up credits after payment
             }).finally(() => {
               setIsToppingUp(false);
             });
           }
         },
         onClose: () => {
-          console.log('Payment cancelled by user');
           setIsProcessingPayment(false);
         }
       });
     } catch (error) {
-      console.error('Failed to initialize payment:', error);
+      // Failed to initialize payment
     } finally {
       setIsProcessingPayment(false);
     }
@@ -702,10 +659,7 @@ export default function UsagePage() {
 
 
 
-  // Debug the current usage data
-  console.log('🔍 Current Usage Data:', currentUsage);
-  console.log('🔍 Breakdown Data:', currentUsage?.breakdown);
-  console.log('🔍 Credit Breakdown Data:', currentUsage?.credit_breakdown);
+  // Process the current usage data
 
   // Create breakdown data with better fallbacks
   const breakdownData = (() => {
@@ -752,7 +706,6 @@ export default function UsagePage() {
     return [];
   })();
 
-  console.log('🔍 Final Breakdown Data for Chart:', breakdownData);
 
 
 
@@ -763,14 +716,14 @@ export default function UsagePage() {
         <div className="text-center space-y-4">
           <div className="flex items-center justify-center space-x-3">
             <div className="p-3 bg-gradient-to-r from-teal-500 to-emerald-600 rounded-2xl">
-              <BarChart3 className="h-8 w-8 text-white" />
+              <BarChart3 className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
             </div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+            <h1 className="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
               Usage Analytics
             </h1>
           </div>
-          <p className="text-gray-400 text-lg">Monitor your API usage and costs</p>
-          <div className="flex items-center justify-center space-x-4">
+          <p className="text-gray-400 text-sm sm:text-lg">Monitor your API usage and costs</p>
+          <div className="flex flex-wrap items-center justify-center gap-3 sm:space-x-4">
             <Button
               onClick={() => fetchData(false, true)}
               disabled={isFetching.current}
@@ -789,7 +742,7 @@ export default function UsagePage() {
         </div>
         
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {/* SMS Credit Balance */}
           <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden hover:bg-black/30 transition-all duration-300">
             <CardHeader className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border-b border-white/10">
@@ -821,31 +774,33 @@ export default function UsagePage() {
                   </Button>
                   {parseFloat(String(currentUsage?.sms_credit_balance || 0)) > 0 && (
                     <>
-                      <Button
-                        onClick={() => {
-                          setConvertFromType('sms');
-                          setConvertToType('email');
-                          setShowConvertModal(true);
-                        }}
-                        variant="outline"
-                        className="w-full border-orange-500/30 text-orange-300 hover:bg-orange-500/20"
-                      >
-                        <ArrowUpRight className="h-4 w-4 mr-2" />
-                        Convert Some SMS Credits to Email Credits
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          setConvertFromType('sms');
-                          setConvertToType('email');
-                          setConvertAmount(String(currentUsage?.sms_credit_balance || 0));
-                          setShowConvertModal(true);
-                        }}
-                        variant="outline"
-                        className="w-full border-green-500/30 text-green-300 hover:bg-green-500/20"
-                      >
-                        <ArrowUpRight className="h-4 w-4 mr-2" />
-                        Convert ALL SMS Credits to Email Credits
-                      </Button>
+                        <Button
+                            onClick={() => {
+                              setConvertFromType('sms');
+                              setConvertToType('email');
+                              setShowConvertModal(true);
+                            }}
+                            variant="outline"
+                            className="w-full border-orange-500/30 text-orange-300 hover:bg-orange-500/20"
+                          >
+                            <ArrowUpRight className="h-4 w-4 mr-2" />
+                            <span className="hidden sm:inline">Convert Some SMS Credits to Email Credits</span>
+                            <span className="sm:hidden">Convert to Email</span>
+                          </Button>
+                        <Button
+                            onClick={() => {
+                              setConvertFromType('sms');
+                              setConvertToType('email');
+                              setConvertAmount(String(currentUsage?.sms_credit_balance || 0));
+                              setShowConvertModal(true);
+                            }}
+                            variant="outline"
+                            className="w-full border-green-500/30 text-green-300 hover:bg-green-500/20"
+                          >
+                            <ArrowUpRight className="h-4 w-4 mr-2" />
+                            <span className="hidden sm:inline">Convert ALL SMS Credits to Email Credits</span>
+                            <span className="sm:hidden">Convert All</span>
+                          </Button>
                     </>
                   )}
                 </div>
@@ -884,31 +839,33 @@ export default function UsagePage() {
                   </Button>
                   {parseFloat(String(currentUsage?.email_credit_balance || 0)) > 0 && (
                     <>
-                      <Button
-                        onClick={() => {
-                          setConvertFromType('email');
-                          setConvertToType('sms');
-                          setShowConvertModal(true);
-                        }}
-                        variant="outline"
-                        className="w-full border-blue-500/30 text-blue-300 hover:bg-blue-500/20"
-                      >
-                        <ArrowUpRight className="h-4 w-4 mr-2" />
-                        Convert Some Email Credits to SMS Credits
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          setConvertFromType('email');
-                          setConvertToType('sms');
-                          setConvertAmount(String(currentUsage?.email_credit_balance || 0));
-                          setShowConvertModal(true);
-                        }}
-                        variant="outline"
-                        className="w-full border-green-500/30 text-green-300 hover:bg-green-500/20"
-                      >
-                        <ArrowUpRight className="h-4 w-4 mr-2" />
-                        Convert ALL Email Credits to SMS Credits
-                      </Button>
+                        <Button
+                            onClick={() => {
+                              setConvertFromType('email');
+                              setConvertToType('sms');
+                              setShowConvertModal(true);
+                            }}
+                            variant="outline"
+                            className="w-full border-blue-500/30 text-blue-300 hover:bg-blue-500/20"
+                          >
+                            <ArrowUpRight className="h-4 w-4 mr-2" />
+                            <span className="hidden sm:inline">Convert Some Email Credits to SMS Credits</span>
+                            <span className="sm:hidden">Convert to SMS</span>
+                          </Button>
+                        <Button
+                            onClick={() => {
+                              setConvertFromType('email');
+                              setConvertToType('sms');
+                              setConvertAmount(String(currentUsage?.email_credit_balance || 0));
+                              setShowConvertModal(true);
+                            }}
+                            variant="outline"
+                            className="w-full border-green-500/30 text-green-300 hover:bg-green-500/20"
+                          >
+                            <ArrowUpRight className="h-4 w-4 mr-2" />
+                            <span className="hidden sm:inline">Convert ALL Email Credits to SMS Credits</span>
+                            <span className="sm:hidden">Convert All</span>
+                          </Button>
                     </>
                   )}
                 </div>
@@ -963,7 +920,7 @@ export default function UsagePage() {
 
 
         {/* Additional Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
           {/* Monthly Quota Usage */}
           <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden hover:bg-black/30 transition-all duration-300">
             <CardHeader className="bg-gradient-to-r from-purple-500/10 to-indigo-500/10 border-b border-white/10">
@@ -1153,15 +1110,15 @@ export default function UsagePage() {
             </CardHeader>
             <CardContent className="p-6">
             {creditTransactions.length === 0 ? (
-              <div className="text-center py-8">
+                <div className="text-center py-4 sm:py-8">
                 <p className="text-gray-400">No transactions found</p>
               </div>
             ) : (
               <div className="space-y-4">
                 {creditTransactions.map((transaction: CreditTransaction) => (
-                  <div key={transaction.id} className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg border border-gray-700">
-                    <div className="flex items-center space-x-4">
-                      <div className={`p-2 rounded-lg ${
+                  <div key={transaction.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 bg-gray-800/50 rounded-lg border border-gray-700 gap-3">
+                    <div className="flex items-center space-x-3">
+                      <div className={`p-2 rounded-lg flex-shrink-0 ${
                         transaction.transaction_type === 'top_up' ? 'bg-green-500/20' :
                         transaction.transaction_type === 'sms_usage' ? 'bg-red-500/20' :
                         transaction.transaction_type === 'email_usage' ? 'bg-orange-500/20' :
@@ -1180,14 +1137,14 @@ export default function UsagePage() {
                           <CreditCard className="h-4 w-4 text-purple-400" />
                         )}
                       </div>
-                      <div>
-                        <p className="text-white font-medium">{transaction.description}</p>
-                        <p className="text-gray-400 text-sm">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-white font-medium text-sm sm:text-base truncate">{transaction.description}</p>
+                        <p className="text-gray-400 text-xs sm:text-sm">
                           {new Date(transaction.created_at).toLocaleString()}
                         </p>
                       </div>
                     </div>
-                    <div className={`text-lg font-bold ${
+                    <div className={`text-base sm:text-lg font-bold flex-shrink-0 ${
                       transaction.transaction_type === 'top_up' || transaction.transaction_type === 'refund' || transaction.transaction_type === 'migration_credit' ? 'text-green-400' :
                       'text-red-400'
                     }`}>
@@ -1203,7 +1160,7 @@ export default function UsagePage() {
         {/* Convert Credits Modal */}
         {showConvertModal && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-md">
+            <div className="bg-gray-900 border border-gray-700 rounded-2xl p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
               <h3 className="text-xl font-bold text-white mb-4">
                 Convert {convertFromType.toUpperCase()} Credits to {convertToType.toUpperCase()} Credits
                 {convertAmount === String(currentUsage?.[`${convertFromType}_credit_balance`] || 0) && (
@@ -1310,13 +1267,14 @@ export default function UsagePage() {
                   >
                     Cancel
                   </Button>
-                  <Button
-                    onClick={handleConvert}
-                    disabled={isConverting || !convertAmount || parseFloat(convertAmount) <= 0 || !conversionPreview?.can_convert}
-                    className="flex-1 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700"
-                  >
-                    {isConverting ? 'Converting...' : 'Convert Credits'}
-                  </Button>
+                          <Button
+                            onClick={handleConvert}
+                            disabled={isConverting || !convertAmount || parseFloat(convertAmount) <= 0 || !conversionPreview?.can_convert}
+                            className="flex-1 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700"
+                          >
+                            {isConverting ? 'Converting...' : <span className="sm:hidden">Convert</span>}
+                            {isConverting ? '' : <span className="hidden sm:inline">Convert Credits</span>}
+                          </Button>
                 </div>
               </div>
             </div>
@@ -1326,7 +1284,7 @@ export default function UsagePage() {
         {/* SMS Bundle Selection Modal */}
         {showSmsBundleModal && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="bg-gray-900 border border-gray-700 rounded-2xl p-4 sm:p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
               <h3 className="text-xl font-bold text-white mb-6 text-center">Choose Your SMS Bundle</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                 {smsBundles.map((bundle) => {
@@ -1385,7 +1343,7 @@ export default function UsagePage() {
         {/* Email Bundle Selection Modal */}
         {showEmailBundleModal && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="bg-gray-900 border border-gray-700 rounded-2xl p-4 sm:p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
               <h3 className="text-xl font-bold text-white mb-6 text-center">Choose Your Email Bundle</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                 {emailBundles.map((bundle) => {
@@ -1444,9 +1402,9 @@ export default function UsagePage() {
         {/* Bundle Selection Modal */}
         {showBundleModal && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="bg-gray-900 border border-gray-700 rounded-2xl p-4 sm:p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
               <h3 className="text-xl font-bold text-white mb-6 text-center">Choose Your Bundle</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-6">
                 {predefinedBundles.map((bundle) => {
                   const smsCost = bundle.sms * parseFloat(process.env.NEXT_PUBLIC_SMS_CREDIT_RATE || '0.07');
                   const emailCost = bundle.email * parseFloat(process.env.NEXT_PUBLIC_EMAIL_CREDIT_RATE || '0.02');
@@ -1506,7 +1464,7 @@ export default function UsagePage() {
         {/* Top Up Modal */}
         {showTopUpModal && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-md">
+            <div className="bg-gray-900 border border-gray-700 rounded-2xl p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
               <h3 className="text-xl font-bold text-white mb-4">
                 {topUpCreditType === 'bulk' ? 'Bundle Top-up' : `Top Up ${topUpCreditType.charAt(0).toUpperCase() + topUpCreditType.slice(1)} Credits`}
               </h3>

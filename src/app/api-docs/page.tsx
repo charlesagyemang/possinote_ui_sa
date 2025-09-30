@@ -1820,24 +1820,32 @@ try {
     <div className="h-screen bg-gradient-to-br from-slate-900 via-teal-900 to-emerald-900 flex flex-col">
       {/* Fixed Header */}
       <div className="border-b border-slate-700 bg-slate-800/50 flex-shrink-0">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-gradient-to-r from-teal-500 to-emerald-600 rounded-xl">
-                <BookOpen className="h-6 w-6 text-white" />
+        <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0">
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              <div className="p-1.5 sm:p-2 bg-gradient-to-r from-teal-500 to-emerald-600 rounded-lg sm:rounded-xl">
+                <BookOpen className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
                   PossiNote API
                 </h1>
-                <p className="text-sm text-gray-400">Documentation</p>
+                <p className="text-xs sm:text-sm text-gray-400">Documentation</p>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              <Link href="/dashboard">
+                <Button variant="outline" className="border-white/20 text-white hover:bg-white/10 h-9 sm:h-10 px-2 sm:px-4">
+                  <ArrowRight className="h-4 w-4 mr-1 sm:mr-2 rotate-180" />
+                  <span className="hidden sm:inline">Back to Dashboard</span>
+                  <span className="sm:hidden">Back</span>
+                </Button>
+              </Link>
               <Link href="/pricing">
-                <Button variant="outline" className="border-white/20 text-white hover:bg-white/10">
-                  Get Started
-                  <ArrowRight className="h-4 w-4 ml-2" />
+                <Button variant="outline" className="border-white/20 text-white hover:bg-white/10 h-9 sm:h-10 px-2 sm:px-4">
+                  <span className="hidden sm:inline">Get Started</span>
+                  <span className="sm:hidden">Start</span>
+                  <ArrowRight className="h-4 w-4 ml-1 sm:ml-2" />
                 </Button>
               </Link>
             </div>
@@ -1847,10 +1855,10 @@ try {
 
       {/* Main Content Area */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Fixed Sidebar */}
-        <div className="w-64 bg-slate-800/50 border-r border-slate-700 flex-shrink-0">
-          <nav className="p-6 h-full overflow-y-auto">
-            <ul className="space-y-2">
+        {/* Fixed Sidebar - Hidden on mobile, visible on larger screens */}
+        <div className="hidden md:block w-64 bg-slate-800/50 border-r border-slate-700 flex-shrink-0">
+          <nav className="p-4 sm:p-6 h-full overflow-y-auto">
+            <ul className="space-y-1 sm:space-y-2">
               {navigationItems.map((item) => {
                 const Icon = item.icon;
                 const hasSubItems = 'subItems' in item;
@@ -1916,9 +1924,35 @@ try {
           </nav>
         </div>
 
+        {/* Mobile Navigation Dropdown */}
+        <div className="md:hidden w-full bg-slate-800/80 border-b border-slate-700 px-4 py-3">
+          <div className="flex items-center justify-between">
+            <label htmlFor="section-select" className="text-sm font-medium text-gray-300">
+              Navigate to:
+            </label>
+            <select
+              id="section-select"
+              value={activeSection}
+              onChange={(e) => setActiveSection(e.target.value)}
+              className="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 p-2 w-48"
+            >
+              {navigationItems.flatMap((item) => [
+                <option key={item.id} value={item.id}>
+                  {item.label}
+                </option>,
+                ...(item.subItems?.map((subItem) => (
+                  <option key={subItem.id} value={subItem.id}>
+                    ↳ {subItem.label}
+                  </option>
+                )) || [])
+              ])}
+            </select>
+          </div>
+        </div>
+
         {/* Scrollable Main Content */}
         <div className="flex-1 overflow-y-auto">
-          <div className="p-8">
+          <div className="p-4 sm:p-6 md:p-8">
             <div className="max-w-4xl">
               {renderContent()}
             </div>

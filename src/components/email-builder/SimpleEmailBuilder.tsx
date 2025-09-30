@@ -271,97 +271,100 @@ export default function SimpleEmailBuilder({ initialTemplate, onSave, onSend }: 
   const { html: previewHTML, subject: previewSubject } = renderPreviewHTML();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-teal-900 to-emerald-900 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-teal-900 to-emerald-900 p-3 sm:p-6">
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:space-x-4 w-full sm:w-auto">
             <Button
               variant="outline"
               onClick={() => router.push('/email-templates')}
-              className="border-slate-600 text-gray-300 hover:bg-slate-700"
+              className="border-slate-600 text-gray-300 hover:bg-slate-700 w-full sm:w-auto"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Templates
+              <span className="hidden sm:inline">Back to Templates</span>
+              <span className="sm:hidden">Back</span>
             </Button>
-            <div>
-              <h1 className="text-3xl font-bold text-white mb-2">Simple Email Template Builder</h1>
-              <p className="text-gray-400">Create email templates with HTML and variables</p>
+            <div className="w-full sm:w-auto">
+              <h1 className="text-xl sm:text-3xl font-bold text-white mb-1 sm:mb-2">Email Template Builder</h1>
+              <p className="text-sm sm:text-base text-gray-400">Create email templates with HTML and variables</p>
             </div>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <Button
               onClick={saveTemplate}
               disabled={isLoading}
-              className="bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700"
+              className="bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 flex-1 sm:flex-auto"
             >
-              <Save className="h-4 w-4 mr-2" />
-              Save Template
+              <Save className="h-4 w-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Save Template</span>
+              <span className="sm:hidden">Save</span>
             </Button>
             {onSend && (
               <Button
                 onClick={sendEmail}
                 disabled={isLoading}
-                className="bg-green-600 hover:bg-green-700"
+                className="bg-green-600 hover:bg-green-700 flex-1 sm:flex-auto"
               >
-                <Send className="h-4 w-4 mr-2" />
-                Send Email
+                <Send className="h-4 w-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Send Email</span>
+                <span className="sm:hidden">Send</span>
               </Button>
             )}
           </div>
         </div>
 
         {/* Main Content */}
-        <div className="grid grid-cols-12 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
           {/* Left Side - Editor */}
-          <div className="col-span-7">
+          <div className="lg:col-span-7">
             <Tabs defaultValue="editor" className="space-y-4">
               <TabsList className="grid w-full grid-cols-2 bg-slate-800/50">
-                <TabsTrigger value="editor" className="data-[state=active]:bg-gradient-to-r from-teal-600 to-emerald-600">
-                  <Code className="h-4 w-4 mr-2" />
-                  Editor
+                <TabsTrigger value="editor" className="data-[state=active]:bg-gradient-to-r from-teal-600 to-emerald-600 py-2 sm:py-3">
+                  <Code className="h-4 w-4 mr-1 sm:mr-2" />
+                  <span>Editor</span>
                 </TabsTrigger>
-                <TabsTrigger value="preview" className="data-[state=active]:bg-gradient-to-r from-teal-600 to-emerald-600">
-                  <Eye className="h-4 w-4 mr-2" />
-                  Preview
+                <TabsTrigger value="preview" className="data-[state=active]:bg-gradient-to-r from-teal-600 to-emerald-600 py-2 sm:py-3">
+                  <Eye className="h-4 w-4 mr-1 sm:mr-2" />
+                  <span>Preview</span>
                 </TabsTrigger>
               </TabsList>
 
               <TabsContent value="editor" className="space-y-4">
                 {/* Template Info */}
                 <Card className="bg-slate-800/50 border-slate-700">
-                  <CardHeader>
-                    <CardTitle className="text-white">Template Information</CardTitle>
+                  <CardHeader className="p-4 sm:p-6">
+                    <CardTitle className="text-white text-base sm:text-lg">Template Information</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                  <CardContent className="p-4 sm:p-6 space-y-3 sm:space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                       <div>
-                        <Label htmlFor="template-name" className="text-gray-300">Template Name</Label>
+                        <Label htmlFor="template-name" className="text-gray-300 text-sm sm:text-base">Template Name</Label>
                         <Input
                           id="template-name"
                           value={template.name}
                           onChange={(e) => setTemplate(prev => ({ ...prev, name: e.target.value }))}
-                          className="bg-slate-700 border-slate-600 text-white"
+                          className="bg-slate-700 border-slate-600 text-white h-9 sm:h-10 mt-1 sm:mt-2 text-sm sm:text-base"
                         />
                       </div>
                       <div>
-                        <Label htmlFor="template-subject" className="text-gray-300">Email Subject</Label>
+                        <Label htmlFor="template-subject" className="text-gray-300 text-sm sm:text-base">Email Subject</Label>
                         <Input
                           id="template-subject"
                           value={template.subject}
                           onChange={(e) => setTemplate(prev => ({ ...prev, subject: e.target.value }))}
                           placeholder="Welcome {{name}} to {{company}}!"
-                          className="bg-slate-700 border-slate-600 text-white"
+                          className="bg-slate-700 border-slate-600 text-white h-9 sm:h-10 mt-1 sm:mt-2 text-sm sm:text-base"
                         />
                       </div>
                     </div>
                     <div>
-                      <Label htmlFor="template-description" className="text-gray-300">Description</Label>
+                      <Label htmlFor="template-description" className="text-gray-300 text-sm sm:text-base">Description</Label>
                       <Textarea
                         id="template-description"
                         value={template.description}
                         onChange={(e) => setTemplate(prev => ({ ...prev, description: e.target.value }))}
-                        className="bg-slate-700 border-slate-600 text-white"
+                        className="bg-slate-700 border-slate-600 text-white mt-1 sm:mt-2 text-sm sm:text-base"
                         rows={2}
                       />
                     </div>
@@ -370,69 +373,70 @@ export default function SimpleEmailBuilder({ initialTemplate, onSave, onSend }: 
 
                 {/* HTML Editor */}
                 <Card className="bg-slate-800/50 border-slate-700">
-                  <CardHeader>
-                    <CardTitle className="text-white flex items-center justify-between">
+                  <CardHeader className="p-4 sm:p-6">
+                    <CardTitle className="text-white flex items-center justify-between text-base sm:text-lg">
                       <span>HTML Content</span>
                       <div className="flex items-center gap-2">
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={formatCurrentHTML}
-                          className="border-slate-600 text-gray-300 hover:bg-slate-700"
+                          className="border-slate-600 text-gray-300 hover:bg-slate-700 h-8 w-8 p-0"
                           title="Format HTML"
                         >
-                          <AlignLeft className="h-4 w-4" />
+                          <AlignLeft className="h-3 w-3 sm:h-4 sm:w-4" />
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={copyHTML}
-                          className="border-slate-600 text-gray-300 hover:bg-slate-700"
+                          className="border-slate-600 text-gray-300 hover:bg-slate-700 h-8 w-8 p-0"
                           title="Copy HTML"
                         >
-                          {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                          {copied ? <Check className="h-3 w-3 sm:h-4 sm:w-4" /> : <Copy className="h-3 w-3 sm:h-4 sm:w-4" />}
                         </Button>
                       </div>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="p-4 sm:p-6">
                     <Textarea
                       value={template.html}
                       onChange={(e) => setTemplate(prev => ({ ...prev, html: e.target.value }))}
                       placeholder={`<h1>Welcome {{name}}!</h1>
 <p>We're excited to have you at {{company}}.</p>
 <p>Your email: {{email}}</p>`}
-                      className="bg-slate-700 border-slate-600 text-white font-mono"
-                      rows={15}
+                      className="bg-slate-700 border-slate-600 text-white font-mono text-xs sm:text-sm"
+                      rows={12}
                     />
-                                         <p className="text-sm text-gray-400 mt-2">
-                       Use {'{{variable_name}}'} syntax for dynamic content
-                     </p>
+                    <p className="text-xs sm:text-sm text-gray-400 mt-2">
+                      Use {'{{variable_name}}'} syntax for dynamic content
+                    </p>
                   </CardContent>
                 </Card>
               </TabsContent>
 
               <TabsContent value="preview">
                 <Card className="bg-slate-800/50 border-slate-700">
-                  <CardHeader>
-                    <CardTitle className="text-white">Email Preview</CardTitle>
+                  <CardHeader className="p-4 sm:p-6">
+                    <CardTitle className="text-white text-base sm:text-lg">Email Preview</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="space-y-3 sm:space-y-4">
                       {/* Subject Preview */}
                       <div>
-                        <Label className="text-gray-300">Subject:</Label>
-                        <div className="mt-2 p-3 bg-slate-700 rounded-lg border border-slate-600">
-                          <p className="text-white">{previewSubject}</p>
+                        <Label className="text-gray-300 text-sm sm:text-base">Subject:</Label>
+                        <div className="mt-1 sm:mt-2 p-2 sm:p-3 bg-slate-700 rounded-lg border border-slate-600">
+                          <p className="text-white text-sm sm:text-base break-words">{previewSubject}</p>
                         </div>
                       </div>
 
                       {/* HTML Preview */}
                       <div>
-                        <Label className="text-gray-300">Content:</Label>
-                        <div className="mt-2 bg-white rounded-lg shadow-lg overflow-hidden">
+                        <Label className="text-gray-300 text-sm sm:text-base">Content:</Label>
+                        <div className="mt-1 sm:mt-2 bg-white rounded-lg shadow-lg overflow-hidden">
                           <div 
-                            className="p-6 text-black"
+                            className="p-3 sm:p-6 text-black"
+                            style={{ fontSize: '90%' }}
                             dangerouslySetInnerHTML={{ __html: previewHTML }}
                           />
                         </div>
@@ -445,49 +449,49 @@ export default function SimpleEmailBuilder({ initialTemplate, onSave, onSend }: 
           </div>
 
           {/* Right Side - Variables */}
-          <div className="col-span-5">
+          <div className="lg:col-span-5">
             <div className="space-y-4">
               {/* Variables Panel */}
               <Card className="bg-slate-800/50 border-slate-700">
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center justify-between">
+                <CardHeader className="p-4 sm:p-6">
+                  <CardTitle className="text-white flex items-center justify-between text-base sm:text-lg">
                     <span>Template Variables</span>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={addVariable}
-                      className="border-slate-600 text-gray-300 hover:bg-slate-700"
+                      className="border-slate-600 text-gray-300 hover:bg-slate-700 h-8 sm:h-9 text-xs sm:text-sm"
                     >
-                      <Variable className="h-4 w-4 mr-1" />
+                      <Variable className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                       Add
                     </Button>
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-4 sm:p-6">
                   {variables.length === 0 ? (
-                    <div className="text-center py-8 text-gray-400">
-                      <Variable className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                      <p>No variables found</p>
-                      <p className="text-sm">Add {'{{variable_name}}'} to your HTML to see them here</p>
+                    <div className="text-center py-6 sm:py-8 text-gray-400">
+                      <Variable className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-1 sm:mb-2 opacity-50" />
+                      <p className="text-sm sm:text-base">No variables found</p>
+                      <p className="text-xs sm:text-sm">Add {'{{variable_name}}'} to your HTML to see them here</p>
                     </div>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-2 sm:space-y-3">
                       {variables.map((varName) => (
-                        <div key={varName} className="flex items-center space-x-2">
-                          <Badge variant="outline" className="bg-purple-500/20 border-purple-500/30 text-purple-300">
+                        <div key={varName} className="flex items-center gap-2">
+                          <Badge variant="outline" className="bg-purple-500/20 border-purple-500/30 text-purple-300 text-xs whitespace-nowrap overflow-hidden text-ellipsis max-w-[100px] sm:max-w-none">
                             {`{{${varName}}}`}
                           </Badge>
                           <Input
                             value={previewVariables[varName] || ''}
                             onChange={(e) => handleVariableChange(varName, e.target.value)}
                             placeholder={`Value for ${varName}`}
-                            className="bg-slate-700 border-slate-600 text-white text-sm flex-1"
+                            className="bg-slate-700 border-slate-600 text-white text-xs sm:text-sm flex-1 h-8 sm:h-9"
                           />
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => removeVariable(varName)}
-                            className="h-8 w-8 p-0 text-red-400 hover:text-red-300"
+                            className="h-8 w-8 p-0 text-red-400 hover:text-red-300 flex-shrink-0"
                           >
                             ×
                           </Button>
@@ -500,11 +504,11 @@ export default function SimpleEmailBuilder({ initialTemplate, onSave, onSend }: 
 
               {/* Quick Variables */}
               <Card className="bg-slate-800/50 border-slate-700">
-                <CardHeader>
-                  <CardTitle className="text-white text-sm">Quick Variables</CardTitle>
+                <CardHeader className="p-4 sm:p-6">
+                  <CardTitle className="text-white text-xs sm:text-sm">Quick Variables</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-2">
+                <CardContent className="p-4 sm:p-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {['name', 'email', 'company', 'date', 'id'].map((varName) => {
                       const isAdded = varName in previewVariables;
                       
@@ -522,13 +526,13 @@ export default function SimpleEmailBuilder({ initialTemplate, onSave, onSend }: 
                             }
                           }}
                           disabled={isAdded}
-                          className={`justify-start h-auto p-2 text-xs ${
+                          className={`justify-start h-auto p-1 sm:p-2 text-xs ${
                             isAdded 
                               ? 'border-green-500/30 text-green-400 bg-green-500/10' 
                               : 'border-slate-600 text-gray-300 hover:bg-slate-700'
                           }`}
                         >
-                          <Variable className="h-3 w-3 mr-1" />
+                          <Variable className="h-2 w-2 sm:h-3 sm:w-3 mr-1" />
                           {varName}
                         </Button>
                       );
@@ -539,12 +543,12 @@ export default function SimpleEmailBuilder({ initialTemplate, onSave, onSend }: 
 
               {/* HTML Output */}
               <Card className="bg-slate-800/50 border-slate-700">
-                <CardHeader>
-                  <CardTitle className="text-white text-sm">Generated HTML</CardTitle>
+                <CardHeader className="p-4 sm:p-6">
+                  <CardTitle className="text-white text-xs sm:text-sm">Generated HTML</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="bg-slate-900 rounded-lg p-4 border border-slate-600 max-h-64 overflow-y-auto">
-                    <pre className="text-xs text-gray-300 whitespace-pre-wrap">
+                <CardContent className="p-4 sm:p-6">
+                  <div className="bg-slate-900 rounded-lg p-3 sm:p-4 border border-slate-600 max-h-48 sm:max-h-64 overflow-y-auto">
+                    <pre className="text-[10px] sm:text-xs text-gray-300 whitespace-pre-wrap">
                       {previewHTML || '<!-- No HTML generated yet -->'}
                     </pre>
                   </div>
