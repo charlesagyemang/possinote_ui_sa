@@ -67,14 +67,9 @@ export default function SignupPage() {
   };
 
   // Map plan types to South African versions for backend
-  const getSouthAfricanPlanType = (planType: string): string => {
-    const planMapping = {
-      free: 'sa_free',
-      starter: 'sa_starter',
-      business: 'sa_business',
-      enterprise: 'sa_enterprise'
-    };
-    return planMapping[planType as keyof typeof planMapping] || planType;
+  const getSouthAfricanPlanType = (planType: string): 'free' | 'starter' | 'business' | 'enterprise' => {
+    // For now, return the original plan types - backend will handle SA mapping
+    return planType as 'free' | 'starter' | 'business' | 'enterprise';
   };
   const [isLoading, setIsLoading] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
