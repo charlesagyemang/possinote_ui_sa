@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -47,6 +48,13 @@ interface FileInfo {
 }
 
 export default function SmsPage() {
+  const router = useRouter();
+  
+  // Redirect to forbidden page
+  useEffect(() => {
+    router.push('/dashboard?error=sms_forbidden');
+  }, [router]);
+
   const { showPaymentRequired } = usePaymentRequired();
   const [isLoading, setIsLoading] = useState(false);
   const [mode, setMode] = useState<'single' | 'bulk' | 'history' | 'senders'>('senders');
@@ -666,71 +674,67 @@ export default function SmsPage() {
         {/* Header */}
         <div className="text-center space-y-4">
           <div className="flex items-center justify-center space-x-3">
-            <div className="p-2 sm:p-3 bg-gradient-to-r from-teal-500 to-emerald-600 rounded-2xl">
-              <MessageSquare className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
+            <div className="p-3 bg-gradient-to-r from-teal-500 to-emerald-600 rounded-2xl">
+              <MessageSquare className="h-8 w-8 text-white" />
             </div>
-            <h1 className="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
               SMS Dashboard
             </h1>
           </div>
-          <p className="text-gray-400 text-sm sm:text-lg">Powerful SMS messaging with advanced bulk capabilities</p>
+          <p className="text-gray-400 text-lg">Powerful SMS messaging with advanced bulk capabilities</p>
         </div>
 
         {/* Mode Toggle */}
         <div className="flex justify-center">
-          <div className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-2xl p-2 w-full max-w-full overflow-x-auto">
-            <div className="flex flex-nowrap md:flex-wrap md:space-x-2 min-w-max md:min-w-0">
+          <div className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-2xl p-2">
+            <div className="flex space-x-2">
               <Button
                 variant={mode === 'senders' ? 'default' : 'ghost'}
                 onClick={() => setMode('senders')}
-                className={`rounded-xl px-3 sm:px-6 py-3 transition-all duration-300 flex-shrink-0 ${
+                className={`rounded-xl px-6 py-3 transition-all duration-300 ${
                   mode === 'senders'
                     ? 'bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-lg shadow-orange-500/25' 
                     : 'text-gray-400 hover:text-white hover:bg-white/10'
                 }`}
               >
-                <CheckCircle className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Sender Management</span>
-                <span className="sm:hidden">Senders</span>
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Sender Management
               </Button>
               <Button
                 variant={mode === 'single' ? 'default' : 'ghost'}
                 onClick={() => setMode('single')}
-                className={`rounded-xl px-3 sm:px-6 py-3 transition-all duration-300 flex-shrink-0 ml-2 md:ml-0 ${
+                className={`rounded-xl px-6 py-3 transition-all duration-300 ${
                   mode === 'single'
                     ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/25' 
                     : 'text-gray-400 hover:text-white hover:bg-white/10'
                 }`}
               >
-                <MessageSquare className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Single SMS</span>
-                <span className="sm:hidden">Single</span>
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Single SMS
               </Button>
               <Button
                 variant={mode === 'bulk' ? 'default' : 'ghost'}
                 onClick={() => setMode('bulk')}
-                className={`rounded-xl px-3 sm:px-6 py-3 transition-all duration-300 flex-shrink-0 ml-2 md:ml-0 ${
+                className={`rounded-xl px-6 py-3 transition-all duration-300 ${
                   mode === 'bulk'
                     ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/25' 
                     : 'text-gray-400 hover:text-white hover:bg-white/10'
                 }`}
               >
-                <Users className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Bulk SMS</span>
-                <span className="sm:hidden">Bulk</span>
+                <Users className="h-4 w-4 mr-2" />
+                Bulk SMS
               </Button>
               <Button
                 variant={mode === 'history' ? 'default' : 'ghost'}
                 onClick={() => setMode('history')}
-                className={`rounded-xl px-3 sm:px-6 py-3 transition-all duration-300 flex-shrink-0 ml-2 md:ml-0 ${
+                className={`rounded-xl px-6 py-3 transition-all duration-300 ${
                   mode === 'history'
                     ? 'bg-gradient-to-r from-teal-500 to-emerald-600 text-white shadow-lg shadow-teal-500/25' 
                     : 'text-gray-400 hover:text-white hover:bg-white/10'
                 }`}
               >
-                <FileText className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">SMS History</span>
-                <span className="sm:hidden">History</span>
+                <FileText className="h-4 w-4 mr-2" />
+                SMS History
               </Button>
             </div>
           </div>
@@ -764,36 +768,36 @@ export default function SmsPage() {
         {mode === 'single' && (
           /* Single SMS Card */
           <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-b border-white/10 p-4 sm:p-6">
-              <CardTitle className="text-white text-xl sm:text-2xl flex items-center space-x-3">
+            <CardHeader className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-b border-white/10">
+              <CardTitle className="text-white text-2xl flex items-center space-x-3">
                 <div className="p-2 bg-blue-500/20 rounded-xl">
-                  <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6 text-blue-400" />
+                  <MessageSquare className="h-6 w-6 text-blue-400" />
                 </div>
                 <span>Send Single SMS</span>
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-4 sm:p-8">
+            <CardContent className="p-8">
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                  <div className="space-y-2 sm:space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-3">
                     <Label htmlFor="to" className="text-gray-300 font-medium">Phone Number</Label>
                     <Input
                       {...form.register('to')}
                       placeholder="+233244123456"
-                      className="bg-black/30 border-white/20 text-white placeholder-gray-400 rounded-xl h-10 sm:h-12 focus:border-blue-500 focus:ring-blue-500/20"
+                      className="bg-black/30 border-white/20 text-white placeholder-gray-400 rounded-xl h-12 focus:border-blue-500 focus:ring-blue-500/20"
                     />
                     {form.formState.errors.to && (
                       <p className="text-red-400 text-sm">{form.formState.errors.to.message}</p>
                     )}
                   </div>
 
-                  <div className="space-y-2 sm:space-y-3">
+                  <div className="space-y-3">
                     <Label htmlFor="sender_id" className="text-gray-300 font-medium">Sender ID</Label>
                     <Select
                       value={form.watch('sender_id')}
                       onValueChange={(value) => form.setValue('sender_id', value)}
                     >
-                      <SelectTrigger className="bg-black/30 border-white/20 text-white rounded-xl h-10 sm:h-12 focus:border-blue-500 focus:ring-blue-500/20">
+                      <SelectTrigger className="bg-black/30 border-white/20 text-white rounded-xl h-12 focus:border-blue-500 focus:ring-blue-500/20">
                         <SelectValue placeholder="Select sender name" />
                       </SelectTrigger>
                       <SelectContent className="bg-gray-800 border-gray-700">
@@ -861,15 +865,15 @@ export default function SmsPage() {
           <div className="space-y-8">
             {/* Simple Bulk SMS */}
             <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden">
-              <CardHeader className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-b border-white/10 p-4 sm:p-6">
-                <CardTitle className="text-white text-xl sm:text-2xl flex items-center space-x-3">
+              <CardHeader className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-b border-white/10">
+                <CardTitle className="text-white text-2xl flex items-center space-x-3">
                   <div className="p-2 bg-green-500/20 rounded-xl">
-                    <Users className="h-5 w-5 sm:h-6 sm:w-6 text-green-400" />
+                    <Users className="h-6 w-6 text-green-400" />
                   </div>
                   <span>Simple Bulk SMS</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-4 sm:p-8">
+              <CardContent className="p-8">
                 <div className="space-y-6">
                   {/* Sender ID selection for simple bulk */}
                   <div className="space-y-3">
@@ -950,15 +954,15 @@ export default function SmsPage() {
 
             {/* Advanced Bulk SMS with CSV */}
             <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden">
-              <CardHeader className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-b border-white/10 p-4 sm:p-6">
-                <CardTitle className="text-white text-xl sm:text-2xl flex items-center space-x-3">
+              <CardHeader className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-b border-white/10">
+                <CardTitle className="text-white text-2xl flex items-center space-x-3">
                   <div className="p-2 bg-purple-500/20 rounded-xl">
-                    <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 text-purple-400" />
+                    <Sparkles className="h-6 w-6 text-purple-400" />
                   </div>
                   <span>Dynamic Bulk SMS</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-4 sm:p-8">
+              <CardContent className="p-8">
                 <div className="space-y-8">
                   {/* File Upload */}
                   <div className="space-y-4">
@@ -1137,17 +1141,17 @@ export default function SmsPage() {
                   {/* Action Buttons */}
                   <div className="space-y-4">
                     {/* Debug info */}
-                    <div className="text-xs text-gray-400 bg-black/20 rounded-lg p-2 overflow-x-auto">
+                    <div className="text-xs text-gray-400 bg-black/20 rounded-lg p-2">
                       <div>Debug Info:</div>
-                      <div>• File: {fileData.length} rows</div>
-                      <div className="truncate">• Columns: {fileHeaders.join(', ')}</div>
-                      <div>• Sender: {selectedBulkSenderId || '✗'}</div>
-                      <div>• Phone col: {phoneColumn || '✗'}</div>
+                      <div>• File loaded: {fileData.length} rows</div>
+                      <div>• Available columns: {fileHeaders.join(', ')}</div>
+                      <div>• Sender ID: {selectedBulkSenderId || '✗'}</div>
+                      <div>• Phone column: {phoneColumn || '✗'}</div>
                       <div>• Template: {templateMessage.trim() ? '✓' : '✗'}</div>
-                      <div>• Ready: {(!fileData.length || !templateMessage.trim() || !phoneColumn || !selectedBulkSenderId) ? 'No' : 'Yes'}</div>
+                      <div>• Button disabled: {(!fileData.length || !templateMessage.trim() || !phoneColumn || !selectedBulkSenderId) ? 'Yes' : 'No'}</div>
                     </div>
                     
-                    <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="flex gap-4">
                       <Button 
                         onClick={() => {
                           console.log('🔘 Preview button clicked!');
@@ -1160,13 +1164,12 @@ export default function SmsPage() {
                           processTemplate();
                         }}
                         disabled={!fileData.length || !templateMessage.trim() || !phoneColumn || !selectedBulkSenderId}
-                        className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl h-10 sm:h-12 text-sm sm:text-lg font-medium shadow-lg shadow-emerald-500/25 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl h-12 text-lg font-medium shadow-lg shadow-emerald-500/25 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <Eye className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
-                        <span className="hidden sm:inline">Preview Messages</span>
-                        <span className="sm:hidden">Preview</span>
+                        <Eye className="h-5 w-5 mr-2" />
+                        Preview Messages
                         {(!fileData.length || !templateMessage.trim() || !phoneColumn || !selectedBulkSenderId) && (
-                          <span className="ml-1 sm:ml-2 text-xs opacity-75 hidden sm:inline">(Upload file, select sender + phone column, and add template)</span>
+                          <span className="ml-2 text-xs opacity-75">(Upload file, select sender + phone column, and add template)</span>
                         )}
                       </Button>
                     
@@ -1174,15 +1177,10 @@ export default function SmsPage() {
                         <Button 
                           onClick={sendAdvancedBulkSms}
                           disabled={isLoading || processedRecipients.length === 0 || !selectedBulkSenderId}
-                          className="flex-1 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white rounded-xl h-10 sm:h-12 text-sm sm:text-lg font-medium shadow-lg shadow-purple-500/25 transition-all duration-300"
+                          className="flex-1 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white rounded-xl h-12 text-lg font-medium shadow-lg shadow-purple-500/25 transition-all duration-300"
                         >
-                          <Send className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
-                          {isLoading ? 'Sending...' : (
-                            <>
-                              <span className="hidden sm:inline">Send to {processedRecipients.length} Recipients</span>
-                              <span className="sm:hidden">Send ({processedRecipients.length})</span>
-                            </>
-                          )}
+                          <Send className="h-5 w-5 mr-2" />
+                          {isLoading ? 'Sending...' : `Send to ${processedRecipients.length} Recipients`}
                         </Button>
                       )}
                     </div>
@@ -1194,16 +1192,16 @@ export default function SmsPage() {
             {/* Message Preview */}
             {showPreview && processedRecipients.length > 0 && (
               <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden">
-                <CardHeader className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-b border-white/10 p-4 sm:p-6">
-                  <CardTitle className="text-white text-xl sm:text-2xl flex items-center space-x-3">
+                <CardHeader className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-b border-white/10">
+                  <CardTitle className="text-white text-2xl flex items-center space-x-3">
                     <div className="p-2 bg-amber-500/20 rounded-xl">
-                      <Target className="h-5 w-5 sm:h-6 sm:w-6 text-amber-400" />
+                      <Target className="h-6 w-6 text-amber-400" />
                     </div>
                     <span>Message Preview</span>
                   </CardTitle>
                   <p className="text-sm text-gray-400">Showing first 5 messages (out of {processedRecipients.length})</p>
                 </CardHeader>
-                <CardContent className="p-4 sm:p-8">
+                <CardContent className="p-8">
                   <div className="space-y-4">
                     {processedRecipients.slice(0, 5).map((recipient, index) => (
                       <div key={index} className="border border-white/10 rounded-2xl p-4 bg-gradient-to-r from-white/5 to-white/10 backdrop-blur-sm">
@@ -1232,15 +1230,15 @@ export default function SmsPage() {
         {mode === 'history' && (
           <div className="space-y-6">
             <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden">
-              <CardHeader className="bg-gradient-to-r from-teal-500/10 to-emerald-500/10 border-b border-white/10 p-4 sm:p-6">
-                <CardTitle className="text-white text-xl sm:text-2xl flex items-center space-x-3">
+              <CardHeader className="bg-gradient-to-r from-teal-500/10 to-emerald-500/10 border-b border-white/10">
+                <CardTitle className="text-white text-2xl flex items-center space-x-3">
                   <div className="p-2 bg-teal-500/20 rounded-xl">
-                    <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-teal-400" />
+                    <FileText className="h-6 w-6 text-teal-400" />
                   </div>
                   <span>SMS History</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-4 sm:p-8">
+              <CardContent className="p-8">
                 {/* Filters */}
                 <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
@@ -1378,17 +1376,17 @@ export default function SmsPage() {
           <div className="space-y-8">
             {/* Sender Management Header */}
             <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden">
-              <CardHeader className="bg-gradient-to-r from-orange-500/10 to-red-500/10 border-b border-white/10 p-4 sm:p-6">
-                <CardTitle className="text-white text-xl sm:text-2xl flex items-center space-x-3">
+              <CardHeader className="bg-gradient-to-r from-orange-500/10 to-red-500/10 border-b border-white/10">
+                <CardTitle className="text-white text-2xl flex items-center space-x-3">
                   <div className="p-2 bg-orange-500/20 rounded-xl">
-                    <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-orange-400" />
+                    <CheckCircle className="h-6 w-6 text-orange-400" />
                   </div>
                   <span>Sender Management</span>
                 </CardTitle>
-                <p className="text-gray-400 text-sm sm:text-base">Create and manage your SMS sender names</p>
+                <p className="text-gray-400">Create and manage your SMS sender names</p>
               </CardHeader>
-              <CardContent className="p-4 sm:p-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
+              <CardContent className="p-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   {/* Create Sender Card */}
                   <Card className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-2xl overflow-hidden">
                     <CardHeader className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-b border-blue-500/20">

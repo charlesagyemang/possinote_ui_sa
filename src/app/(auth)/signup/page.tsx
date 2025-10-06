@@ -18,6 +18,7 @@ import { useSearchParams } from 'next/navigation';
 import { PaystackService, PaystackResponse } from '@/lib/services/paystack';
 import { useToast } from '@/components/ui/toast';
 import { NotificationService } from '@/lib/services/notifications';
+import { EmailValidationService } from '@/lib/services/emailValidation';
 
 const signupSchema = z.object({
   name: z.string()
@@ -28,17 +29,17 @@ const signupSchema = z.object({
     .min(1, 'Email is required'),
   phone: z.string()
     .min(1, 'Phone number is required')
-    .regex(/^\+?[1-9]\d{1,14}$/, 'Phone number must be in international format (e.g., +233244123456)'),
+    .regex(/^\+27[0-9]{9}$/, 'Phone number must be a valid South African number (e.g., +27123456789)'),
   company_name: z.string()
     .min(2, 'Company name must be at least 2 characters')
     .max(100, 'Company name must be less than 100 characters'),
 });
 
 const plans = {
-  free: { name: 'Free', initial_credits: 10, price: '₵0', description: '5 emails, 5 SMS - Perfect for testing' },
-  starter: { name: 'Starter', initial_credits: 2000, price: `₵${process.env.NEXT_PUBLIC_STARTER_PLAN_PRICE || '99'}`, description: '1,000 emails, 1,000 SMS - Great for growing businesses' },
-  business: { name: 'Business', initial_credits: 10000, price: `₵${process.env.NEXT_PUBLIC_BUSINESS_PLAN_PRICE || '399'}`, description: '5,000 emails, 5,000 SMS - For established businesses' },
-  enterprise: { name: 'Enterprise', initial_credits: 20000, price: `₵${process.env.NEXT_PUBLIC_ENTERPRISE_PLAN_PRICE || '799'}`, description: '10,000 emails, 10,000 SMS - For large-scale operations' }
+  free: { name: 'Free', initial_credits: 10, price: 'R0', description: '10 emails - Perfect for testing' },
+  starter: { name: 'Starter', initial_credits: 2000, price: `R${process.env.NEXT_PUBLIC_STARTER_PLAN_PRICE || '99'}`, description: '2,000 emails - Great for growing businesses' },
+  business: { name: 'Business', initial_credits: 10000, price: `R${process.env.NEXT_PUBLIC_BUSINESS_PLAN_PRICE || '399'}`, description: '10,000 emails - For established businesses' },
+  enterprise: { name: 'Enterprise', initial_credits: 20000, price: `R${process.env.NEXT_PUBLIC_ENTERPRISE_PLAN_PRICE || '799'}`, description: '20,000 emails - For large-scale operations' }
 };
 
 export default function SignupPage() {
@@ -64,6 +65,17 @@ export default function SignupPage() {
         return 2000;
     }
   };
+
+  // Map plan types to South African versions for backend
+  const getSouthAfricanPlanType = (planType: string): string => {
+    const planMapping = {
+      free: 'sa_free',
+      starter: 'sa_starter',
+      business: 'sa_business',
+      enterprise: 'sa_enterprise'
+    };
+    return planMapping[planType as keyof typeof planMapping] || planType;
+  };
   const [isLoading, setIsLoading] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [error, setError] = useState('');
@@ -71,6 +83,11 @@ export default function SignupPage() {
   const [apiKey, setApiKey] = useState('');
   const [copied, setCopied] = useState(false);
   const [initialCredits, setInitialCredits] = useState(0);
+  
+  // Email validation states
+  const [isValidatingEmail, setIsValidatingEmail] = useState(false);
+  const [emailValidationStatus, setEmailValidationStatus] = useState<'idle' | 'valid' | 'invalid' | 'error'>('idle');
+  const [emailValidationMessage, setEmailValidationMessage] = useState('');
   
   const form = useForm({
     resolver: zodResolver(signupSchema),
@@ -82,7 +99,43 @@ export default function SignupPage() {
     },
   });
 
+  // Email validation function
+  const validateEmail = async (email: string) => {
+    if (!email || !email.includes('@')) {
+      setEmailValidationStatus('idle');
+      setEmailValidationMessage('');
+      return;
+    }
+
+    setIsValidatingEmail(true);
+    setEmailValidationStatus('idle');
+    setEmailValidationMessage('Validating email...');
+
+    try {
+      const result = await EmailValidationService.validateEmail(email);
+      
+      if (result.success) {
+        setEmailValidationStatus('valid');
+        setEmailValidationMessage('✅ Email is valid and available');
+      } else {
+        setEmailValidationStatus('invalid');
+        setEmailValidationMessage('❌ Email is invalid or already in use');
+      }
+    } catch (error) {
+      setEmailValidationStatus('error');
+      setEmailValidationMessage('⚠️ Could not validate email. Please check your connection.');
+    } finally {
+      setIsValidatingEmail(false);
+    }
+  };
+
   const onSubmit = async (data: z.infer<typeof signupSchema>) => {
+    // Check if email is validated for paid plans
+    if (planType !== 'free' && emailValidationStatus !== 'valid') {
+      setError('Please ensure your email is valid and deliverable before proceeding with payment.');
+      return;
+    }
+
     setIsLoading(true);
     setError('');
     setSuccess(false);
@@ -93,7 +146,7 @@ export default function SignupPage() {
         const response = await AuthService.register({
           customer: {
             ...data,
-            plan_type: planType,
+            plan_type: getSouthAfricanPlanType(planType),
             monthly_limit: getPlanInitialCredits(planType)
           }
         });
@@ -103,12 +156,9 @@ export default function SignupPage() {
           if (response.success) {
             setSuccess(true);
             setApiKey(response.api_key || '');
-            setInitialCredits(response.initial_credits || 0);
+            setInitialCredits(response.initial_credits || getPlanInitialCredits(planType));
             
-            // Store the API key in localStorage
-            localStorage.setItem('api_token', response.api_key || '');
-            
-            // Update auth store
+            // Update auth store first
             const login = useAuthStore.getState().login;
             if (response.customer && response.api_key) {
               login(response.api_key, response.customer as Customer);
@@ -145,6 +195,13 @@ export default function SignupPage() {
             }).catch((error) => {
               console.error('❌ Failed to send welcome notification:', error);
             });
+            
+            // Store the user's API key in localStorage AFTER notifications are sent
+            // This ensures the dashboard will use the user's API key, not the system's
+            setTimeout(() => {
+              localStorage.setItem('api_token', response.api_key || '');
+              console.log('🔑 User API key set in localStorage:', response.api_key ? 'Set' : 'NOT SET');
+            }, 1000); // Small delay to ensure notifications complete
             
             // Redirect to dashboard after 5 seconds
             setTimeout(() => {
@@ -187,8 +244,8 @@ export default function SignupPage() {
       setIsProcessingPayment(true);
       
       const selectedPlan = plans[planType];
-      const amountInCedi = parseFloat(selectedPlan.price.replace('₵', ''));
-      const amountInPesewas = PaystackService.convertToKobo(amountInCedi);
+      const amountInRand = parseFloat(selectedPlan.price.replace('R', ''));
+      const amountInCents = PaystackService.convertToCents(amountInRand);
       const reference = PaystackService.generateReference();
       
       // Make email unique to prevent Paystack spam detection
@@ -197,8 +254,8 @@ export default function SignupPage() {
       await PaystackService.initializePayment({
         key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY!,
         email: uniqueEmail,
-        amount: amountInPesewas,
-        currency: 'GHS',
+        amount: amountInCents,
+        currency: 'ZAR',
         ref: reference,
         callback: (response: PaystackResponse) => {
           console.log('Payment successful:', response);
@@ -207,7 +264,7 @@ export default function SignupPage() {
           AuthService.register({
             customer: {
               ...data,
-              plan_type: planType,
+              plan_type: getSouthAfricanPlanType(planType),
               monthly_limit: getPlanInitialCredits(planType)
             },
             reference: reference
@@ -217,12 +274,9 @@ export default function SignupPage() {
             if (regResponse.success) {
               setSuccess(true);
               setApiKey(regResponse.api_key || '');
-              setInitialCredits(regResponse.initial_credits || 0);
+              setInitialCredits(regResponse.initial_credits || getPlanInitialCredits(planType));
               
-              // Store the API key in localStorage
-              localStorage.setItem('api_token', regResponse.api_key || '');
-              
-              // Update auth store
+              // Update auth store first
               const login = useAuthStore.getState().login;
               if (regResponse.customer && regResponse.api_key) {
                 login(regResponse.api_key, regResponse.customer as Customer);
@@ -256,6 +310,13 @@ export default function SignupPage() {
               }).catch((error) => {
                 console.error('❌ Failed to send welcome notification:', error);
               });
+              
+              // Store the user's API key in localStorage AFTER notifications are sent
+              // This ensures the dashboard will use the user's API key, not the system's
+              setTimeout(() => {
+                localStorage.setItem('api_token', regResponse.api_key || '');
+                console.log('🔑 User API key set in localStorage:', regResponse.api_key ? 'Set' : 'NOT SET');
+              }, 1000); // Small delay to ensure notifications complete
               
               // Redirect to dashboard after 5 seconds
               setTimeout(() => {
@@ -358,7 +419,7 @@ export default function SignupPage() {
                 </p>
                 <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 rounded-2xl p-3">
                   <p className="text-green-300 text-sm font-medium">
-                    🎉 You can start sending SMS and Email notifications immediately!
+                    🎉 You can start sending Email notifications immediately!
                   </p>
                 </div>
               </div>
@@ -520,10 +581,21 @@ export default function SignupPage() {
                     type="email"
                     className="bg-black/30 border-white/20 text-white placeholder-gray-400 rounded-xl h-12 pl-10 focus:border-green-500 focus:ring-green-500/20"
                     placeholder="Enter your email"
+                    onBlur={(e) => validateEmail(e.target.value)}
                   />
                 </div>
                 {form.formState.errors.email && (
                   <p className="text-red-400 text-sm">{form.formState.errors.email.message}</p>
+                )}
+                {emailValidationMessage && (
+                  <p className={`text-sm ${
+                    emailValidationStatus === 'valid' ? 'text-green-400' : 
+                    emailValidationStatus === 'invalid' ? 'text-red-400' : 
+                    emailValidationStatus === 'error' ? 'text-yellow-400' : 
+                    'text-gray-400'
+                  }`}>
+                    {isValidatingEmail ? '🔄 Validating email...' : emailValidationMessage}
+                  </p>
                 )}
               </div>
               
@@ -537,10 +609,10 @@ export default function SignupPage() {
                     {...form.register('phone')}
                     type="tel"
                     className="bg-black/30 border-white/20 text-white placeholder-gray-400 rounded-xl h-12 pl-10 focus:border-green-500 focus:ring-green-500/20"
-                    placeholder="+233244123456"
+                    placeholder="+27123456789"
                   />
                 </div>
-                <p className="text-xs text-gray-500">Enter phone number in international format (e.g., +233244123456)</p>
+                <p className="text-xs text-gray-500">Enter South African phone number (e.g., +27123456789)</p>
                 {form.formState.errors.phone && (
                   <p className="text-red-400 text-sm">{form.formState.errors.phone.message}</p>
                 )}
@@ -568,8 +640,8 @@ export default function SignupPage() {
               
               <Button
                 type="submit"
-                disabled={isLoading || isProcessingPayment}
-                className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl h-12 text-lg font-medium shadow-lg shadow-green-500/25 transition-all duration-300"
+                disabled={isLoading || isProcessingPayment || (planType !== 'free' && emailValidationStatus !== 'valid')}
+                className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl h-12 text-lg font-medium shadow-lg shadow-green-500/25 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isProcessingPayment ? (
                   <div className="flex items-center space-x-2">

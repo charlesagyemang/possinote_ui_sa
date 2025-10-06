@@ -30,7 +30,7 @@ import Link from 'next/link';
 export default function ApiDocsPage() {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState('overview');
-  const [expandedMenus, setExpandedMenus] = useState<string[]>(['sms', 'email', 'scheduling']);
+  const [expandedMenus, setExpandedMenus] = useState<string[]>(['email', 'scheduling']);
 
   const copyToClipboard = async (text: string, identifier: string) => {
     try {
@@ -138,15 +138,6 @@ export default function ApiDocsPage() {
     { id: 'overview', label: 'Overview', icon: Home },
     { id: 'authentication', label: 'Authentication', icon: Key },
     { 
-      id: 'sms', 
-      label: 'SMS', 
-      icon: MessageSquare,
-      subItems: [
-        { id: 'sms-send', label: 'Send Single SMS', icon: Send },
-        { id: 'sms-bulk', label: 'Send Bulk SMS', icon: Users }
-      ]
-    },
-    { 
       id: 'email', 
       label: 'Email', 
       icon: Mail,
@@ -160,21 +151,9 @@ export default function ApiDocsPage() {
       label: 'Scheduling', 
       icon: Calendar,
       subItems: [
-        { id: 'schedule-sms', label: 'Schedule Single SMS', icon: Clock },
-        { id: 'schedule-bulk-sms', label: 'Schedule Bulk SMS', icon: Clock },
         { id: 'schedule-email', label: 'Schedule Single Email', icon: Clock },
         { id: 'schedule-bulk-email', label: 'Schedule Bulk Email', icon: Clock },
         { id: 'schedule-bulk-individual', label: 'Schedule Bulk Individual', icon: Clock }
-      ]
-    },
-    { 
-      id: 'sdks', 
-      label: 'SDKs', 
-      icon: Package,
-      subItems: [
-        { id: 'sdk-ruby', label: 'Ruby SDK', icon: Code },
-        { id: 'sdk-python', label: 'Python SDK', icon: Code },
-        { id: 'sdk-nodejs', label: 'Node.js SDK', icon: Code }
       ]
     },
     { id: 'errors', label: 'Error Handling', icon: XCircle },
@@ -189,7 +168,7 @@ export default function ApiDocsPage() {
             <div>
               <h2 className="text-2xl font-bold text-white mb-4">Overview</h2>
               <p className="text-gray-400 mb-6">
-                PossiNote provides a powerful REST API for sending SMS messages, emails, and scheduling notifications. 
+                PossiNote provides a powerful REST API for sending emails and scheduling notifications. 
                 Our API is designed to be simple, reliable, and scalable for developers.
               </p>
             </div>
@@ -274,180 +253,8 @@ export default function ApiDocsPage() {
           </div>
         );
 
-      case 'sms':
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold text-white mb-4">SMS Endpoints</h2>
-              <p className="text-gray-400 mb-6">
-                Send SMS messages to phone numbers. All phone numbers must be in E.164 format.
-              </p>
-              
-              {/* Sender ID Setup Notice */}
-              <div className="bg-amber-900/30 border border-amber-500/50 rounded-lg p-6 mb-6">
-                <div className="flex items-start space-x-3">
-                  <div className="p-2 bg-amber-500/20 rounded-lg">
-                    <Shield className="h-5 w-5 text-amber-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-amber-300 mb-2">
-                      ⚠️ Important: Sender ID Setup Required
-                    </h3>
-                    <p className="text-amber-200 mb-3">
-                      Before sending SMS messages, you <strong>must</strong> create a sender ID in your dashboard. 
-                      This sender ID will appear as the &quot;from&quot; name on your SMS messages.
-                    </p>
-                    <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-600">
-                      <p className="text-sm text-gray-300 mb-2">
-                        <strong>To set up your sender ID:</strong>
-                      </p>
-                      <ol className="text-sm text-gray-300 space-y-1 ml-4">
-                        <li>1. Go to your <Link href="/dashboard" className="text-teal-400 hover:text-teal-300 underline">Dashboard</Link></li>
-                        <li>2. Navigate to <strong>SMS Settings</strong> or <strong>Sender Names</strong></li>
-                        <li>3. Create a new sender ID (e.g., &quot;POSSINOTE&quot;, &quot;MyCompany&quot;)</li>
-                        <li>4. Wait for approval (usually instant for standard names)</li>
-                        <li>5. Use the approved sender ID in your API requests</li>
-                      </ol>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
 
-      case 'sms-send':
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold text-white mb-4">Send Single SMS</h2>
-              <p className="text-gray-400 mb-6">
-                Send a single SMS message to one recipient.
-              </p>
-            </div>
 
-            <EndpointSection
-              method="POST"
-              endpoint="/sms/send"
-              description="Send a single SMS message"
-              curlExample={`curl -X POST https://notifyapi.possitech.net/api/v1/sms/send \\
-  -H "Authorization: Bearer YOUR_API_KEY" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "sms": {
-      "to": "+233541348180",
-      "message": "Hello from PossiNote!",
-      "sender_id": "MyBrand"
-    }
-  }'`}
-              requestBody={`{
-  "sms": {
-    "to": "+233541348180",
-    "message": "Hello from PossiNote!",
-    "sender_id": "MyBrand"
-  }
-}`}
-              response={`{
-  "success": true,
-  "data": {
-    "message_id": "msg_abc123def456",
-    "to": "+233541348180",
-    "status": "queued",
-    "cost": 1.0,
-    "created_at": "2025-08-09T18:30:00Z"
-  }
-}`}
-              notes={[
-                "sender_id is required and must be pre-approved in your dashboard",
-                "Phone number must be in E.164 format (+233...)",
-                "Message limited to 160 characters",
-                "Credits are deducted immediately",
-                "SMS is queued for background delivery"
-              ]}
-            />
-          </div>
-        );
-
-      case 'sms-bulk':
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold text-white mb-4">Send Bulk SMS</h2>
-              <p className="text-gray-400 mb-6">
-                Send multiple SMS messages in a single request.
-              </p>
-            </div>
-
-            <EndpointSection
-              method="POST"
-              endpoint="/sms/bulk"
-              description="Send multiple SMS messages in a single request"
-              curlExample={`curl -X POST https://notifyapi.possitech.net/api/v1/sms/bulk \\
-  -H "Authorization: Bearer YOUR_API_KEY" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "bulk_sms": {
-      "sender_id": "MyBrand",
-      "messages": [
-        {
-          "to": "+233541348180",
-          "message": "Hello John!"
-        },
-        {
-          "to": "+233277119919",
-          "message": "Hello Jane!"
-        }
-      ]
-    }
-  }'`}
-              requestBody={`{
-  "bulk_sms": {
-    "sender_id": "MyBrand",
-    "messages": [
-      {
-        "to": "+233541348180",
-        "message": "Hello John!"
-      },
-      {
-        "to": "+233277119919",
-        "message": "Hello Jane!"
-      }
-    ]
-  }
-}`}
-              response={`{
-  "success": true,
-  "data": {
-    "batch_id": "batch_abc123def456",
-    "total_messages": 2,
-    "successful": 2,
-    "failed": 0,
-    "total_cost": 2.0,
-    "messages": [
-      {
-        "message_id": "msg_abc123_0",
-        "to": "+233541348180",
-        "status": "queued"
-      },
-      {
-        "message_id": "msg_def456_1",
-        "to": "+233277119919",
-        "status": "queued"
-      }
-    ],
-    "job_id": "550c4620-76bb-4bbb-8015-ff9ab94358f8"
-  }
-}`}
-              notes={[
-                "All messages use the same sender_id (required and must be pre-approved)",
-                "Credits are deducted upfront for the entire batch",
-                "Each message is queued individually for background processing",
-                "Use batch_id to correlate related messages",
-                "Use job_id to track the bulk job status"
-              ]}
-            />
-          </div>
-        );
 
       case 'email':
         return (
@@ -573,133 +380,13 @@ export default function ApiDocsPage() {
             <div>
               <h2 className="text-2xl font-bold text-white mb-4">Scheduling Endpoints</h2>
               <p className="text-gray-400 mb-6">
-                Schedule emails and SMS for future delivery. All scheduled times must be in ISO 8601 format.
+                Schedule emails for future delivery. All scheduled times must be in ISO 8601 format.
               </p>
             </div>
           </div>
         );
 
-      case 'schedule-sms':
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold text-white mb-4">Schedule Single SMS</h2>
-              <p className="text-gray-400 mb-6">
-                Schedule a single SMS message for future delivery.
-              </p>
-            </div>
 
-            <EndpointSection
-              method="POST"
-              endpoint="/sms/schedule"
-              description="Schedule a single SMS for future delivery"
-              curlExample={`curl -X POST https://notifyapi.possitech.net/api/v1/sms/schedule \\
-  -H "Authorization: Bearer YOUR_API_KEY" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "scheduled_sms": {
-      "to": "+233541348180",
-      "message": "Scheduled reminder from PossiNote!",
-      "sender_id": "MyBrand",
-      "scheduled_at": "2025-08-10T10:00:00Z"
-    }
-  }'`}
-              requestBody={`{
-  "scheduled_sms": {
-    "to": "+233541348180",
-    "message": "Scheduled reminder from PossiNote!",
-    "sender_id": "MyBrand",
-    "scheduled_at": "2025-08-10T10:00:00Z"
-  }
-}`}
-              response={`{
-  "success": true,
-  "data": {
-    "id": "sched_abc123def456",
-    "to": "+233541348180",
-    "message": "Scheduled reminder from PossiNote!",
-    "scheduled_at": "2025-08-10T10:00:00Z",
-    "status": "pending",
-    "cost": 1.0
-  }
-}`}
-              notes={[
-                "sender_id is required and must be pre-approved in your dashboard",
-                "scheduled_at must be in ISO 8601 format",
-                "scheduled_at must be in the future",
-                "Phone number must be in E.164 format (+233...)",
-                "Credits are deducted immediately",
-                "SMS will be sent at the scheduled time"
-              ]}
-            />
-          </div>
-        );
-
-      case 'schedule-bulk-sms':
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold text-white mb-4">Schedule Bulk SMS</h2>
-              <p className="text-gray-400 mb-6">
-                Schedule multiple SMS messages for future delivery.
-              </p>
-            </div>
-
-            <EndpointSection
-              method="POST"
-              endpoint="/sms/schedule-bulk"
-              description="Schedule multiple SMS messages for future delivery"
-              curlExample={`curl -X POST https://notifyapi.possitech.net/api/v1/sms/schedule-bulk \\
-  -H "Authorization: Bearer YOUR_API_KEY" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "bulk_scheduled_sms": {
-      "sender_id": "MyBrand",
-      "message": "Scheduled bulk reminder from PossiNote!",
-      "scheduled_at": "2025-08-10T10:00:00Z",
-      "recipients": ["+233541348180", "+233277119919"]
-    }
-  }'`}
-              requestBody={`{
-  "bulk_scheduled_sms": {
-    "sender_id": "MyBrand",
-    "message": "Scheduled bulk reminder from PossiNote!",
-    "scheduled_at": "2025-08-10T10:00:00Z",
-    "recipients": ["+233541348180", "+233277119919"]
-  }
-}`}
-              response={`{
-  "success": true,
-  "data": {
-    "batch_id": "batch_abc123def456",
-    "total_scheduled": 2,
-    "total_cost": 2.0,
-    "scheduled_sms": [
-      {
-        "id": "sched_abc123_0",
-        "to": "+233541348180",
-        "status": "pending"
-      },
-      {
-        "id": "sched_def456_1",
-        "to": "+233277119919",
-        "status": "pending"
-      }
-    ]
-  }
-}`}
-              notes={[
-                "All SMS use the same message and sender_id",
-                "sender_id is required and must be pre-approved in your dashboard",
-                "scheduled_at must be in ISO 8601 format",
-                "scheduled_at must be in the future",
-                "Phone numbers must be in E.164 format (+233...)",
-                "Credits are deducted immediately",
-                "All SMS will be sent at the scheduled time"
-              ]}
-            />
-          </div>
-        );
 
       case 'schedule-email':
         return (
@@ -1180,13 +867,6 @@ export default function ApiDocsPage() {
 # Initialize client
 client = Possinote::Client.new(api_key: &apos;your_api_key_here&apos;)
 
-# Send SMS
-response = client.sms.send(
-  to: &apos;+233244123456&apos;,
-  message: &apos;Hello from Possinote!&apos;,
-  sender_id: &apos;YourSenderID&apos;
-)
-
 # Send Email
 response = client.email.send(
   recipient: &apos;user@example.com&apos;,
@@ -1210,18 +890,19 @@ POSSINOTE_CLIENT = Possinote::Client.new(
                   <div>
                     <p className="text-sm text-gray-300 mb-2">Controller Usage:</p>
                     <CodeBlock identifier="ruby-controller" language="ruby">{`class NotificationsController < ApplicationController
-  def send_sms
+  def send_email
     begin
-      response = POSSINOTE_CLIENT.sms.send(
-        to: params[:phone_number],
-        message: params[:message],
-        sender_id: &apos;YourBrand&apos;
+      response = POSSINOTE_CLIENT.email.send(
+        recipient: params[:email],
+        subject: params[:subject],
+        content: params[:content],
+        sender_name: &apos;YourBrand&apos;
       )
       
       if response[&apos;success&apos;]
-        render json: { message: &apos;SMS sent successfully&apos; }
+        render json: { message: &apos;Email sent successfully&apos; }
       else
-        render json: { error: &apos;Failed to send SMS&apos; }, status: :unprocessable_entity
+        render json: { error: &apos;Failed to send email&apos; }, status: :unprocessable_entity
       end
     rescue Possinote::AuthenticationError => e
       render json: { error: &apos;Authentication failed&apos; }, status: :unauthorized
@@ -1238,28 +919,33 @@ end`}</CodeBlock>
                 <h4 className="text-lg font-semibold text-white mb-3">Advanced Features</h4>
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
-                    <p className="text-sm text-gray-300 mb-2">Bulk SMS:</p>
-                    <CodeBlock identifier="ruby-bulk" language="ruby">{`# Send bulk SMS
-response = client.sms.send_bulk(
-  sender_id: &apos;YourBrand&apos;,
-  messages: [
-    { to: &apos;+233244123456&apos;, message: &apos;Hello John!&apos; },
-    { to: &apos;+233277119919&apos;, message: &apos;Hello Jane!&apos; }
-  ]
+                    <p className="text-sm text-gray-300 mb-2">Bulk Email:</p>
+                    <CodeBlock identifier="ruby-bulk" language="ruby">{`# Send bulk email
+response = client.email.send_bulk(
+  recipients: [&apos;user1@example.com&apos;, &apos;user2@example.com&apos;],
+  subject: &apos;Bulk Newsletter&apos;,
+  content: &apos;<h1>Newsletter</h1><p>This is our newsletter.</p>&apos;,
+  sender_name: &apos;YourBrand&apos;
 )
 
-# Schedule SMS
-response = client.scheduling.schedule_sms(
-  to: &apos;+233244123456&apos;,
-  message: &apos;Scheduled reminder!&apos;,
-  sender_id: &apos;YourBrand&apos;,
+# Schedule email
+response = client.scheduling.schedule_email(
+  recipient: &apos;user@example.com&apos;,
+  subject: &apos;Scheduled reminder!&apos;,
+  content: &apos;<h1>Reminder</h1><p>This is a scheduled email.</p>&apos;,
+  sender_name: &apos;YourBrand&apos;,
   scheduled_at: &apos;2025-08-10T10:00:00Z&apos;
 )`}</CodeBlock>
                   </div>
                   <div>
                     <p className="text-sm text-gray-300 mb-2">Error Handling:</p>
                     <CodeBlock identifier="ruby-errors" language="ruby">{`begin
-  response = client.sms.send(to: &apos;+233244123456&apos;, message: &apos;Hello&apos;, sender_id: &apos;SenderID&apos;)
+  response = client.email.send(
+    recipient: &apos;user@example.com&apos;,
+    subject: &apos;Hello&apos;,
+    content: &apos;<p>Hello from PossiNote!</p>&apos;,
+    sender_name: &apos;YourBrand&apos;
+  )
 rescue Possinote::AuthenticationError => e
   puts &quot;Authentication failed: #{e.message}&quot;
 rescue Possinote::PaymentRequiredError => e
@@ -1286,20 +972,20 @@ class SendNotificationJob < ApplicationJob
     service = NotificationService.new
 
     case notification_type
-    when 'welcome_sms'
-      service.send_welcome_sms(user)
     when 'password_reset_email'
       service.send_password_reset_email(user, options[:reset_token])
     when 'bulk_newsletter'
       service.send_bulk_newsletter(options[:users], options[:content])
     when 'scheduled_reminder'
       service.schedule_reminder_email(user, options[:appointment])
+    when 'welcome_email'
+      service.send_welcome_email(user)
     end
   end
 end
 
 # Usage in controller
-SendNotificationJob.perform_later('welcome_sms', user.id)
+SendNotificationJob.perform_later('welcome_email', user.id)
 SendNotificationJob.perform_later('password_reset_email', user.id, reset_token: token)`}</CodeBlock>
               </div>
             </div>
@@ -1728,7 +1414,7 @@ try {
               <div>
                 <h3 className="text-lg font-semibold text-red-400 mb-3">402 Payment Required</h3>
                 <CodeBlock identifier="error-402">{`{
-  "error": "Insufficient credits. Need 10.0 credits for 10 SMS messages."
+  "error": "Insufficient credits. Need 10.0 credits for 10 email messages."
 }`}</CodeBlock>
                 <p className="text-sm text-gray-400 mt-2">Insufficient credits to complete the operation.</p>
               </div>
