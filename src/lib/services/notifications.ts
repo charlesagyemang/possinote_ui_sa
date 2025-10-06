@@ -49,25 +49,29 @@ export class NotificationService {
       const fullMessage = `New PossiNote Signup! ${data.customerName} from ${data.companyName} signed up for ${data.planType} plan with ${data.initialCredits.toLocaleString()} credits. Email: ${data.customerEmail}`;
       const smsMessage = fullMessage.length > 159 ? fullMessage.substring(0, 159) : fullMessage;
       
-      // Use the API key from environment variable
+      // Use the system's API key to send notifications (notifications should come from system)
       const originalToken = localStorage.getItem('api_token');
-      localStorage.setItem('api_token', this.apiKey || '');
-      
-      // Try without sender ID first, then with sender ID if that fails
       try {
-        await SmsService.sendSms(this.salesPhone, smsMessage);
-        results.smsSuccess = true;
-        console.log('✅ SMS notification sent successfully (without sender ID)');
-      } catch (_senderError) {
-        console.log('⚠️ SMS without sender ID failed, trying with sender ID...');
-        await SmsService.sendSms(this.salesPhone, smsMessage, this.smsSenderId);
-        results.smsSuccess = true;
-        console.log('✅ SMS notification sent successfully (with sender ID)');
-      }
-      
-      // Restore original token
-      if (originalToken) {
-        localStorage.setItem('api_token', originalToken);
+        localStorage.setItem('api_token', this.apiKey || '');
+        
+        // Try without sender ID first, then with sender ID if that fails
+        try {
+          await SmsService.sendSms(this.salesPhone, smsMessage);
+          results.smsSuccess = true;
+          console.log('✅ SMS notification sent successfully (without sender ID)');
+        } catch (_senderError) {
+          console.log('⚠️ SMS without sender ID failed, trying with sender ID...');
+          await SmsService.sendSms(this.salesPhone, smsMessage, this.smsSenderId);
+          results.smsSuccess = true;
+          console.log('✅ SMS notification sent successfully (with sender ID)');
+        }
+      } finally {
+        // Always restore original token, even if an error occurs
+        if (originalToken) {
+          localStorage.setItem('api_token', originalToken);
+        } else {
+          localStorage.removeItem('api_token');
+        }
       }
     } catch (error) {
       results.smsError = error instanceof Error ? error.message : 'Failed to send SMS';
@@ -212,21 +216,25 @@ export class NotificationService {
         </html>
       `;
       
-      // Use the API key from environment variable
+      // Use the system's API key to send notifications (notifications should come from system)
       const originalToken = localStorage.getItem('api_token');
-      localStorage.setItem('api_token', this.apiKey || '');
-      
-      console.log('📧 Sending signup notification email to sales:', this.salesEmail);
-      console.log('📧 Email subject:', subject);
-      console.log('📧 Using API key:', this.apiKey ? 'Set' : 'NOT SET');
-      
-      await EmailService.sendEmail(this.salesEmail, subject, content, 'PossiNote System');
-      results.emailSuccess = true;
-      console.log('✅ Email notification sent successfully to sales team');
-      
-      // Restore original token
-      if (originalToken) {
-        localStorage.setItem('api_token', originalToken);
+      try {
+        localStorage.setItem('api_token', this.apiKey || '');
+        
+        console.log('📧 Sending signup notification email to sales:', this.salesEmail);
+        console.log('📧 Email subject:', subject);
+        console.log('📧 Using API key:', this.apiKey ? 'Set' : 'NOT SET');
+        
+        await EmailService.sendEmail(this.salesEmail, subject, content, 'PossiNote System');
+        results.emailSuccess = true;
+        console.log('✅ Email notification sent successfully to sales team');
+      } finally {
+        // Always restore original token, even if an error occurs
+        if (originalToken) {
+          localStorage.setItem('api_token', originalToken);
+        } else {
+          localStorage.removeItem('api_token');
+        }
       }
     } catch (error) {
       results.emailError = error instanceof Error ? error.message : 'Failed to send email';
@@ -255,25 +263,29 @@ export class NotificationService {
       const welcomeSms = `Welcome to PossiNote! Your account is ready with ${data.initialCredits.toLocaleString()} credits. Start sending SMS and emails instantly. Visit dashboard to get started.`;
       const smsMessage = welcomeSms.length > 159 ? welcomeSms.substring(0, 159) : welcomeSms;
       
-      // Use the API key from environment variable
+      // Use the system's API key to send notifications (notifications should come from system)
       const originalToken = localStorage.getItem('api_token');
-      localStorage.setItem('api_token', this.apiKey || '');
-      
-      // Try without sender ID first, then with sender ID if that fails
       try {
-        await SmsService.sendSms(data.customerPhone, smsMessage);
-        results.smsSuccess = true;
-        console.log('✅ Welcome SMS sent successfully (without sender ID)');
-      } catch (_senderError) {
-        console.log('⚠️ Welcome SMS without sender ID failed, trying with sender ID...');
-        await SmsService.sendSms(data.customerPhone, smsMessage, this.smsSenderId);
-        results.smsSuccess = true;
-        console.log('✅ Welcome SMS sent successfully (with sender ID)');
-      }
-      
-      // Restore original token
-      if (originalToken) {
-        localStorage.setItem('api_token', originalToken);
+        localStorage.setItem('api_token', this.apiKey || '');
+        
+        // Try without sender ID first, then with sender ID if that fails
+        try {
+          await SmsService.sendSms(data.customerPhone, smsMessage);
+          results.smsSuccess = true;
+          console.log('✅ Welcome SMS sent successfully (without sender ID)');
+        } catch (_senderError) {
+          console.log('⚠️ Welcome SMS without sender ID failed, trying with sender ID...');
+          await SmsService.sendSms(data.customerPhone, smsMessage, this.smsSenderId);
+          results.smsSuccess = true;
+          console.log('✅ Welcome SMS sent successfully (with sender ID)');
+        }
+      } finally {
+        // Always restore original token, even if an error occurs
+        if (originalToken) {
+          localStorage.setItem('api_token', originalToken);
+        } else {
+          localStorage.removeItem('api_token');
+        }
       }
     } catch (error) {
       results.smsError = error instanceof Error ? error.message : 'Failed to send welcome SMS';
@@ -421,21 +433,25 @@ export class NotificationService {
         </html>
       `;
       
-      // Use the API key from environment variable
+      // Use the system's API key to send notifications (notifications should come from system)
       const originalToken = localStorage.getItem('api_token');
-      localStorage.setItem('api_token', this.apiKey || '');
-      
-      console.log('📧 Sending welcome email to customer:', data.customerEmail);
-      console.log('📧 Email subject:', subject);
-      console.log('📧 Using API key:', this.apiKey ? 'Set' : 'NOT SET');
-      
-      await EmailService.sendEmail(data.customerEmail, subject, content, 'PossiNote Team');
-      results.emailSuccess = true;
-      console.log('✅ Welcome email sent successfully to customer');
-      
-      // Restore original token
-      if (originalToken) {
-        localStorage.setItem('api_token', originalToken);
+      try {
+        localStorage.setItem('api_token', this.apiKey || '');
+        
+        console.log('📧 Sending welcome email to customer:', data.customerEmail);
+        console.log('📧 Email subject:', subject);
+        console.log('📧 Using API key:', this.apiKey ? 'Set' : 'NOT SET');
+        
+        await EmailService.sendEmail(data.customerEmail, subject, content, 'PossiNote Team');
+        results.emailSuccess = true;
+        console.log('✅ Welcome email sent successfully to customer');
+      } finally {
+        // Always restore original token, even if an error occurs
+        if (originalToken) {
+          localStorage.setItem('api_token', originalToken);
+        } else {
+          localStorage.removeItem('api_token');
+        }
       }
     } catch (error) {
       results.emailError = error instanceof Error ? error.message : 'Failed to send welcome email';

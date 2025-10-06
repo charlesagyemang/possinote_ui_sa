@@ -10,14 +10,13 @@ const plans = [
   {
     id: 'free',
     name: 'Free',
-    price: '₵0',
+    price: 'R0',
     initial_credits: 10,
-    email_limit: 5,
-    sms_limit: 5,
+    email_limit: 10,
+    sms_limit: 0,
     description: 'Perfect for testing and small projects',
     features: [
-      '5 emails included',
-      '5 SMS included',
+      '10 emails included',
       '10 initial credits',
       'Advanced analytics',
       'API access',
@@ -33,14 +32,13 @@ const plans = [
   {
     id: 'starter',
     name: 'Starter',
-    price: `₵${process.env.NEXT_PUBLIC_STARTER_PLAN_PRICE || '99'}`,
+    price: `R${process.env.NEXT_PUBLIC_STARTER_PLAN_PRICE || '99'}`,
     initial_credits: 2000,
-    email_limit: 1000,
-    sms_limit: 1000,
+    email_limit: 2000,
+    sms_limit: 0,
     description: 'Great for growing businesses',
     features: [
-      '1,000 emails included',
-      '1,000 SMS included',
+      '2,000 emails included',
       '2,000 initial credits',
       'Advanced analytics',
       'API access',
@@ -56,14 +54,13 @@ const plans = [
   {
     id: 'business',
     name: 'Business',
-    price: `₵${process.env.NEXT_PUBLIC_BUSINESS_PLAN_PRICE || '399'}`,
+    price: `R${process.env.NEXT_PUBLIC_BUSINESS_PLAN_PRICE || '399'}`,
     initial_credits: 10000,
-    email_limit: 5000,
-    sms_limit: 5000,
+    email_limit: 10000,
+    sms_limit: 0,
     description: 'For established businesses',
     features: [
-      '5,000 emails included',
-      '5,000 SMS included',
+      '10,000 emails included',
       '10,000 initial credits',
       'Advanced analytics',
       'API access',
@@ -80,14 +77,13 @@ const plans = [
   {
     id: 'enterprise',
     name: 'Enterprise',
-    price: `₵${process.env.NEXT_PUBLIC_ENTERPRISE_PLAN_PRICE || '799'}`,
+    price: `R${process.env.NEXT_PUBLIC_ENTERPRISE_PLAN_PRICE || '799'}`,
     initial_credits: 20000,
-    email_limit: 10000,
-    sms_limit: 10000,
+    email_limit: 20000,
+    sms_limit: 0,
     description: 'For large-scale operations',
     features: [
-      '10,000 emails included',
-      '10,000 SMS included',
+      '20,000 emails included',
       '20,000 initial credits',
       'Advanced analytics',
       'API access',
@@ -129,6 +125,9 @@ export default function PricingPage() {
               PossiNote
             </h1>
           </div>
+          <p className="text-lg text-gray-300 mb-4">
+            The world's most advanced email engine for businesses and developers
+          </p>
           <h2 className="text-4xl font-bold text-white mb-6">
             Choose Your Plan
           </h2>
@@ -258,9 +257,9 @@ export default function PricingPage() {
               <div className="p-4 bg-green-500/20 rounded-2xl w-fit mx-auto mb-6">
                 <MessageSquare className="h-8 w-8 text-green-400" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-4">2. Send Messages</h3>
+              <h3 className="text-xl font-bold text-white mb-4">2. Send Emails</h3>
               <p className="text-gray-400">
-                Use our API to send SMS and email notifications. Each message costs credits based on the service.
+                Use our API to send email notifications. Each message costs credits based on the service.
               </p>
             </div>
             

@@ -561,7 +561,7 @@ export default function UsagePage() {
           return parseFloat(topUpAmount) * GENERAL_CREDIT_RATE;
         }
       })();
-      const amountInPesewas = PaystackService.convertToKobo(amountInCedi);
+      const amountInCents = PaystackService.convertToCents(amountInCedi);
       const reference = PaystackService.generateReference();
       
       // Make email unique to prevent Paystack spam detection
@@ -570,8 +570,8 @@ export default function UsagePage() {
       await PaystackService.initializePayment({
         key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY!,
         email: uniqueEmail,
-        amount: amountInPesewas,
-        currency: 'GHS',
+        amount: amountInCents,
+        currency: 'ZAR',
         ref: reference,
         callback: (response: PaystackResponse) => {
           // Only call the top-up endpoint if payment is successful
@@ -743,70 +743,6 @@ export default function UsagePage() {
         
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          {/* SMS Credit Balance */}
-          <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden hover:bg-black/30 transition-all duration-300">
-            <CardHeader className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border-b border-white/10">
-              <CardTitle className="text-white text-lg flex items-center space-x-3">
-                <div className="p-2 bg-blue-500/20 rounded-xl">
-                  <MessageSquare className="h-5 w-5 text-blue-400" />
-                </div>
-                <span>SMS Credits</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="text-center space-y-2">
-                <div className="text-3xl font-bold text-blue-400">
-                  {parseFloat(String(currentUsage?.sms_credit_balance || 0)).toFixed(2)}
-                </div>
-                <p className="text-gray-400 text-sm">SMS Credits Available</p>
-                <div className="text-xs text-gray-500">
-                  Used: {parseFloat(String(currentUsage?.sms_usage_this_month || 0)).toFixed(2)} this month
-                </div>
-                <div className="space-y-2 mt-2">
-                  <Button
-                    onClick={() => {
-                      setShowSmsBundleModal(true);
-                    }}
-                    className="w-full bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white rounded-xl"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    SMS Bundles
-                  </Button>
-                  {parseFloat(String(currentUsage?.sms_credit_balance || 0)) > 0 && (
-                    <>
-                        <Button
-                            onClick={() => {
-                              setConvertFromType('sms');
-                              setConvertToType('email');
-                              setShowConvertModal(true);
-                            }}
-                            variant="outline"
-                            className="w-full border-orange-500/30 text-orange-300 hover:bg-orange-500/20"
-                          >
-                            <ArrowUpRight className="h-4 w-4 mr-2" />
-                            <span className="hidden sm:inline">Convert Some SMS Credits to Email Credits</span>
-                            <span className="sm:hidden">Convert to Email</span>
-                          </Button>
-                        <Button
-                            onClick={() => {
-                              setConvertFromType('sms');
-                              setConvertToType('email');
-                              setConvertAmount(String(currentUsage?.sms_credit_balance || 0));
-                              setShowConvertModal(true);
-                            }}
-                            variant="outline"
-                            className="w-full border-green-500/30 text-green-300 hover:bg-green-500/20"
-                          >
-                            <ArrowUpRight className="h-4 w-4 mr-2" />
-                            <span className="hidden sm:inline">Convert ALL SMS Credits to Email Credits</span>
-                            <span className="sm:hidden">Convert All</span>
-                          </Button>
-                    </>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
 
           {/* Email Credit Balance */}
           <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden hover:bg-black/30 transition-all duration-300">
@@ -837,110 +773,6 @@ export default function UsagePage() {
                     <Plus className="h-4 w-4 mr-2" />
                     Email Bundles
                   </Button>
-                  {parseFloat(String(currentUsage?.email_credit_balance || 0)) > 0 && (
-                    <>
-                        <Button
-                            onClick={() => {
-                              setConvertFromType('email');
-                              setConvertToType('sms');
-                              setShowConvertModal(true);
-                            }}
-                            variant="outline"
-                            className="w-full border-blue-500/30 text-blue-300 hover:bg-blue-500/20"
-                          >
-                            <ArrowUpRight className="h-4 w-4 mr-2" />
-                            <span className="hidden sm:inline">Convert Some Email Credits to SMS Credits</span>
-                            <span className="sm:hidden">Convert to SMS</span>
-                          </Button>
-                        <Button
-                            onClick={() => {
-                              setConvertFromType('email');
-                              setConvertToType('sms');
-                              setConvertAmount(String(currentUsage?.email_credit_balance || 0));
-                              setShowConvertModal(true);
-                            }}
-                            variant="outline"
-                            className="w-full border-green-500/30 text-green-300 hover:bg-green-500/20"
-                          >
-                            <ArrowUpRight className="h-4 w-4 mr-2" />
-                            <span className="hidden sm:inline">Convert ALL Email Credits to SMS Credits</span>
-                            <span className="sm:hidden">Convert All</span>
-                          </Button>
-                    </>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Credit Balances */}
-          <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden hover:bg-black/30 transition-all duration-300">
-            <CardHeader className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-b border-white/10">
-              <CardTitle className="text-white text-lg flex items-center space-x-3">
-                <div className="p-2 bg-green-500/20 rounded-xl">
-                  <CreditCard className="h-5 w-5 text-green-400" />
-                </div>
-                <span>Credit Balances</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-3 h-3 bg-blue-400 rounded-full"></div>
-                    <span className="text-gray-300 text-sm">SMS Credits</span>
-                  </div>
-                  <span className="text-white font-semibold">
-                    {parseFloat(String(currentUsage?.sms_credit_balance || 0)).toFixed(2)}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-3 h-3 bg-orange-400 rounded-full"></div>
-                    <span className="text-gray-300 text-sm">Email Credits</span>
-                  </div>
-                  <span className="text-white font-semibold">
-                    {parseFloat(String(currentUsage?.email_credit_balance || 0)).toFixed(2)}
-                  </span>
-                </div>
-                <Button
-                  onClick={() => {
-                    setShowBundleModal(true);
-                  }}
-                  className="w-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white rounded-xl mt-4"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Bundle Top-up
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-
-
-        {/* Additional Stats Grid */}
-        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-          {/* Monthly Quota Usage */}
-          <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden hover:bg-black/30 transition-all duration-300">
-            <CardHeader className="bg-gradient-to-r from-purple-500/10 to-indigo-500/10 border-b border-white/10">
-              <CardTitle className="text-white text-lg flex items-center space-x-3">
-                <div className="p-2 bg-purple-500/20 rounded-xl">
-                  <Target className="h-5 w-5 text-purple-400" />
-                </div>
-                <span>Monthly Quota</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="text-center space-y-2">
-                <div className="text-3xl font-bold text-purple-400">
-                  {parseFloat(String(currentUsage?.usage_percentage || 0)).toFixed(2)}%
-                </div>
-                <p className="text-gray-400 text-sm">
-                  {parseFloat(String(currentUsage?.current_month_usage || 0)).toFixed(2)} / {parseFloat(String(currentUsage?.monthly_limit || 0)).toFixed(0)}
-                </p>
-                <div className="text-xs text-gray-500">
-                  {parseFloat(String(currentUsage?.remaining_quota || 0)).toFixed(2)} remaining
                 </div>
               </div>
             </CardContent>
@@ -994,109 +826,11 @@ export default function UsagePage() {
             </CardContent>
           </Card>
 
-          {/* Net Credits */}
-          <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden hover:bg-black/30 transition-all duration-300">
-            <CardHeader className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-b border-white/10">
-              <CardTitle className="text-white text-lg flex items-center space-x-3">
-                <div className="p-2 bg-purple-500/20 rounded-xl">
-                  <CreditCard className="h-5 w-5 text-purple-400" />
-                </div>
-                <span>Net Credits</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="text-center space-y-2">
-                <div className="text-3xl font-bold text-purple-400">
-                  {parseFloat(String(currentUsage?.net_credits_this_month || 0)).toFixed(2)} credits
-              </div>
-                <p className="text-gray-400 text-sm">This Month</p>
-                <div className="flex items-center justify-center space-x-1">
-                  <span className="text-sm text-purple-400">
-                    {currentUsage?.can_send_sms ? 'SMS: ✓' : 'SMS: ✗'} | {currentUsage?.can_send_email ? 'Email: ✓' : 'Email: ✗'}
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
-        {/* Charts Grid */}
-        <div className="grid grid-cols-1 gap-6">
-          <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-b border-white/10">
-              <CardTitle className="text-white text-xl flex items-center space-x-3">
-                <div className="p-2 bg-green-500/20 rounded-xl">
-                  <Target className="h-5 w-5 text-green-400" />
-                </div>
-                <span>Usage Breakdown</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              {breakdownData.length > 0 && breakdownData.some(item => item.value > 0) ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={breakdownData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
-                    <XAxis 
-                      dataKey="name" 
-                      stroke="#9CA3AF"
-                      fontSize={12}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <YAxis 
-                      stroke="#9CA3AF"
-                      fontSize={12}
-                      tickFormatter={(value) => `${typeof value === 'number' ? value.toFixed(2) : parseFloat(value || 0).toFixed(2)} credits`}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <Tooltip 
-                      contentStyle={{
-                        backgroundColor: '#1F2937',
-                        border: '1px solid #374151',
-                        borderRadius: '12px',
-                        color: '#F9FAFB',
-                        boxShadow: '0 10px 25px rgba(0, 0, 0, 0.3)'
-                      }}
-                      formatter={(value: unknown) => [`${typeof value === 'number' ? value.toFixed(2) : parseFloat(String(value) || '0').toFixed(2)} credits`, 'Cost']}
-                    />
-                    <Bar 
-                      dataKey="value" 
-                      fill="url(#colorGradient)" 
-                      radius={[8, 8, 0, 0]}
-                    />
-                    <defs>
-                      <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#3B82F6" />
-                        <stop offset="100%" stopColor="#1D4ED8" />
-                      </linearGradient>
-                    </defs>
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : breakdownData.length > 0 ? (
-                <div className="flex items-center justify-center h-64">
-                  <div className="text-center space-y-4">
-                    <div className="p-4 bg-gray-500/20 rounded-2xl w-fit mx-auto">
-                      <Activity className="h-12 w-12 text-gray-400" />
-              </div>
-                    <p className="text-gray-400">No usage data yet</p>
-                    <p className="text-gray-500 text-sm">Start sending SMS and Email to see usage breakdown</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center justify-center h-64">
-                  <div className="text-center space-y-4">
-                    <div className="p-4 bg-gray-500/20 rounded-2xl w-fit mx-auto">
-                      <Activity className="h-12 w-12 text-gray-400" />
-                    </div>
-                    <p className="text-gray-400">No breakdown data available</p>
-                    <p className="text-gray-500 text-sm">Start using SMS and Email to see usage breakdown</p>
-                  </div>
-              </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+
+
+
 
         {/* Credit Transaction History */}
           <Card className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden">

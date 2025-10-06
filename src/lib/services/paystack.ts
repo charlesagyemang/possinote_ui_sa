@@ -20,7 +20,7 @@ export interface PaystackResponse {
 export interface PaystackConfig {
   key: string;
   email: string;
-  amount: number; // Amount in kobo (smallest currency unit)
+  amount: number; // Amount in cents (smallest currency unit)
   currency: string;
   ref: string;
   callback: (response: PaystackResponse) => void;
@@ -68,8 +68,8 @@ export class PaystackService {
     return `POSSI_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
-  static convertToKobo(amount: number): number {
-    // Convert amount to pesewas (smallest currency unit for GHS)
+  static convertToCents(amount: number): number {
+    // Convert amount to cents (smallest currency unit for ZAR)
     return Math.round(amount * 100);
   }
 }
