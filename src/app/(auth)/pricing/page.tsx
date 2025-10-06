@@ -126,7 +126,7 @@ export default function PricingPage() {
             </h1>
           </div>
           <p className="text-lg text-gray-300 mb-4">
-            The world's most advanced email engine for businesses and developers
+            The world&apos;s most advanced email engine for businesses and developers
           </p>
           <h2 className="text-4xl font-bold text-white mb-6">
             Choose Your Plan
